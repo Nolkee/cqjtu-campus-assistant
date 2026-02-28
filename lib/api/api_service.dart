@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/course.dart';
 import '../models/grade.dart';
 import '../models/exam.dart';
+import '../config/app_config.dart';
 
 /// 修改为你电脑的局域网 IP（手机和电脑要连同一 WiFi）
 const String kBaseUrl = 'http://47.109.25.240:8080';
@@ -14,7 +15,7 @@ class ApiService {
 
   ApiService() {
     _dio = Dio(BaseOptions(
-      baseUrl: kBaseUrl,
+      baseUrl: AppConfig.baseUrl,
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 30),
     ));

@@ -71,7 +71,8 @@ void backgroundCallbackDispatcher() {
 
       // ── 5. 初始化 HTTP 客户端
       final dio = Dio(BaseOptions(
-        baseUrl: 'http://47.109.25.240:8080',
+        baseUrl: const String.fromEnvironment('BASE_URL',
+          defaultValue: 'http://127.0.0.1:8080'),
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 30),
       ));
