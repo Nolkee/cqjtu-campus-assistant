@@ -1,25 +1,20 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:core/models/course.dart';
 import 'package:core/models/grade.dart';
 import 'package:core/models/exam.dart';
-import '../config/app_config.dart';
-
-/// 修改为你电脑的局域网 IP（手机和电脑要连同一 WiFi）
-const String kBaseUrl = 'http://47.109.25.240:8080';
-
-final apiServiceProvider = Provider<ApiService>((ref) => ApiService());
 
 class ApiService {
-  late final Dio _dio;
+  ApiService({
+    required String baseUrl,
+    Dio? dio,
+  }) : _dio = dio ??
+            Dio(BaseOptions(
+              baseUrl: baseUrl,
+              connectTimeout: const Duration(seconds: 15),
+              receiveTimeout: const Duration(seconds: 30),
+            ));
 
-  ApiService() {
-    _dio = Dio(BaseOptions(
-      baseUrl: AppConfig.baseUrl,
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 30),
-    ));
-  }
+  final Dio _dio;
 
   // ── 课程表 ──────────────────────────────────────────────
   Future<({List<Course> courses, String remark})> getSchedule(

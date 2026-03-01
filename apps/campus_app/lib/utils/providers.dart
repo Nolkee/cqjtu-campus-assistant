@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../api/api_service.dart';
+import 'package:data/src/api_service.dart';
 import 'package:core/models/course.dart';
 import 'package:core/models/grade.dart';
 import 'package:core/models/exam.dart';
@@ -10,6 +10,12 @@ import 'package:campus_platform/services/credential_service.dart';
 import 'package:campus_platform/services/notification_service.dart';
 import '../utils/semester_service.dart';
 import 'package:campus_platform/services/dorm_service.dart';
+import 'package:campus_app/config/app_config.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+final apiServiceProvider = Provider<ApiService>((ref) {
+  return ApiService(baseUrl: AppConfig.baseUrl);
+});
 
 // ── 凭据状态 ─────────────────────────────────────────────────
 class CredentialsNotifier

@@ -1,6 +1,8 @@
-# melos_managed_dependency_overrides: core,campus_platform
+# melos_managed_dependency_overrides: core,campus_platform,data
 dependency_overrides:
   campus_platform:
     path: ..\\..\\packages\\platform
   core:
     path: ..\\..\\packages\\core
+  data:
+    path: ..\\..\\packages\\data

@@ -4,7 +4,7 @@ import 'package:core/models/course.dart';
 import '../utils/providers.dart';
 import '../widgets/course_cell.dart';
 import '../widgets/error_view.dart';
-import '../api/api_service.dart';
+import 'package:data/src/api_service.dart';
 
 const int _kTotalWeeks = 20;
 const int _kTotalSlots = 13;

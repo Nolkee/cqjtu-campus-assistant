@@ -87,6 +87,13 @@ packages:
       url: "https://mirrors.tuna.tsinghua.edu.cn/dart-pub/"
     source: hosted
     version: "1.0.8"
+  data:
+    dependency: "direct main"
+    description:
+      path: "../../packages/data"
+      relative: true
+    source: path
+    version: "0.0.1"
   dbus:
     dependency: transitive
     description:
