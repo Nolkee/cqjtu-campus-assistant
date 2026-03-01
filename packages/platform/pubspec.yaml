@@ -1,0 +1,24 @@
+name: campus_platform
+description: Platform integrations (notifications, background tasks, storage).
+version: 0.0.1
+publish_to: "none"
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # 让 platform 能用 core 里的模型
+  core: ^0.0.1
+
+  # 你挪进来的 service 里实际用到的依赖
+  flutter_riverpod: ^2.6.1
+  shared_preferences: ^2.2.3
+  flutter_secure_storage: ^9.2.4
+  flutter_local_notifications: ^17.2.4
+  flutter_timezone: ^5.0.1
+  timezone: ^0.9.4
+  dio: ^5.4.0
+  workmanager: 0.9.0+3

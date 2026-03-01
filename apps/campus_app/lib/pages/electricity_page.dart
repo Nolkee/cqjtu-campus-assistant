@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/api_service.dart';
 import '../utils/providers.dart';
-import '../utils/notification_service.dart';
+import 'package:campus_platform/services/notification_service.dart';
 import '../widgets/error_view.dart';
 
 class ElectricityPage extends ConsumerWidget {

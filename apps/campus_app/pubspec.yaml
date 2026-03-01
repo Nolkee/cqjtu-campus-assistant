@@ -46,9 +46,11 @@ dependencies:
   # ── 时间处理（上课提醒必备） ──────────────────────────────────
   timezone: ^0.9.4
   flutter_timezone: ^5.0.1
-  
+
   core:
     path: ../../packages/core
+  campus_platform:
+    path: ../../packages/platform
 
 dev_dependencies:
   flutter_test:

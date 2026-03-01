@@ -6,10 +6,10 @@ import 'package:core/models/course.dart';
 import 'package:core/models/grade.dart';
 import 'package:core/models/exam.dart';
 import 'package:core/models/dorm_room.dart';
-import '../utils/credential_service.dart';
-import '../utils/notification_service.dart';
+import 'package:campus_platform/services/credential_service.dart';
+import 'package:campus_platform/services/notification_service.dart';
 import '../utils/semester_service.dart';
-import '../utils/dorm_service.dart';
+import 'package:campus_platform/services/dorm_service.dart';
 
 // ── 凭据状态 ─────────────────────────────────────────────────
 class CredentialsNotifier

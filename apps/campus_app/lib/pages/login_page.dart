@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/api_service.dart';
-import '../utils/credential_service.dart';
+import 'package:campus_platform/services/credential_service.dart';
 import '../utils/providers.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
