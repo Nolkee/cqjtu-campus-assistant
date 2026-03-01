@@ -53,6 +53,8 @@ dependencies:
     path: ../../packages/platform
   data:
     path: ../../packages/data
+  campus_adapters_mock:
+    path: ../../packages/adapters_mock
 
 dev_dependencies:
   flutter_test:

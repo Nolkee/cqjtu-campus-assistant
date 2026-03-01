@@ -1,21 +1,123 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:data/src/api_service.dart';
+
 import 'package:core/models/course.dart';
 import 'package:core/models/grade.dart';
 import 'package:core/models/exam.dart';
 import 'package:core/models/dorm_room.dart';
+
 import 'package:campus_platform/services/credential_service.dart';
 import 'package:campus_platform/services/notification_service.dart';
-import '../utils/semester_service.dart';
 import 'package:campus_platform/services/dorm_service.dart';
-import 'package:campus_app/config/app_config.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:campus_app/config/app_config.dart';
+import '../utils/semester_service.dart';
+
+import 'package:data/src/api_service.dart';
+import 'package:data/data.dart';
+
+import 'package:campus_adapters_mock/campus_adapters_mock.dart';
+
+/// 仍保留 ApiService（给你现有代码用）
+/// 生产环境下会用它去实现 CampusBackend
 final apiServiceProvider = Provider<ApiService>((ref) {
   return ApiService(baseUrl: AppConfig.baseUrl);
 });
+
+/// 统一入口：mock / prod 都从这里拿
+final campusBackendProvider = Provider<CampusBackend>((ref) {
+  if (AppConfig.env == 'mock') {
+    return MockCampusBackend();
+  }
+  final api = ref.read(apiServiceProvider);
+  return _ApiCampusBackend(api);
+});
+
+/// 不新增 http_campus_backend.dart，也能让 prod 走真实后端
+class _ApiCampusBackend implements CampusBackend {
+  _ApiCampusBackend(this._api);
+  final ApiService _api;
+
+  @override
+  Future<({List<Course> courses, String remark})> getSchedule(
+    String username,
+    String password, {
+    String? semester,
+    bool forceRefresh = false,
+  }) =>
+      _api.getSchedule(
+        username,
+        password,
+        semester: semester,
+        forceRefresh: forceRefresh,
+      );
+
+  @override
+  Future<({Map<String, String> summary, List<Grade> grades})> getGrades(
+    String username,
+    String password, {
+    String semester = '',
+    bool forceRefresh = false,
+  }) =>
+      _api.getGrades(
+        username,
+        password,
+        semester: semester,
+        forceRefresh: forceRefresh,
+      );
+
+  @override
+  Future<List<Exam>> getExams(
+    String username,
+    String password, {
+    String? semester,
+    bool forceRefresh = false,
+  }) =>
+      _api.getExams(
+        username,
+        password,
+        semester: semester,
+        forceRefresh: forceRefresh,
+      );
+
+  @override
+  Future<String> getElecBalance(
+    String username,
+    String password, {
+    bool forceRefresh = false,
+    Map<String, String>? dormParams,
+  }) =>
+      _api.getElecBalance(
+        username,
+        password,
+        forceRefresh: forceRefresh,
+        dormParams: dormParams,
+      );
+
+  @override
+  Future<String> getCampusCardBalance(
+    String username,
+    String password, {
+    bool forceRefresh = false,
+  }) =>
+      _api.getCampusCardBalance(
+        username,
+        password,
+        forceRefresh: forceRefresh,
+      );
+
+  @override
+  Future<String> rechargeElec(String username, double amount) =>
+      _api.rechargeElec(username, amount);
+
+  @override
+  Future<String> getPayCodeToken(String username) => _api.getPayCodeToken(username);
+
+  @override
+  Future<String> getCampusCardAlipayUrl(String username, double amount) =>
+      _api.getCampusCardAlipayUrl(username, amount);
+}
 
 // ── 凭据状态 ─────────────────────────────────────────────────
 class CredentialsNotifier
@@ -151,9 +253,9 @@ final scheduleProvider =
         (ref, semester) async {
   final creds = ref.watch(credentialsProvider);
   if (creds == null) throw Exception('未登录');
-  return ref
-      .watch(apiServiceProvider)
-      .getSchedule(creds.username, creds.password, semester: semester);
+
+  final backend = ref.watch(campusBackendProvider);
+  return backend.getSchedule(creds.username, creds.password, semester: semester);
 });
 
 // ── 根据当前时间返回轮询间隔 ─────────────────────────────────────
@@ -164,10 +266,6 @@ Duration _pollingInterval() {
 }
 
 // ── 电费（时间感知轮询）──────────────────────────────────────────
-// 通过 ref.watch(dormRoomProvider) 建立依赖：
-//   · 宿舍从「未设置」→「已设置」时，provider 自动重建并发起真正的请求
-//   · 宿舍更换时同理自动刷新
-// 若宿舍未设置，抛出 NoDormSetException，UI 显示「去设置」引导而非错误。
 final electricityProvider = FutureProvider<String>((ref) async {
   final interval = _pollingInterval();
   final timer = Timer(interval, () => ref.invalidateSelf());
@@ -176,10 +274,10 @@ final electricityProvider = FutureProvider<String>((ref) async {
   final creds = ref.watch(credentialsProvider);
   if (creds == null) throw Exception('未登录');
 
-  // 监听宿舍状态——这是触发自动刷新的关键 watch
-  final dormAsync = ref.watch(dormRoomProvider);
+  final backend = ref.watch(campusBackendProvider);
 
-  // 宿舍数据还在从 SharedPreferences 加载中，等待完成
+  // 监听宿舍状态
+  final dormAsync = ref.watch(dormRoomProvider);
   final dorm = await dormAsync.when(
     loading: () => ref.read(dormRoomProvider.future),
     error: (e, _) => Future<DormRoom?>.error(e),
@@ -189,9 +287,11 @@ final electricityProvider = FutureProvider<String>((ref) async {
   if (dorm == null) throw NoDormSetException();
 
   debugPrint('[FG] 查询电费，宿舍=${dorm.displayName}');
-  final balance = await ref
-      .watch(apiServiceProvider)
-      .getElecBalance(creds.username, creds.password, dormParams: dorm.toQueryParams());
+  final balance = await backend.getElecBalance(
+    creds.username,
+    creds.password,
+    dormParams: dorm.toQueryParams(),
+  );
   debugPrint('[FG] 电费余额获取成功：$balance');
   NotificationService.checkAndNotify(balance);
   return balance;
@@ -207,9 +307,9 @@ final campusCardBalanceProvider = FutureProvider<String>((ref) async {
   final creds = ref.watch(credentialsProvider);
   if (creds == null) throw Exception('未登录');
 
-  final balance = await ref
-      .watch(apiServiceProvider)
-      .getCampusCardBalance(creds.username, creds.password);
+  final backend = ref.watch(campusBackendProvider);
+  final balance = await backend.getCampusCardBalance(creds.username, creds.password);
+
   debugPrint('[FG] 校园卡余额获取成功：$balance');
   return balance;
 });
@@ -218,19 +318,21 @@ final campusCardBalanceProvider = FutureProvider<String>((ref) async {
 final payCodeProvider = FutureProvider.autoDispose<String>((ref) async {
   final creds = ref.watch(credentialsProvider);
   if (creds == null) throw Exception('未登录');
-  return ref.watch(apiServiceProvider).getPayCodeToken(creds.username);
+
+  final backend = ref.watch(campusBackendProvider);
+  return backend.getPayCodeToken(creds.username);
 });
 
 // ── 成绩 ─────────────────────────────────────────────────────
 typedef GradeResult = ({Map<String, String> summary, List<Grade> grades});
 
-final gradesProvider = FutureProvider.autoDispose
-    .family<GradeResult, String>((ref, semester) async {
+final gradesProvider =
+    FutureProvider.autoDispose.family<GradeResult, String>((ref, semester) async {
   final creds = ref.watch(credentialsProvider);
   if (creds == null) throw Exception('未登录');
-  return ref
-      .watch(apiServiceProvider)
-      .getGrades(creds.username, creds.password, semester: semester);
+
+  final backend = ref.watch(campusBackendProvider);
+  return backend.getGrades(creds.username, creds.password, semester: semester);
 });
 
 // ── 考试安排 ─────────────────────────────────────────────────
@@ -238,7 +340,7 @@ final examsProvider =
     FutureProvider.autoDispose.family<List<Exam>, String?>((ref, semester) async {
   final creds = ref.watch(credentialsProvider);
   if (creds == null) throw Exception('未登录');
-  return ref
-      .watch(apiServiceProvider)
-      .getExams(creds.username, creds.password, semester: semester);
+
+  final backend = ref.watch(campusBackendProvider);
+  return backend.getExams(creds.username, creds.password, semester: semester);
 });

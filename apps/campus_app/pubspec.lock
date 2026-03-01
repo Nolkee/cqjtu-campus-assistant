@@ -25,6 +25,13 @@ packages:
       url: "https://mirrors.tuna.tsinghua.edu.cn/dart-pub/"
     source: hosted
     version: "2.1.2"
+  campus_adapters_mock:
+    dependency: "direct main"
+    description:
+      path: "../../packages/adapters_mock"
+      relative: true
+    source: path
+    version: "0.0.1"
   campus_platform:
     dependency: "direct main"
     description:

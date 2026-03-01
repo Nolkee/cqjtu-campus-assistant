@@ -1,5 +1,7 @@
-# melos_managed_dependency_overrides: core,campus_platform,data
+# melos_managed_dependency_overrides: core,campus_platform,data,campus_adapters_mock
 dependency_overrides:
+  campus_adapters_mock:
+    path: ..\\..\\packages\\adapters_mock
   campus_platform:
     path: ..\\..\\packages\\platform
   core:
