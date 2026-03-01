@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/course.dart';
+import 'package:core/models/course.dart';
 
 class CourseCell extends StatelessWidget {
   final Course course;

@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/dorm_room.dart';
+import 'package:core/models/dorm_room.dart';
 
 final dormServiceProvider =
     Provider<DormService>((ref) => DormService());

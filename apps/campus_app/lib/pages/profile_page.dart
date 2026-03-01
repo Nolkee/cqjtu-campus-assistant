@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,7 +5,7 @@ import '../utils/providers.dart';
 import '../utils/credential_service.dart';
 import '../utils/notification_service.dart';
 import '../utils/battery_optimization_service.dart';
-import '../models/dorm_room.dart';
+import 'package:core/models/dorm_room.dart';
 import 'login_page.dart';
 import 'electricity_page.dart';
 import 'tools_page.dart';

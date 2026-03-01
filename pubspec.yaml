@@ -1,56 +1,8 @@
-name: campus_app
-description: "重交校园助手 - 课程表、校园卡、电费一体化管理"
-publish_to: 'none'
-version: 1.0.0+3
+﻿name: campus_monorepo
+publish_to: none
 
 environment:
-  sdk: ^3.11.0
-
-dependencies:
-  flutter:
-    sdk: flutter
-  flutter_localizations:
-    sdk: flutter
-
-  workmanager: 0.9.0+3
-  cupertino_icons: ^1.0.8
-
-  # ── 网络请求 ──────────────────────────────────────────────
-  dio: ^5.4.0
-
-  # ── 状态管理 ──────────────────────────────────────────────
-  flutter_riverpod: ^2.5.1
-
-  # ── 存储 ─────────────────────────────────────────────────
-  # shared_preferences：存普通设置项（电费预警阈值等）
-  shared_preferences: ^2.2.2
-  # flutter_secure_storage：加密存储账号密码，底层走 Android Keystore
-  # 绝对不能用 shared_preferences 明文存密码！
-  flutter_secure_storage: ^9.0.0
-
-  # ── 二维码 ───────────────────────────────────────────────
-  qr_flutter: ^4.1.0
-
-  # ── 本地通知（电费预警推送）────────────────────────────────
-  flutter_local_notifications: ^17.2.2
-
-  # ── 打开外部链接（唤起支付宝）──────────────────────────────
-  url_launcher: ^6.2.4
-
-  # ── 时间格式化 ────────────────────────────────────────────
-  intl: ^0.20.2
-
-  # ── Toast 提示 ────────────────────────────────────────────
-  fluttertoast: ^8.2.4
-  webview_flutter: ^4.13.1
-  # ── 时间处理（上课提醒必备） ──────────────────────────────────
-  timezone: ^0.9.4
-  flutter_timezone: ^5.0.1
+  sdk: ">=3.0.0 <4.0.0"
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^6.0.0
-
-flutter:
-  uses-material-design: true
+  melos: ^6.3.0

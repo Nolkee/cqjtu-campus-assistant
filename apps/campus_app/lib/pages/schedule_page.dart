@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/course.dart';
+import 'package:core/models/course.dart';
 import '../utils/providers.dart';
 import '../widgets/course_cell.dart';
 import '../widgets/error_view.dart';

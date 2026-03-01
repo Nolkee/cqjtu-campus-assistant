@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/course.dart';
-import '../models/grade.dart';
-import '../models/exam.dart';
+import 'package:core/models/course.dart';
+import 'package:core/models/grade.dart';
+import 'package:core/models/exam.dart';
 import '../config/app_config.dart';
 
 /// 修改为你电脑的局域网 IP（手机和电脑要连同一 WiFi）

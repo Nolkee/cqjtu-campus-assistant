@@ -1,0 +1,4 @@
+﻿name: campus_monorepo
+packages:
+  - apps/**
+  - packages/**

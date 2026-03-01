@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
-import '../models/course.dart';
+import 'package:core/models/course.dart';
 
 class NotificationService {
   static final _plugin = FlutterLocalNotificationsPlugin();

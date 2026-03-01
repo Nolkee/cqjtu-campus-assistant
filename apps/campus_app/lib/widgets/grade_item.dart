@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/grade.dart';
+import 'package:core/models/grade.dart';
 
 class GradeItem extends StatelessWidget {
   final Grade grade;
