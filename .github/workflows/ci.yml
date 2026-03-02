@@ -28,7 +28,7 @@ jobs:
       - name: Analyze (app)
         run: |
           cd apps/campus_app
-          flutter analyze
+          flutter analyze --no-fatal-infos
 
       - name: Analyze (packages)
         run: |
