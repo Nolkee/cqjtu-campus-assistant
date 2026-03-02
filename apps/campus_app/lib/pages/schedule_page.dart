@@ -306,10 +306,10 @@ Future<void> _pickSemesterStart(BuildContext context, WidgetRef ref) async {
         .set(picked);
 
     // 2. 切换当前学期为刚刚推算的学期，自动触发数据获取
-    ref.read(selectedScheduleSemesterProvider.notifier).state = semesterStr;
+    await ref.read(selectedScheduleSemesterProvider.notifier).set(semesterStr);
 
     // 3. 计算周次并跳转
-    ref.read(selectedWeekProvider.notifier).state = _calcCurrentWeek(picked);
+    ref.read(selectedWeekProvider.notifier).setWeek(_calcCurrentWeek(picked));
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -345,23 +345,23 @@ class _WeekNavigator extends ConsumerWidget {
     VoidCallback? onLeft;
     if (selectedWeek > 1 && selectedWeek <= _kTotalWeeks) {
       onLeft = () =>
-          ref.read(selectedWeekProvider.notifier).state = selectedWeek - 1;
+          ref.read(selectedWeekProvider.notifier).setWeek(selectedWeek - 1);
     } else if (selectedWeek == 21) {
       onLeft = () =>
-          ref.read(selectedWeekProvider.notifier).state = _kTotalWeeks;
+          ref.read(selectedWeekProvider.notifier).setWeek(_kTotalWeeks);
     } else if (selectedWeek == 1) {
-      onLeft = () => ref.read(selectedWeekProvider.notifier).state = 0;
+      onLeft = () => ref.read(selectedWeekProvider.notifier).setWeek(0);
     }
 
     // 右箭头逻辑：放假（21周）不可再向右，第20周向右滑入放假（21周），第0周向右滑入第1周
     VoidCallback? onRight;
     if (selectedWeek >= 1 && selectedWeek < _kTotalWeeks) {
       onRight = () =>
-          ref.read(selectedWeekProvider.notifier).state = selectedWeek + 1;
+          ref.read(selectedWeekProvider.notifier).setWeek(selectedWeek + 1);
     } else if (selectedWeek == 0) {
-      onRight = () => ref.read(selectedWeekProvider.notifier).state = 1;
+      onRight = () => ref.read(selectedWeekProvider.notifier).setWeek(1);
     } else if (selectedWeek == _kTotalWeeks) {
-      onRight = () => ref.read(selectedWeekProvider.notifier).state = 21;
+      onRight = () => ref.read(selectedWeekProvider.notifier).setWeek(21);
     }
 
     return Container(
@@ -466,7 +466,7 @@ class _WeekNavigator extends ConsumerWidget {
                   final isSel = w == selectedWeek;
                   return GestureDetector(
                     onTap: () {
-                      ref.read(selectedWeekProvider.notifier).state = w;
+                      ref.read(selectedWeekProvider.notifier).setWeek(w);
                       Navigator.pop(context);
                     },
                     child: Container(
