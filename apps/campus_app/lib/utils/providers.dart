@@ -243,7 +243,16 @@ final activeSemesterStartProvider = Provider<AsyncValue<DateTime?>>((ref) {
 });
 
 // ── 已选周（独立状态，默认第 1 周）───────────────────────────────
-final selectedWeekProvider = StateProvider<int>((ref) => 1);
+class SelectedWeekNotifier extends Notifier<int> {
+  @override
+  int build() => 1;
+
+  void setWeek(int week) => state = week;
+}
+
+final selectedWeekProvider = NotifierProvider<SelectedWeekNotifier, int>(
+  SelectedWeekNotifier.new,
+);
 
 // ── 课程表返回类型 ────────────────────────────────────────────
 typedef ScheduleResult = ({List<Course> courses, String remark});

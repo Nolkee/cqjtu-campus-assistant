@@ -4,7 +4,6 @@ import 'package:core/models/course.dart';
 import '../utils/providers.dart';
 import '../widgets/course_cell.dart';
 import '../widgets/error_view.dart';
-import 'package:data/src/api_service.dart';
 
 const int _kTotalWeeks = 20;
 const int _kTotalSlots = 13;
@@ -100,7 +99,9 @@ class SchedulePage extends ConsumerWidget {
     ref.listen<AsyncValue<DateTime?>>(activeSemesterStartProvider, (_, next) {
       final start = next.valueOrNull;
       if (start != null) {
-        ref.read(selectedWeekProvider.notifier).state = _calcCurrentWeek(start);
+        ref
+            .read(selectedWeekProvider.notifier)
+            .setWeek(_calcCurrentWeek(start));
       }
     });
 
@@ -210,7 +211,7 @@ class _ScheduleBody extends ConsumerWidget {
           if (selectedWeek != currentWeek)
             TextButton(
               onPressed: () =>
-                  ref.read(selectedWeekProvider.notifier).state = currentWeek,
+                  ref.read(selectedWeekProvider.notifier).setWeek(currentWeek),
               child: const Text('回本周'),
             ),
 
