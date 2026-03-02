@@ -48,16 +48,16 @@ DateTime _mondayOfWeek(DateTime s, int week) =>
 int _calcCurrentWeek(DateTime s) {
   final now = DateTime.now();
   final semesterMonday = _semesterMonday(s);
-  
+
   // 早于开学那一周的周一，判定为放假中（第0周）
   if (now.isBefore(semesterMonday)) return 0;
 
   final diff = now.difference(semesterMonday).inDays;
   final week = diff ~/ 7 + 1;
-  
+
   // 超过20周，判定为放假中（第21周）
   if (week > _kTotalWeeks) return 21;
-  
+
   return week;
 }
 
@@ -69,11 +69,11 @@ String _calculateSemester(DateTime date) {
   // 8月~12月 -> 当年-下一年-1 (上学期)
   if (month >= 8) {
     return '$year-${year + 1}-1';
-  } 
+  }
   // 1月 -> 去年-当年-1 (上学期)
   else if (month == 1) {
     return '${year - 1}-$year-1';
-  } 
+  }
   // 2月~7月 -> 去年-当年-2 (下学期)
   else {
     return '${year - 1}-$year-2';
@@ -100,14 +100,12 @@ class SchedulePage extends ConsumerWidget {
     ref.listen<AsyncValue<DateTime?>>(activeSemesterStartProvider, (_, next) {
       final start = next.valueOrNull;
       if (start != null) {
-        ref.read(selectedWeekProvider.notifier).state =
-            _calcCurrentWeek(start);
+        ref.read(selectedWeekProvider.notifier).state = _calcCurrentWeek(start);
       }
     });
 
     if (semesterAsync.isLoading) {
-      return const Scaffold(
-          body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final semesterStart = semesterAsync.valueOrNull;
@@ -129,25 +127,30 @@ class _NoSemesterPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('课程表'),
-      ),
+      appBar: AppBar(title: const Text('课程表')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.calendar_today_outlined,
-                  size: 64, color: Colors.grey.shade400),
+              Icon(
+                Icons.calendar_today_outlined,
+                size: 64,
+                color: Colors.grey.shade400,
+              ),
               const SizedBox(height: 20),
-              const Text('尚未设置开学日期',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center),
+              const Text(
+                '尚未设置开学日期',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 8),
-              Text('设置开学日期后，将自动识别学期并获取课表。',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey.shade600, height: 1.5)),
+              Text(
+                '设置开学日期后，将自动识别学期并获取课表。',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey.shade600, height: 1.5),
+              ),
               const SizedBox(height: 28),
               FilledButton.icon(
                 icon: const Icon(Icons.edit_calendar_outlined),
@@ -167,10 +170,7 @@ class _ScheduleBody extends ConsumerWidget {
   final DateTime semesterStart;
   final String? selectedSemester;
 
-  const _ScheduleBody({
-    required this.semesterStart,
-    this.selectedSemester,
-  });
+  const _ScheduleBody({required this.semesterStart, this.selectedSemester});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -210,8 +210,7 @@ class _ScheduleBody extends ConsumerWidget {
           if (selectedWeek != currentWeek)
             TextButton(
               onPressed: () =>
-                  ref.read(selectedWeekProvider.notifier).state =
-                      currentWeek,
+                  ref.read(selectedWeekProvider.notifier).state = currentWeek,
               child: const Text('回本周'),
             ),
 
@@ -221,13 +220,16 @@ class _ScheduleBody extends ConsumerWidget {
             onPressed: () async {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                    content: Text('正在同步最新课表...'),
-                    duration: Duration(seconds: 1)),
+                  content: Text('正在同步最新课表...'),
+                  duration: Duration(seconds: 1),
+                ),
               );
               try {
                 final creds = ref.read(credentialsProvider);
                 if (creds != null) {
-                  await ref.read(apiServiceProvider).getSchedule(
+                  await ref
+                      .read(apiServiceProvider)
+                      .getSchedule(
                         creds.username,
                         creds.password,
                         semester: selectedSemester,
@@ -235,18 +237,17 @@ class _ScheduleBody extends ConsumerWidget {
                       );
                 }
                 ref.invalidate(scheduleProvider(selectedSemester));
-                await ref
-                    .read(scheduleProvider(selectedSemester).future);
+                await ref.read(scheduleProvider(selectedSemester).future);
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('课表已更新')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('课表已更新')));
                 }
               } catch (_) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('刷新失败，请检查网络')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('刷新失败，请检查网络')));
                 }
               }
             },
@@ -257,8 +258,7 @@ class _ScheduleBody extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => ErrorView(
           message: e.toString(),
-          onRetry: () =>
-              ref.invalidate(scheduleProvider(selectedSemester)),
+          onRetry: () => ref.invalidate(scheduleProvider(selectedSemester)),
         ),
         data: (result) => Column(
           children: [
@@ -283,10 +283,7 @@ class _ScheduleBody extends ConsumerWidget {
 }
 
 // ── 统一开学日期选择与学期推算逻辑 ─────────────────────────────────────────
-Future<void> _pickSemesterStart(
-  BuildContext context,
-  WidgetRef ref,
-) async {
+Future<void> _pickSemesterStart(BuildContext context, WidgetRef ref) async {
   final now = DateTime.now();
   final initial = ref.read(activeSemesterStartProvider).valueOrNull ?? now;
 
@@ -303,18 +300,20 @@ Future<void> _pickSemesterStart(
     final semesterStr = _calculateSemester(picked);
 
     // 1. 存储选定日期的开学时间
-    await ref.read(semesterStartForKeyProvider(semesterStr).notifier).set(picked);
-    
+    await ref
+        .read(semesterStartForKeyProvider(semesterStr).notifier)
+        .set(picked);
+
     // 2. 切换当前学期为刚刚推算的学期，自动触发数据获取
     ref.read(selectedScheduleSemesterProvider.notifier).state = semesterStr;
-    
+
     // 3. 计算周次并跳转
     ref.read(selectedWeekProvider.notifier).state = _calcCurrentWeek(picked);
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('已自动切换为 ${_semesterLabel(semesterStr)}'),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('已自动切换为 ${_semesterLabel(semesterStr)}')),
+      );
     }
   }
 }
@@ -335,8 +334,8 @@ class _WeekNavigator extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isVacation = selectedWeek == 0 || selectedWeek == 21;
     // 如果是放假中，则直接用系统当前时间所在的周一作为顶部显示的日期区间
-    final monday = isVacation 
-        ? _semesterMonday(DateTime.now()) 
+    final monday = isVacation
+        ? _semesterMonday(DateTime.now())
         : _mondayOfWeek(semesterStart, selectedWeek);
     final sunday = monday.add(const Duration(days: 6));
     final isCur = selectedWeek == currentWeek;
@@ -344,9 +343,11 @@ class _WeekNavigator extends ConsumerWidget {
     // 左箭头逻辑：放假（0周）不可再向左，第1周向左滑入放假（0周），第21周向左滑入第20周
     VoidCallback? onLeft;
     if (selectedWeek > 1 && selectedWeek <= _kTotalWeeks) {
-      onLeft = () => ref.read(selectedWeekProvider.notifier).state = selectedWeek - 1;
+      onLeft = () =>
+          ref.read(selectedWeekProvider.notifier).state = selectedWeek - 1;
     } else if (selectedWeek == 21) {
-      onLeft = () => ref.read(selectedWeekProvider.notifier).state = _kTotalWeeks;
+      onLeft = () =>
+          ref.read(selectedWeekProvider.notifier).state = _kTotalWeeks;
     } else if (selectedWeek == 1) {
       onLeft = () => ref.read(selectedWeekProvider.notifier).state = 0;
     }
@@ -354,7 +355,8 @@ class _WeekNavigator extends ConsumerWidget {
     // 右箭头逻辑：放假（21周）不可再向右，第20周向右滑入放假（21周），第0周向右滑入第1周
     VoidCallback? onRight;
     if (selectedWeek >= 1 && selectedWeek < _kTotalWeeks) {
-      onRight = () => ref.read(selectedWeekProvider.notifier).state = selectedWeek + 1;
+      onRight = () =>
+          ref.read(selectedWeekProvider.notifier).state = selectedWeek + 1;
     } else if (selectedWeek == 0) {
       onRight = () => ref.read(selectedWeekProvider.notifier).state = 1;
     } else if (selectedWeek == _kTotalWeeks) {
@@ -362,65 +364,74 @@ class _WeekNavigator extends ConsumerWidget {
     }
 
     return Container(
-      color: Theme.of(context)
-          .colorScheme
-          .primaryContainer
-          .withValues(alpha: 0.3),
+      color: Theme.of(
+        context,
+      ).colorScheme.primaryContainer.withValues(alpha: 0.3),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      child: Row(children: [
-        IconButton(
-          icon: const Icon(Icons.chevron_left),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-          onPressed: onLeft,
-        ),
-        Expanded(
-          child: GestureDetector(
-            onLongPress: () => _pickWeek(context, ref),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Text(
-                  isVacation ? '放假中' : '第 $selectedWeek 周',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: isCur && !isVacation
-                        ? Theme.of(context).colorScheme.primary
-                        : null,
-                  ),
-                ),
-                if (isCur && !isVacation) ...[
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Text('本周',
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            onPressed: onLeft,
+          ),
+          Expanded(
+            child: GestureDetector(
+              onLongPress: () => _pickWeek(context, ref),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        isVacation ? '放假中' : '第 $selectedWeek 周',
                         style: TextStyle(
-                            fontSize: 10, color: Colors.white)),
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: isCur && !isVacation
+                              ? Theme.of(context).colorScheme.primary
+                              : null,
+                        ),
+                      ),
+                      if (isCur && !isVacation) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Text(
+                            '本周',
+                            style: TextStyle(fontSize: 10, color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${monday.month}/${monday.day} - '
+                    '${sunday.month}/${sunday.day}',
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                   ),
                 ],
-              ]),
-              const SizedBox(height: 2),
-              Text(
-                '${monday.month}/${monday.day} - '
-                '${sunday.month}/${sunday.day}',
-                style:
-                    TextStyle(fontSize: 11, color: Colors.grey.shade600),
               ),
-            ]),
+            ),
           ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.chevron_right),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-          onPressed: onRight,
-        ),
-      ]),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            onPressed: onRight,
+          ),
+        ],
+      ),
     );
   }
 
@@ -429,68 +440,68 @@ class _WeekNavigator extends ConsumerWidget {
       context: context,
       builder: (_) => SizedBox(
         height: 300,
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text('选择周次',
-                style: Theme.of(context).textTheme.titleMedium),
-          ),
-          Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 5,
-                childAspectRatio: 1.6,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                '选择周次',
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-              itemCount: _kTotalWeeks,
-              itemBuilder: (_, i) {
-                final w = i + 1;
-                final isCur = w == currentWeek;
-                final isSel = w == selectedWeek;
-                return GestureDetector(
-                  onTap: () {
-                    ref.read(selectedWeekProvider.notifier).state = w;
-                    Navigator.pop(context);
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isSel
-                          ? Theme.of(context).colorScheme.primary
-                          : isCur
-                              ? Theme.of(context)
-                                  .colorScheme
-                                  .primaryContainer
-                              : Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(8),
-                      border: isCur && !isSel
-                          ? Border.all(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primary,
-                              width: 1.5)
-                          : null,
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      '第$w周',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isSel ? Colors.white : null,
-                        fontWeight: isCur || isSel
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+            ),
+            Expanded(
+              child: GridView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 5,
+                  childAspectRatio: 1.6,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                ),
+                itemCount: _kTotalWeeks,
+                itemBuilder: (_, i) {
+                  final w = i + 1;
+                  final isCur = w == currentWeek;
+                  final isSel = w == selectedWeek;
+                  return GestureDetector(
+                    onTap: () {
+                      ref.read(selectedWeekProvider.notifier).state = w;
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isSel
+                            ? Theme.of(context).colorScheme.primary
+                            : isCur
+                            ? Theme.of(context).colorScheme.primaryContainer
+                            : Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                        border: isCur && !isSel
+                            ? Border.all(
+                                color: Theme.of(context).colorScheme.primary,
+                                width: 1.5,
+                              )
+                            : null,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '第$w周',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isSel ? Colors.white : null,
+                          fontWeight: isCur || isSel
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-        ]),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }
@@ -523,8 +534,8 @@ class _TimetableGrid extends StatelessWidget {
     final dayMap = _buildDayMap();
     final isVacation = selectedWeek == 0 || selectedWeek == 21;
     // 如果放假中，顶部日期头按系统时间的周一来算，保持视觉正常
-    final monday = isVacation 
-        ? _semesterMonday(DateTime.now()) 
+    final monday = isVacation
+        ? _semesterMonday(DateTime.now())
         : _mondayOfWeek(semesterStart, selectedWeek);
     final today = DateTime.now();
     final todayDay = DateTime(today.year, today.month, today.day);
@@ -546,17 +557,19 @@ class _TimetableGrid extends StatelessWidget {
             // ── 表头：星期 + 日期 ────────────────────────────
             Container(
               color: Colors.blue.shade50,
-              child: Row(children: [
-                SizedBox(width: _kTimeW, height: 44),
-                for (int d = 0; d < 7; d++)
-                  _buildDayHeader(
-                    context,
-                    monday.add(Duration(days: d)),
-                    dayLabels[d],
-                    todayDay,
-                    isVacation,
-                  ),
-              ]),
+              child: Row(
+                children: [
+                  SizedBox(width: _kTimeW, height: 44),
+                  for (int d = 0; d < 7; d++)
+                    _buildDayHeader(
+                      context,
+                      monday.add(Duration(days: d)),
+                      dayLabels[d],
+                      todayDay,
+                      isVacation,
+                    ),
+                ],
+              ),
             ),
             Container(height: 1, color: Colors.grey.shade300),
 
@@ -568,9 +581,10 @@ class _TimetableGrid extends StatelessWidget {
                 children: [
                   _buildTimeColumn(gridH),
                   Container(
-                      width: 1,
-                      height: gridH,
-                      color: Colors.grey.shade300),
+                    width: 1,
+                    height: gridH,
+                    color: Colors.grey.shade300,
+                  ),
                   for (int day = 1; day <= 7; day++)
                     _buildDayColumn(context, dayMap[day] ?? [], day),
                 ],
@@ -581,15 +595,16 @@ class _TimetableGrid extends StatelessWidget {
             if (remark.isNotEmpty)
               Container(
                 width: totalWidth,
-                constraints:
-                    const BoxConstraints(minHeight: _kRemarkH),
+                constraints: const BoxConstraints(minHeight: _kRemarkH),
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 10),
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.amber.shade50,
                   border: Border(
-                      top: BorderSide(
-                          color: Colors.amber.shade200, width: 1)),
+                    top: BorderSide(color: Colors.amber.shade200, width: 1),
+                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -601,13 +616,19 @@ class _TimetableGrid extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           const SizedBox(height: 2),
-                          Icon(Icons.sticky_note_2_outlined,
-                              size: 14, color: Colors.amber.shade800),
+                          Icon(
+                            Icons.sticky_note_2_outlined,
+                            size: 14,
+                            color: Colors.amber.shade800,
+                          ),
                           const SizedBox(height: 2),
-                          Text('备注',
-                              style: TextStyle(
-                                  fontSize: 9,
-                                  color: Colors.amber.shade800)),
+                          Text(
+                            '备注',
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: Colors.amber.shade800,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -651,30 +672,28 @@ class _TimetableGrid extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: isToday
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
+              color: isToday ? Theme.of(context).colorScheme.primary : null,
             ),
           ),
           const SizedBox(height: 2),
           isToday
               ? Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 6, vertical: 1),
+                    horizontal: 6,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.primary,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     '${date.month}/${date.day}',
-                    style: const TextStyle(
-                        fontSize: 11, color: Colors.white),
+                    style: const TextStyle(fontSize: 11, color: Colors.white),
                   ),
                 )
               : Text(
                   '${date.month}/${date.day}',
-                  style: TextStyle(
-                      fontSize: 11, color: Colors.grey.shade600),
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                 ),
         ],
       ),
@@ -685,24 +704,29 @@ class _TimetableGrid extends StatelessWidget {
     return SizedBox(
       width: _kTimeW,
       height: gridH,
-      child: Stack(children: [
-        ..._sectionBg(),
-        for (int s = 1; s <= _kTotalSlots; s++)
-          Positioned(
-            top: (s - 1) * _kSlotH,
-            left: 0,
-            right: 0,
-            height: _kSlotH,
-            child: _SlotCell(slot: s),
-          ),
-        _hDivider(5 * _kSlotH, Colors.blue.shade200),
-        _hDivider(10 * _kSlotH, Colors.indigo.shade200),
-      ]),
+      child: Stack(
+        children: [
+          ..._sectionBg(),
+          for (int s = 1; s <= _kTotalSlots; s++)
+            Positioned(
+              top: (s - 1) * _kSlotH,
+              left: 0,
+              right: 0,
+              height: _kSlotH,
+              child: _SlotCell(slot: s),
+            ),
+          _hDivider(5 * _kSlotH, Colors.blue.shade200),
+          _hDivider(10 * _kSlotH, Colors.indigo.shade200),
+        ],
+      ),
     );
   }
 
   Widget _buildDayColumn(
-      BuildContext context, List<Course> dayCourses, int day) {
+    BuildContext context,
+    List<Course> dayCourses,
+    int day,
+  ) {
     final gridH = _kTotalSlots * _kSlotH;
     return Container(
       width: _kDayW,
@@ -710,51 +734,60 @@ class _TimetableGrid extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(right: BorderSide(color: Colors.grey.shade200)),
       ),
-      child: Stack(children: [
-        ..._sectionBg(),
-        for (int s = 1; s <= _kTotalSlots; s++)
-          _hDivider(s * _kSlotH, Colors.grey.shade200),
-        _hDivider(5 * _kSlotH, Colors.blue.shade100, thickness: 1.5),
-        _hDivider(10 * _kSlotH, Colors.indigo.shade100, thickness: 1.5),
-        // 由于 selectedWeek 为 0 或 21 时，course.isActiveInWeek 均会返回 false，
-        // 渲染时这里的 _cellColor 就会自动呈现出置灰效果，实现了放假中全局灰化。
-        for (final course in [...dayCourses]..sort((a, b) =>
-            (a.isActiveInWeek(selectedWeek) ? 1 : 0)
-                .compareTo(b.isActiveInWeek(selectedWeek) ? 1 : 0)))
-          Positioned(
-            key: ValueKey('${course.name}_${course.timeStr}'),
-            top: (course.timeSlot - 1) * _kSlotH + 2,
-            left: 2,
-            right: 2,
-            height: course.slotSpan * _kSlotH - 4,
-            child: CourseCell(
-              course: course,
-              isActive: course.isActiveInWeek(selectedWeek),
+      child: Stack(
+        children: [
+          ..._sectionBg(),
+          for (int s = 1; s <= _kTotalSlots; s++)
+            _hDivider(s * _kSlotH, Colors.grey.shade200),
+          _hDivider(5 * _kSlotH, Colors.blue.shade100, thickness: 1.5),
+          _hDivider(10 * _kSlotH, Colors.indigo.shade100, thickness: 1.5),
+          // 由于 selectedWeek 为 0 或 21 时，course.isActiveInWeek 均会返回 false，
+          // 渲染时这里的 _cellColor 就会自动呈现出置灰效果，实现了放假中全局灰化。
+          for (final course
+              in [...dayCourses]..sort(
+                (a, b) => (a.isActiveInWeek(selectedWeek) ? 1 : 0).compareTo(
+                  b.isActiveInWeek(selectedWeek) ? 1 : 0,
+                ),
+              ))
+            Positioned(
+              key: ValueKey('${course.name}_${course.timeStr}'),
+              top: (course.timeSlot - 1) * _kSlotH + 2,
+              left: 2,
+              right: 2,
+              height: course.slotSpan * _kSlotH - 4,
+              child: CourseCell(
+                course: course,
+                isActive: course.isActiveInWeek(selectedWeek),
+              ),
             ),
-          ),
-      ]),
+        ],
+      ),
     );
   }
 
   List<Widget> _sectionBg() => [
-        Positioned(
-          top: 0, left: 0, right: 0,
-          height: 5 * _kSlotH,
-          child: Container(color: Colors.white),
-        ),
-        Positioned(
-          top: 5 * _kSlotH, left: 0, right: 0,
-          height: 5 * _kSlotH,
-          child: Container(
-              color: Colors.blue.shade50.withValues(alpha: 0.4)),
-        ),
-        Positioned(
-          top: 10 * _kSlotH, left: 0, right: 0,
-          height: 3 * _kSlotH,
-          child: Container(
-              color: Colors.indigo.shade50.withValues(alpha: 0.4)),
-        ),
-      ];
+    Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 5 * _kSlotH,
+      child: Container(color: Colors.white),
+    ),
+    Positioned(
+      top: 5 * _kSlotH,
+      left: 0,
+      right: 0,
+      height: 5 * _kSlotH,
+      child: Container(color: Colors.blue.shade50.withValues(alpha: 0.4)),
+    ),
+    Positioned(
+      top: 10 * _kSlotH,
+      left: 0,
+      right: 0,
+      height: 3 * _kSlotH,
+      child: Container(color: Colors.indigo.shade50.withValues(alpha: 0.4)),
+    ),
+  ];
 
   Widget _hDivider(double top, Color color, {double thickness = 0.5}) =>
       Positioned(
@@ -789,12 +822,14 @@ class _SlotCell extends StatelessWidget {
             ),
           ),
           if (times != null) ...[
-            Text(times.$1,
-                style:
-                    TextStyle(fontSize: 9, color: Colors.grey.shade500)),
-            Text(times.$2,
-                style:
-                    TextStyle(fontSize: 9, color: Colors.grey.shade500)),
+            Text(
+              times.$1,
+              style: TextStyle(fontSize: 9, color: Colors.grey.shade500),
+            ),
+            Text(
+              times.$2,
+              style: TextStyle(fontSize: 9, color: Colors.grey.shade500),
+            ),
           ],
         ],
       ),

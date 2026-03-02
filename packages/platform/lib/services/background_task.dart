@@ -7,7 +7,7 @@ import 'package:workmanager/workmanager.dart';
 
 /// WorkManager 任务标识
 const kBgTaskName = 'balanceMonitor';
-const kBgTaskTag  = 'com.axu.schedule.balanceMonitor';
+const kBgTaskTag = 'com.axu.schedule.balanceMonitor';
 
 /// 后台任务入口，必须是顶层函数且加 @pragma。
 @pragma('vm:entry-point')
@@ -72,14 +72,15 @@ void backgroundCallbackDispatcher() {
       // ── 5. 初始化 HTTP 客户端
       final dio = Dio(BaseOptions(
         baseUrl: const String.fromEnvironment('BASE_URL',
-          defaultValue: 'http://127.0.0.1:8080'),
+            defaultValue: 'http://127.0.0.1:8080'),
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 30),
       ));
 
       // ── 6. 查询电费余额（携带宿舍参数）
       debugPrint('[BG] 开始查询电费余额...');
-      await _checkElec(dio, plugin, prefs, username, password, elecThreshold, dormParams);
+      await _checkElec(
+          dio, plugin, prefs, username, password, elecThreshold, dormParams);
 
       // ── 7. 查询校园卡余额
       debugPrint('[BG] 开始查询校园卡余额...');
@@ -101,17 +102,17 @@ void backgroundCallbackDispatcher() {
 /// 若任一字段缺失则返回 null（表示用户未设置宿舍）
 Map<String, String>? _readDormParams(SharedPreferences prefs) {
   final buildid = prefs.getString('dorm_buildid');
-  final roomid  = prefs.getString('dorm_roomid');
-  final sysid   = prefs.getString('dorm_sysid');
-  final areaid  = prefs.getString('dorm_areaid');
+  final roomid = prefs.getString('dorm_roomid');
+  final sysid = prefs.getString('dorm_sysid');
+  final areaid = prefs.getString('dorm_areaid');
   if (buildid == null || roomid == null || sysid == null || areaid == null) {
     return null;
   }
   return {
-    'sysid':   sysid,
-    'areaid':  areaid,
+    'sysid': sysid,
+    'areaid': areaid,
     'buildid': buildid,
-    'roomid':  roomid,
+    'roomid': roomid,
   };
 }
 
@@ -132,7 +133,8 @@ Future<void> _checkElec(
       if (dormParams != null) ...dormParams,
     };
 
-    final res = await dio.get('/api/elec/balance', queryParameters: queryParams);
+    final res =
+        await dio.get('/api/elec/balance', queryParameters: queryParams);
     if (res.data['code'] != 200) {
       debugPrint('[BG] 电费接口返回非200：${res.data['code']}');
       return;
@@ -142,10 +144,22 @@ Future<void> _checkElec(
     final bal = _parseBalance(balStr);
     debugPrint('[BG] 电费余额：$balStr（parsed=$bal），阈值=$threshold');
 
-    if (bal.isNaN) { debugPrint('[BG] 电费余额解析失败，跳过'); return; }
-    if (threshold <= 0) { debugPrint('[BG] 电费预警已关闭'); return; }
-    if (bal >= threshold) { debugPrint('[BG] 电费余额充足'); return; }
-    if (!_canNotify(prefs, 'elec_last_notif')) { debugPrint('[BG] 电费通知冷却中'); return; }
+    if (bal.isNaN) {
+      debugPrint('[BG] 电费余额解析失败，跳过');
+      return;
+    }
+    if (threshold <= 0) {
+      debugPrint('[BG] 电费预警已关闭');
+      return;
+    }
+    if (bal >= threshold) {
+      debugPrint('[BG] 电费余额充足');
+      return;
+    }
+    if (!_canNotify(prefs, 'elec_last_notif')) {
+      debugPrint('[BG] 电费通知冷却中');
+      return;
+    }
 
     debugPrint('[BG] 电费余额不足，发送通知！');
     await plugin.show(
@@ -192,10 +206,22 @@ Future<void> _checkCard(
     final bal = _parseBalance(balStr);
     debugPrint('[BG] 校园卡余额：$balStr（parsed=$bal），阈值=$threshold');
 
-    if (bal.isNaN) { debugPrint('[BG] 校园卡余额解析失败，跳过'); return; }
-    if (threshold <= 0) { debugPrint('[BG] 校园卡预警已关闭'); return; }
-    if (bal >= threshold) { debugPrint('[BG] 校园卡余额充足'); return; }
-    if (!_canNotify(prefs, 'card_last_notif')) { debugPrint('[BG] 校园卡通知冷却中'); return; }
+    if (bal.isNaN) {
+      debugPrint('[BG] 校园卡余额解析失败，跳过');
+      return;
+    }
+    if (threshold <= 0) {
+      debugPrint('[BG] 校园卡预警已关闭');
+      return;
+    }
+    if (bal >= threshold) {
+      debugPrint('[BG] 校园卡余额充足');
+      return;
+    }
+    if (!_canNotify(prefs, 'card_last_notif')) {
+      debugPrint('[BG] 校园卡通知冷却中');
+      return;
+    }
 
     debugPrint('[BG] 校园卡余额不足，发送通知！');
     await plugin.show(

@@ -1,8 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-final semesterServiceProvider =
-    Provider<SemesterService>((ref) => SemesterService());
+final semesterServiceProvider = Provider<SemesterService>(
+  (ref) => SemesterService(),
+);
 
 class SemesterService {
   static const _key = 'semester_start_date';
@@ -29,7 +30,9 @@ class SemesterService {
   Future<void> saveForKey(String semesterKey, DateTime date) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
-        'semester_start_key_$semesterKey', date.toIso8601String());
+      'semester_start_key_$semesterKey',
+      date.toIso8601String(),
+    );
   }
 
   /// 读取指定学期的开学日期，未设置返回 null

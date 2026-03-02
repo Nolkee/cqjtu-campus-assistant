@@ -2,8 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:core/models/dorm_room.dart';
 
-final dormServiceProvider =
-    Provider<DormService>((ref) => DormService());
+final dormServiceProvider = Provider<DormService>((ref) => DormService());
 
 class DormService {
   static const _keys = [
@@ -32,7 +31,12 @@ class DormService {
       await prefs.remove(k);
     }
     // 也清除旧版本的字段（兼容旧存档）
-    for (final k in ['dorm_building', 'dorm_buildid', 'dorm_sysid', 'dorm_areaid']) {
+    for (final k in [
+      'dorm_building',
+      'dorm_buildid',
+      'dorm_sysid',
+      'dorm_areaid'
+    ]) {
       await prefs.remove(k);
     }
   }

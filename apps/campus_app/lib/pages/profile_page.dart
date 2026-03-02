@@ -67,12 +67,16 @@ class ProfilePage extends ConsumerWidget {
   }
 
   Widget _sectionLabel(String text) => Padding(
-        padding: const EdgeInsets.only(left: 4, bottom: 8),
-        child: Text(
-          text,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
-        ),
-      );
+    padding: const EdgeInsets.only(left: 4, bottom: 8),
+    child: Text(
+      text,
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: Colors.black87,
+      ),
+    ),
+  );
 
   Widget _buildUserInfoCard(String username) {
     return Row(
@@ -86,8 +90,14 @@ class ProfilePage extends ConsumerWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(username,
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87)),
+            Text(
+              username,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
             const SizedBox(height: 4),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -95,7 +105,10 @@ class ProfilePage extends ConsumerWidget {
                 color: Colors.blue.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Text('重庆交通大学', style: TextStyle(fontSize: 12, color: Colors.blueAccent)),
+              child: const Text(
+                '重庆交通大学',
+                style: TextStyle(fontSize: 12, color: Colors.blueAccent),
+              ),
             ),
           ],
         ),
@@ -108,7 +121,13 @@ class ProfilePage extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -116,29 +135,46 @@ class ProfilePage extends ConsumerWidget {
             icon: Icons.assignment_outlined,
             color: Colors.orange,
             title: '成绩查询',
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GradesPage())),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const GradesPage()),
+            ),
           ),
           const Divider(height: 1, indent: 56, color: Color(0xFFF0F0F0)),
           _buildMenuTile(
             icon: Icons.event_note_outlined,
             color: Colors.purpleAccent,
             title: '考试安排',
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExamsPage())),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ExamsPage()),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMenuTile({required IconData icon, required Color color, required String title, required VoidCallback onTap}) {
+  Widget _buildMenuTile({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required VoidCallback onTap,
+  }) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       leading: Container(
         padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
         child: Icon(icon, color: color),
       ),
-      title: Text(title, style: const TextStyle(fontSize: 16, color: Colors.black87)),
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 16, color: Colors.black87),
+      ),
       trailing: const Icon(Icons.chevron_right, color: Colors.black26),
       onTap: onTap,
     );
@@ -151,26 +187,46 @@ class ProfilePage extends ConsumerWidget {
       child: TextButton(
         style: TextButton.styleFrom(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
         onPressed: () {
           showDialog(
             context: context,
             builder: (ctx) => AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               title: const Text('退出登录'),
               content: const Text('确定要退出当前账号吗？'),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消', style: TextStyle(color: Colors.grey))),
                 TextButton(
-                  onPressed: () { Navigator.pop(ctx); _logout(context, ref); },
-                  child: const Text('退出', style: TextStyle(color: Colors.redAccent)),
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('取消', style: TextStyle(color: Colors.grey)),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _logout(context, ref);
+                  },
+                  child: const Text(
+                    '退出',
+                    style: TextStyle(color: Colors.redAccent),
+                  ),
                 ),
               ],
             ),
           );
         },
-        child: const Text('退出登录', style: TextStyle(color: Colors.redAccent, fontSize: 16, fontWeight: FontWeight.bold)),
+        child: const Text(
+          '退出登录',
+          style: TextStyle(
+            color: Colors.redAccent,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
     );
   }
@@ -190,22 +246,43 @@ class _DormSettingsCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         leading: Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: Colors.amber.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+          decoration: BoxDecoration(
+            color: Colors.amber.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
           child: const Icon(Icons.home_outlined, color: Colors.amber),
         ),
-        title: const Text('我的宿舍', style: TextStyle(fontSize: 15, color: Colors.black87)),
+        title: const Text(
+          '我的宿舍',
+          style: TextStyle(fontSize: 15, color: Colors.black87),
+        ),
         subtitle: dormAsync.when(
-          loading: () => const Text('加载中...', style: TextStyle(fontSize: 12, color: Colors.grey)),
-          error: (_, __) => const Text('加载失败', style: TextStyle(fontSize: 12, color: Colors.red)),
+          loading: () => const Text(
+            '加载中...',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+          error: (_, __) => const Text(
+            '加载失败',
+            style: TextStyle(fontSize: 12, color: Colors.red),
+          ),
           data: (dorm) => Text(
             dorm == null ? '未设置，电费查询使用账号默认宿舍' : dorm.displayName,
-            style: TextStyle(fontSize: 12, color: dorm == null ? Colors.orange : Colors.grey),
+            style: TextStyle(
+              fontSize: 12,
+              color: dorm == null ? Colors.orange : Colors.grey,
+            ),
           ),
         ),
         trailing: FilledButton.tonal(
@@ -277,9 +354,11 @@ class _DormPickerSheetState extends State<_DormPickerSheet> {
     _selectedNumber = dorm?.buildingNumber ?? 1;
 
     _gardenCtrl = FixedExtentScrollController(
-        initialItem: _gardens.indexOf(_selectedGarden));
+      initialItem: _gardens.indexOf(_selectedGarden),
+    );
     _numberCtrl = FixedExtentScrollController(
-        initialItem: _selectedNumber - kDormNumberMin);
+      initialItem: _selectedNumber - kDormNumberMin,
+    );
 
     if (dorm != null) {
       // 还原房间号，去掉前导零
@@ -312,13 +391,16 @@ class _DormPickerSheetState extends State<_DormPickerSheet> {
       setState(() => _roomError = '请输入正确的房间号（如 305）');
       return;
     }
-    setState(() { _roomError = null; _saving = true; });
+    setState(() {
+      _roomError = null;
+      _saving = true;
+    });
 
     final room = DormRoom(
-      campusName:     '科学城校区',
-      garden:         _selectedGarden,
+      campusName: '科学城校区',
+      garden: _selectedGarden,
       buildingNumber: _selectedNumber,
-      roomNumber:     roomId,
+      roomNumber: roomId,
     );
     await widget.onSaved(room);
     if (mounted) {
@@ -344,8 +426,12 @@ class _DormPickerSheetState extends State<_DormPickerSheet> {
             // ── 拖拽指示条 ──────────────────────────────────
             const SizedBox(height: 12),
             Container(
-              width: 36, height: 4,
-              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -356,20 +442,39 @@ class _DormPickerSheetState extends State<_DormPickerSheet> {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(color: Colors.amber.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                    child: const Icon(Icons.home_outlined, color: Colors.amber, size: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.home_outlined,
+                      color: Colors.amber,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 10),
                   const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('选择我的宿舍', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-                        Text('目前仅支持科学城校区，南岸校区适配中', style: TextStyle(fontSize: 12, color: Colors.orange)),
+                        Text(
+                          '选择我的宿舍',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '目前仅支持科学城校区，南岸校区适配中',
+                          style: TextStyle(fontSize: 12, color: Colors.orange),
+                        ),
                       ],
                     ),
                   ),
-                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
                 ],
               ),
             ),
@@ -386,11 +491,19 @@ class _DormPickerSheetState extends State<_DormPickerSheet> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.home_outlined, size: 16, color: Colors.amber.shade700),
+                  Icon(
+                    Icons.home_outlined,
+                    size: 16,
+                    color: Colors.amber.shade700,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     '已选：${_selectedGarden.label}${_selectedNumber}舍',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber.shade800, fontSize: 15),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.amber.shade800,
+                      fontSize: 15,
+                    ),
                   ),
                 ],
               ),
@@ -434,8 +547,12 @@ class _DormPickerSheetState extends State<_DormPickerSheet> {
                                   _gardens[i].label,
                                   style: TextStyle(
                                     fontSize: selected ? 20 : 16,
-                                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                                    color: selected ? Colors.amber.shade800 : Colors.grey,
+                                    fontWeight: selected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    color: selected
+                                        ? Colors.amber.shade800
+                                        : Colors.grey,
                                   ),
                                 ),
                               );
@@ -447,7 +564,10 @@ class _DormPickerSheetState extends State<_DormPickerSheet> {
                   ),
 
                   // 中间分隔符
-                  Text('·', style: TextStyle(fontSize: 24, color: Colors.grey.shade400)),
+                  Text(
+                    '·',
+                    style: TextStyle(fontSize: 24, color: Colors.grey.shade400),
+                  ),
 
                   // 舍号滚轮（1-15）
                   Expanded(
@@ -470,7 +590,9 @@ class _DormPickerSheetState extends State<_DormPickerSheet> {
                           diameterRatio: 1.8,
                           perspective: 0.004,
                           onSelectedItemChanged: (i) {
-                            setState(() => _selectedNumber = kDormNumberMin + i);
+                            setState(
+                              () => _selectedNumber = kDormNumberMin + i,
+                            );
                           },
                           childDelegate: ListWheelChildBuilderDelegate(
                             childCount: kDormNumberMax - kDormNumberMin + 1,
@@ -482,8 +604,12 @@ class _DormPickerSheetState extends State<_DormPickerSheet> {
                                   '$num舍',
                                   style: TextStyle(
                                     fontSize: selected ? 20 : 16,
-                                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                                    color: selected ? Colors.amber.shade800 : Colors.grey,
+                                    fontWeight: selected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    color: selected
+                                        ? Colors.amber.shade800
+                                        : Colors.grey,
                                   ),
                                 ),
                               );
@@ -503,18 +629,29 @@ class _DormPickerSheetState extends State<_DormPickerSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('房间号', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black54)),
+                  const Text(
+                    '房间号',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black54,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _roomCtrl,
                     keyboardType: TextInputType.number,
                     maxLength: 4,
-                    onChanged: (_) { if (_roomError != null) setState(() => _roomError = null); },
+                    onChanged: (_) {
+                      if (_roomError != null) setState(() => _roomError = null);
+                    },
                     decoration: InputDecoration(
                       hintText: '如住 305 房，输入 305',
                       errorText: _roomError,
                       prefixIcon: const Icon(Icons.door_back_door_outlined),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       counterText: '',
                     ),
                   ),
@@ -530,12 +667,21 @@ class _DormPickerSheetState extends State<_DormPickerSheet> {
                 height: 50,
                 child: FilledButton.icon(
                   icon: _saving
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : const Icon(Icons.check_rounded, size: 20),
                   label: Text(_saving ? '保存中...' : '保存宿舍设置'),
                   style: FilledButton.styleFrom(
                     backgroundColor: Colors.amber.shade700,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   onPressed: _saving ? null : _save,
                 ),
@@ -560,17 +706,32 @@ class _SecurityNoticeCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         leading: Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+          decoration: BoxDecoration(
+            color: Colors.green.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
           child: const Icon(Icons.verified_user_outlined, color: Colors.green),
         ),
-        title: const Text('数据安全声明', style: TextStyle(fontSize: 15, color: Colors.black87)),
-        subtitle: const Text('点击查看隐私保护说明', style: TextStyle(fontSize: 12, color: Colors.grey)),
+        title: const Text(
+          '数据安全声明',
+          style: TextStyle(fontSize: 15, color: Colors.black87),
+        ),
+        subtitle: const Text(
+          '点击查看隐私保护说明',
+          style: TextStyle(fontSize: 12, color: Colors.grey),
+        ),
         trailing: const Icon(Icons.chevron_right, color: Colors.black26),
         onTap: () => _showSecurityDialog(context),
       ),
@@ -582,11 +743,13 @@ class _SecurityNoticeCard extends StatelessWidget {
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(children: [
-          Icon(Icons.verified_user_outlined, color: Colors.green),
-          SizedBox(width: 8),
-          Text('数据安全声明'),
-        ]),
+        title: const Row(
+          children: [
+            Icon(Icons.verified_user_outlined, color: Colors.green),
+            SizedBox(width: 8),
+            Text('数据安全声明'),
+          ],
+        ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -596,14 +759,16 @@ class _SecurityNoticeCard extends StatelessWidget {
                 icon: Icons.storage_outlined,
                 iconColor: Colors.blue,
                 title: '服务端零持久化',
-                body: '后端服务器不存储任何用户数据。账号密码仅在每次请求时实时传输，用于完成一次性登录并抓取数据，完成后立即丢弃，不写入任何数据库或日志。',
+                body:
+                    '后端服务器不存储任何用户数据。账号密码仅在每次请求时实时传输，用于完成一次性登录并抓取数据，完成后立即丢弃，不写入任何数据库或日志。',
               ),
               const SizedBox(height: 16),
               _NoticeSection(
                 icon: Icons.phone_android_outlined,
                 iconColor: Colors.orange,
                 title: '本机加密存储',
-                body: '账号密码保存在本机的系统级加密存储区（Android Keystore），其他应用无法读取。宿舍信息仅保存在本机，重装 App 后需重新设置。',
+                body:
+                    '账号密码保存在本机的系统级加密存储区（Android Keystore），其他应用无法读取。宿舍信息仅保存在本机，重装 App 后需重新设置。',
               ),
               const SizedBox(height: 16),
               _NoticeSection(
@@ -615,11 +780,18 @@ class _SecurityNoticeCard extends StatelessWidget {
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 child: const Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.check_circle_outline, size: 16, color: Colors.green),
+                    Icon(
+                      Icons.check_circle_outline,
+                      size: 16,
+                      color: Colors.green,
+                    ),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -634,7 +806,10 @@ class _SecurityNoticeCard extends StatelessWidget {
           ),
         ),
         actions: [
-          FilledButton(onPressed: () => Navigator.pop(context), child: const Text('知道了')),
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('知道了'),
+          ),
         ],
       ),
     );
@@ -646,7 +821,12 @@ class _NoticeSection extends StatelessWidget {
   final Color iconColor;
   final String title;
   final String body;
-  const _NoticeSection({required this.icon, required this.iconColor, required this.title, required this.body});
+  const _NoticeSection({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.body,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -655,7 +835,10 @@ class _NoticeSection extends StatelessWidget {
       children: [
         Container(
           padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(color: iconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+          decoration: BoxDecoration(
+            color: iconColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
           child: Icon(icon, size: 18, color: iconColor),
         ),
         const SizedBox(width: 12),
@@ -663,9 +846,22 @@ class _NoticeSection extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(body, style: const TextStyle(fontSize: 12, color: Colors.black54, height: 1.5)),
+              Text(
+                body,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.black54,
+                  height: 1.5,
+                ),
+              ),
             ],
           ),
         ),
@@ -681,7 +877,8 @@ class _BackgroundSettingsCard extends StatefulWidget {
   const _BackgroundSettingsCard();
 
   @override
-  State<_BackgroundSettingsCard> createState() => _BackgroundSettingsCardState();
+  State<_BackgroundSettingsCard> createState() =>
+      _BackgroundSettingsCardState();
 }
 
 class _BackgroundSettingsCardState extends State<_BackgroundSettingsCard>
@@ -711,7 +908,8 @@ class _BackgroundSettingsCardState extends State<_BackgroundSettingsCard>
   }
 
   Future<void> _refreshStatus() async {
-    final ignoring = await BatteryOptimizationService.isIgnoringBatteryOptimizations();
+    final ignoring =
+        await BatteryOptimizationService.isIgnoringBatteryOptimizations();
     final autostart = await BatteryOptimizationService.checkMiuiAutostart();
     final courseReminder = await NotificationService.getCourseReminderEnabled();
     if (mounted) {
@@ -725,7 +923,11 @@ class _BackgroundSettingsCardState extends State<_BackgroundSettingsCard>
 
   Future<void> _loadAutostartFlag() async {
     final prefs = await SharedPreferences.getInstance();
-    if (mounted) setState(() => _autostartOpened = prefs.getBool('autostart_page_opened') ?? false);
+    if (mounted)
+      setState(
+        () =>
+            _autostartOpened = prefs.getBool('autostart_page_opened') ?? false,
+      );
   }
 
   Future<void> _markAutostartOpened() async {
@@ -748,17 +950,31 @@ class _BackgroundSettingsCardState extends State<_BackgroundSettingsCard>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
           _SettingTile(
             icon: Icons.notifications_active_outlined,
-            iconColor: _courseReminderEnabled == true ? Colors.deepOrange : Colors.grey,
+            iconColor: _courseReminderEnabled == true
+                ? Colors.deepOrange
+                : Colors.grey,
             title: '课程表课前通知',
-            subtitle: _courseReminderEnabled == true ? '✅ 已开启，课前 15 分钟提醒' : '预警已关闭',
+            subtitle: _courseReminderEnabled == true
+                ? '✅ 已开启，课前 15 分钟提醒'
+                : '预警已关闭',
             trailing: _courseReminderEnabled == null
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : Switch(
                     value: _courseReminderEnabled!,
                     activeColor: Colors.deepOrange,
@@ -775,7 +991,9 @@ class _BackgroundSettingsCardState extends State<_BackgroundSettingsCard>
             title: '关闭电池优化',
             subtitle: _isIgnoring == null
                 ? '检测中...'
-                : _isIgnoring! ? '✅ 已设置，后台任务可正常运行' : '⚠️ 未设置，后台通知可能无法推送',
+                : _isIgnoring!
+                ? '✅ 已设置，后台任务可正常运行'
+                : '⚠️ 未设置，后台通知可能无法推送',
             trailing: _isIgnoring == true
                 ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
                 : FilledButton.tonal(
@@ -785,7 +1003,10 @@ class _BackgroundSettingsCardState extends State<_BackgroundSettingsCard>
                       _refreshStatus();
                     },
                     style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
@@ -800,8 +1021,12 @@ class _BackgroundSettingsCardState extends State<_BackgroundSettingsCard>
             subtitle: _autostartSubtitle,
             trailing: _autostartDone
                 ? Icon(
-                    _autostartAppOps == true ? Icons.check_circle : Icons.check_circle_outline,
-                    color: _autostartAppOps == true ? Colors.green : Colors.orange,
+                    _autostartAppOps == true
+                        ? Icons.check_circle
+                        : Icons.check_circle_outline,
+                    color: _autostartAppOps == true
+                        ? Colors.green
+                        : Colors.orange,
                     size: 20,
                   )
                 : OutlinedButton(
@@ -810,7 +1035,10 @@ class _BackgroundSettingsCardState extends State<_BackgroundSettingsCard>
                       await BatteryOptimizationService.openMiuiAutostart();
                     },
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
@@ -823,7 +1051,11 @@ class _BackgroundSettingsCardState extends State<_BackgroundSettingsCard>
             iconColor: Colors.purple,
             title: '锁定后台（MIUI 必做）',
             subtitle: '在最近任务界面长按本应用 → 锁定，防止被清理',
-            trailing: const Icon(Icons.info_outline, color: Colors.grey, size: 20),
+            trailing: const Icon(
+              Icons.info_outline,
+              color: Colors.grey,
+              size: 20,
+            ),
             onTap: () => _showLockGuideDialog(context),
           ),
         ],
@@ -836,11 +1068,13 @@ class _BackgroundSettingsCardState extends State<_BackgroundSettingsCard>
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(children: [
-          Icon(Icons.lock_outline, color: Colors.purple),
-          SizedBox(width: 8),
-          Text('如何锁定后台'),
-        ]),
+        title: const Row(
+          children: [
+            Icon(Icons.lock_outline, color: Colors.purple),
+            SizedBox(width: 8),
+            Text('如何锁定后台'),
+          ],
+        ),
         content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -855,11 +1089,18 @@ class _BackgroundSettingsCardState extends State<_BackgroundSettingsCard>
             SizedBox(height: 8),
             _GuideStep(step: '4', text: '卡片右上角出现锁图标即成功'),
             SizedBox(height: 12),
-            Text('锁定后 App 不会被"清理全部"按钮关闭，后台余额监控将持续运行。',
-                style: TextStyle(color: Colors.grey, fontSize: 12)),
+            Text(
+              '锁定后 App 不会被"清理全部"按钮关闭，后台余额监控将持续运行。',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
           ],
         ),
-        actions: [FilledButton(onPressed: () => Navigator.pop(context), child: const Text('知道了'))],
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('知道了'),
+          ),
+        ],
       ),
     );
   }
@@ -888,11 +1129,20 @@ class _SettingTile extends StatelessWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       leading: Container(
         padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: iconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+        decoration: BoxDecoration(
+          color: iconColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
         child: Icon(icon, color: iconColor),
       ),
-      title: Text(title, style: const TextStyle(fontSize: 15, color: Colors.black87)),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 15, color: Colors.black87),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(fontSize: 12, color: Colors.grey),
+      ),
       trailing: trailing,
       onTap: onTap,
     );
@@ -910,10 +1160,21 @@ class _GuideStep extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 22, height: 22,
+          width: 22,
+          height: 22,
           alignment: Alignment.center,
-          decoration: BoxDecoration(color: Colors.purple.withOpacity(0.15), shape: BoxShape.circle),
-          child: Text(step, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.purple)),
+          decoration: BoxDecoration(
+            color: Colors.purple.withOpacity(0.15),
+            shape: BoxShape.circle,
+          ),
+          child: Text(
+            step,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.purple,
+            ),
+          ),
         ),
         const SizedBox(width: 10),
         Expanded(child: Text(text, style: const TextStyle(fontSize: 13))),
@@ -933,7 +1194,10 @@ class _ElectricityCardWidget extends ConsumerWidget {
     final balanceAsync = ref.watch(electricityProvider);
 
     return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ElectricityPage())),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ElectricityPage()),
+      ),
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
@@ -943,7 +1207,13 @@ class _ElectricityCardWidget extends ConsumerWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          boxShadow: [BoxShadow(color: const Color(0xFF243B55).withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 8))],
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF243B55).withOpacity(0.4),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -955,27 +1225,46 @@ class _ElectricityCardWidget extends ConsumerWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                      child: const Icon(Icons.bolt, color: Colors.amberAccent, size: 18),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.bolt,
+                        color: Colors.amberAccent,
+                        size: 18,
+                      ),
                     ),
                     const SizedBox(width: 10),
-                    Consumer(builder: (context, ref, _) {
-                      final dorm = ref.watch(dormRoomProvider).valueOrNull;
-                      return Text(
-                        dorm == null ? '宿舍电费' : dorm.displayName,
-                        style: const TextStyle(color: Colors.white70, fontSize: 15, fontWeight: FontWeight.w500),
-                      );
-                    }),
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final dorm = ref.watch(dormRoomProvider).valueOrNull;
+                        return Text(
+                          dorm == null ? '宿舍电费' : dorm.displayName,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
-                const Text('点击去充值', style: TextStyle(color: Colors.white38, fontSize: 13)),
+                const Text(
+                  '点击去充值',
+                  style: TextStyle(color: Colors.white38, fontSize: 13),
+                ),
               ],
             ),
             const SizedBox(height: 24),
             balanceAsync.when(
               loading: () => const SizedBox(
                 height: 80,
-                child: Align(alignment: Alignment.centerLeft, child: CircularProgressIndicator(color: Colors.white54)),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: CircularProgressIndicator(color: Colors.white54),
+                ),
               ),
               error: (e, _) => SizedBox(
                 height: 80,
@@ -986,27 +1275,47 @@ class _ElectricityCardWidget extends ConsumerWidget {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('未设置宿舍',
-                                style: TextStyle(color: Colors.white70, fontSize: 18, fontWeight: FontWeight.bold)),
+                            const Text(
+                              '未设置宿舍',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(height: 6),
-                            const Text('请在下方「宿舍设置」中选择你的宿舍',
-                                style: TextStyle(color: Colors.white38, fontSize: 12)),
+                            const Text(
+                              '请在下方「宿舍设置」中选择你的宿舍',
+                              style: TextStyle(
+                                color: Colors.white38,
+                                fontSize: 12,
+                              ),
+                            ),
                           ],
                         )
-                      : const Text('获取失败',
-                          style: TextStyle(color: Colors.redAccent, fontSize: 24, fontWeight: FontWeight.bold)),
+                      : const Text(
+                          '获取失败',
+                          style: TextStyle(
+                            color: Colors.redAccent,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
               data: (balanceStr) {
                 final isNegative = balanceStr.contains('-');
                 final absNumStr = balanceStr.replaceAll(RegExp(r'[^0-9.]'), '');
-                final balValue = (double.tryParse(absNumStr) ?? 0.0) * (isNegative ? -1 : 1);
+                final balValue =
+                    (double.tryParse(absNumStr) ?? 0.0) * (isNegative ? -1 : 1);
 
                 return FutureBuilder<double>(
                   future: NotificationService.getElecThreshold(),
                   initialData: NotificationService.defaultElecThreshold,
                   builder: (context, snapshot) {
-                    final threshold = snapshot.data ?? NotificationService.defaultElecThreshold;
+                    final threshold =
+                        snapshot.data ??
+                        NotificationService.defaultElecThreshold;
                     final isLowBalance = threshold > 0 && balValue < threshold;
 
                     return Column(
@@ -1019,13 +1328,23 @@ class _ElectricityCardWidget extends ConsumerWidget {
                               padding: const EdgeInsets.only(bottom: 6.0),
                               child: Text(
                                 isNegative ? '-¥' : '¥',
-                                style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 6),
                             Text(
                               absNumStr.isEmpty ? '0.00' : absNumStr,
-                              style: const TextStyle(color: Colors.white, fontSize: 48, fontWeight: FontWeight.w900, height: 1.0, fontFamily: 'Roboto'),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 48,
+                                fontWeight: FontWeight.w900,
+                                height: 1.0,
+                                fontFamily: 'Roboto',
+                              ),
                             ),
                           ],
                         ),
@@ -1036,31 +1355,67 @@ class _ElectricityCardWidget extends ConsumerWidget {
                             Row(
                               children: [
                                 Container(
-                                  width: 8, height: 8,
+                                  width: 8,
+                                  height: 8,
                                   decoration: BoxDecoration(
-                                    color: isLowBalance ? Colors.redAccent : Colors.greenAccent,
+                                    color: isLowBalance
+                                        ? Colors.redAccent
+                                        : Colors.greenAccent,
                                     shape: BoxShape.circle,
-                                    boxShadow: [BoxShadow(
-                                      color: (isLowBalance ? Colors.redAccent : Colors.greenAccent).withOpacity(0.6),
-                                      blurRadius: 6, spreadRadius: 1,
-                                    )],
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color:
+                                            (isLowBalance
+                                                    ? Colors.redAccent
+                                                    : Colors.greenAccent)
+                                                .withOpacity(0.6),
+                                        blurRadius: 6,
+                                        spreadRadius: 1,
+                                      ),
+                                    ],
                                   ),
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  threshold == 0 ? '余额预警已关闭' : (isLowBalance ? '余额偏低，建议充值' : '余额充足，安心用电'),
-                                  style: TextStyle(color: isLowBalance ? Colors.red[200] : Colors.white70, fontSize: 13),
+                                  threshold == 0
+                                      ? '余额预警已关闭'
+                                      : (isLowBalance
+                                            ? '余额偏低，建议充值'
+                                            : '余额充足，安心用电'),
+                                  style: TextStyle(
+                                    color: isLowBalance
+                                        ? Colors.red[200]
+                                        : Colors.white70,
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ],
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                              decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(20)),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
                               child: const Row(
                                 children: [
-                                  Text('详情', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                                  Text(
+                                    '详情',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                   SizedBox(width: 2),
-                                  Icon(Icons.chevron_right, color: Colors.white, size: 16),
+                                  Icon(
+                                    Icons.chevron_right,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
                                 ],
                               ),
                             ),

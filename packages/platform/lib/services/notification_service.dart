@@ -22,17 +22,27 @@ class NotificationService {
   static const double defaultThreshold = defaultElecThreshold;
 
   static const Map<int, String> _slotStartTimes = {
-    1: '08:20', 2: '09:05', 3: '10:00', 4: '10:45', 5: '11:30',
-    6: '14:00', 7: '14:45', 8: '15:40', 9: '16:25', 10: '17:10',
-    11: '19:00', 12: '19:45', 13: '20:30',
+    1: '08:20',
+    2: '09:05',
+    3: '10:00',
+    4: '10:45',
+    5: '11:30',
+    6: '14:00',
+    7: '14:45',
+    8: '15:40',
+    9: '16:25',
+    10: '17:10',
+    11: '19:00',
+    12: '19:45',
+    13: '20:30',
   };
 
   // ── 通知渠道 ID 常量（修改此值可强制系统重建渠道，带走新的声音/震动配置）──
   // 每次需要"重置"渠道配置时，把末尾版本号 +1 即可，无需卸载 App
-  static const _classChannelId   = 'class_reminder_v2';
+  static const _classChannelId = 'class_reminder_v2';
   static const _classChannelName = '上课提醒';
-  static const _elecChannelId    = 'elec_alert_v2';
-  static const _cardChannelId    = 'card_alert_v2';
+  static const _elecChannelId = 'elec_alert_v2';
+  static const _cardChannelId = 'card_alert_v2';
 
   static Future<void> init() async {
     tz.initializeTimeZones();
@@ -48,8 +58,8 @@ class NotificationService {
     // ── 预先创建所有通知渠道，明确指定声音与震动 ──
     // Android 8+ 要求声音/震动必须在渠道层面开启，Notification 级别的设置仅作补充。
     // 渠道一旦创建后系统会永久缓存，修改 ID（如 v2→v3）是唯一让新配置生效的办法。
-    final androidPlugin = _plugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
 
     await androidPlugin?.createNotificationChannel(
       const AndroidNotificationChannel(
@@ -90,33 +100,36 @@ class NotificationService {
   }
 
   // ▼ 新增：动态调度课程提醒
-  static Future<void> scheduleClassReminders(List<Course> courses, DateTime semesterStart) async {
+  static Future<void> scheduleClassReminders(
+      List<Course> courses, DateTime semesterStart) async {
     final now = DateTime.now();
     // 算出开学第一周的周一
-    final semesterMonday = semesterStart.subtract(Duration(days: semesterStart.weekday - 1));
+    final semesterMonday =
+        semesterStart.subtract(Duration(days: semesterStart.weekday - 1));
     // ✅ 获取通知开关状态
     final isReminderEnabled = await getCourseReminderEnabled();
     // 当前是第几周
     final currentWeek = (now.difference(semesterMonday).inDays ~/ 7) + 1;
-  
+
     // 策略：每次刷新只调度【今天】和【明天】的课，避免数量爆炸
     for (int w = currentWeek; w <= currentWeek + 1; w++) {
-      if (w < 1 || w > 20) continue; 
+      if (w < 1 || w > 20) continue;
 
       // 【核心防抖】先取消这周可能存在的旧调度（防止课表发生变更导致“幽灵通知”）
       for (int day = 1; day <= 7; day++) {
         for (int slot = 1; slot <= 13; slot++) {
-           await _plugin.cancel(w * 1000 + day * 100 + slot);
+          await _plugin.cancel(w * 1000 + day * 100 + slot);
         }
       }
 
       if (!isReminderEnabled) continue;
-      
+
       final mondayOfWeek = semesterMonday.add(Duration(days: (w - 1) * 7));
 
       for (final course in courses) {
         if (!course.isActiveInWeek(w)) continue;
-        final classDate = mondayOfWeek.add(Duration(days: course.dayOfWeek - 1));
+        final classDate =
+            mondayOfWeek.add(Duration(days: course.dayOfWeek - 1));
         // 你一周都不开这个app说明你也不需要这个app了
         if (classDate.difference(now).inDays > 7) continue;
 
@@ -127,14 +140,16 @@ class NotificationService {
         final hour = int.parse(timeParts[0]);
         final minute = int.parse(timeParts[1]);
 
-        final classTime = DateTime(classDate.year, classDate.month, classDate.day, hour, minute);
-    
+        final classTime = DateTime(
+            classDate.year, classDate.month, classDate.day, hour, minute);
+
         // 提前 15 分钟
         final remindTime = classTime.subtract(const Duration(minutes: 15));
 
         if (remindTime.isAfter(now)) {
-          final notificationId = w * 1000 + course.dayOfWeek * 100 + course.timeSlot;
-    
+          final notificationId =
+              w * 1000 + course.dayOfWeek * 100 + course.timeSlot;
+
           await _plugin.zonedSchedule(
             notificationId,
             '上课提醒：${course.name}',
@@ -151,11 +166,13 @@ class NotificationService {
                 enableVibration: true,
                 enableLights: true,
                 // 震动节奏：短-停-长-停-长（单位毫秒）
-                vibrationPattern: Int64List.fromList([0, 200, 200, 400, 200, 400]),
+                vibrationPattern:
+                    Int64List.fromList([0, 200, 200, 400, 200, 400]),
               ),
             ),
             androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-            uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+            uiLocalNotificationDateInterpretation:
+                UILocalNotificationDateInterpretation.absoluteTime,
           );
         }
       }

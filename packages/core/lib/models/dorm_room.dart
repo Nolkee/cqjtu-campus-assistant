@@ -3,8 +3,8 @@ enum DormGarden {
   deYuan('德园', '01'),
   liYuan('礼园', '05');
 
-  final String label;    // 显示名，如 "德园"
-  final String suffix;   // buildid 中间段，德园=01，礼园=05
+  final String label; // 显示名，如 "德园"
+  final String suffix; // buildid 中间段，德园=01，礼园=05
 
   const DormGarden(this.label, this.suffix);
 }
@@ -28,10 +28,10 @@ const int kDormNumberMax = 15;
 
 /// 用户当前选中的宿舍（园区 + 舍号 + 房间号）
 class DormRoom {
-  final String campusName;  // 如 "科学城校区"
-  final DormGarden garden;  // 德园 / 礼园
+  final String campusName; // 如 "科学城校区"
+  final DormGarden garden; // 德园 / 礼园
   final int buildingNumber; // 1-15
-  final String roomNumber;  // 4 位补零格式，如 "0305"
+  final String roomNumber; // 4 位补零格式，如 "0305"
 
   const DormRoom({
     required this.campusName,
@@ -52,24 +52,24 @@ class DormRoom {
 
   /// 拼接给 API 的查询参数
   Map<String, String> toQueryParams() => {
-        'sysid':   '1',
-        'areaid':  '1',
+        'sysid': '1',
+        'areaid': '1',
         'buildid': buildid,
-        'roomid':  roomNumber,
+        'roomid': roomNumber,
       };
 
   /// 序列化到 SharedPreferences
   Map<String, String> toPrefsMap() => {
-        'dorm_campus':  campusName,
-        'dorm_garden':  garden.name,  // enum name，如 "deYuan"
-        'dorm_number':  buildingNumber.toString(),
-        'dorm_roomid':  roomNumber,
+        'dorm_campus': campusName,
+        'dorm_garden': garden.name, // enum name，如 "deYuan"
+        'dorm_number': buildingNumber.toString(),
+        'dorm_roomid': roomNumber,
       };
 
   /// 从 SharedPreferences 反序列化，任意字段缺失或格式错误则返回 null
   static DormRoom? fromPrefsMap(Map<String, String?> map) {
     final campus = map['dorm_campus'];
-    final gName  = map['dorm_garden'];
+    final gName = map['dorm_garden'];
     final numStr = map['dorm_number'];
     final roomid = map['dorm_roomid'];
 
@@ -90,10 +90,10 @@ class DormRoom {
     }
 
     return DormRoom(
-      campusName:     campus,
-      garden:         garden,
+      campusName: campus,
+      garden: garden,
       buildingNumber: number,
-      roomNumber:     roomid,
+      roomNumber: roomid,
     );
   }
 }

@@ -20,16 +20,20 @@ class GradeItem extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        title: Text(grade.courseName,
-            style: const TextStyle(fontWeight: FontWeight.w500)),
+        title: Text(
+          grade.courseName,
+          style: const TextStyle(fontWeight: FontWeight.w500),
+        ),
         subtitle: Text(
-            '${grade.semester}  ${grade.credits} 学分  绩点 ${grade.gradePoint}'),
+          '${grade.semester}  ${grade.credits} 学分  绩点 ${grade.gradePoint}',
+        ),
         trailing: Text(
           grade.score,
           style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: _scoreColor),
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: _scoreColor,
+          ),
         ),
       ),
     );

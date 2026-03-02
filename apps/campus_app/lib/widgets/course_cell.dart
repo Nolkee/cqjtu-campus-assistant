@@ -5,11 +5,7 @@ class CourseCell extends StatelessWidget {
   final Course course;
   final bool isActive;
 
-  const CourseCell({
-    super.key,
-    required this.course,
-    this.isActive = true,
-  });
+  const CourseCell({super.key, required this.course, this.isActive = true});
 
   static const _palette = [
     Color(0xFF5B9BD5),
@@ -22,10 +18,11 @@ class CourseCell extends StatelessWidget {
     Color(0xFFF39C12),
   ];
 
-  Color get _baseColor  => _palette[course.name.hashCode.abs() % _palette.length];
-  Color get _cellColor  => isActive ? _baseColor : Colors.grey.shade300;
-  Color get _textColor  => isActive ? Colors.white : Colors.grey.shade500;
-  Color get _subColor   => isActive ? Colors.white70 : Colors.grey.shade400;
+  Color get _baseColor =>
+      _palette[course.name.hashCode.abs() % _palette.length];
+  Color get _cellColor => isActive ? _baseColor : Colors.grey.shade300;
+  Color get _textColor => isActive ? Colors.white : Colors.grey.shade500;
+  Color get _subColor => isActive ? Colors.white70 : Colors.grey.shade400;
 
   @override
   Widget build(BuildContext context) {
@@ -72,32 +69,45 @@ class CourseCell extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (_) => Padding(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [
-              Expanded(
-                child: Text(course.name,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    course.name,
                     style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold)),
-              ),
-              if (!isActive)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(12),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  child: Text('本周无课',
-                      style: TextStyle(
-                          fontSize: 11, color: Colors.grey.shade600)),
                 ),
-            ]),
+                if (!isActive)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '本周无课',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             const SizedBox(height: 16),
             _InfoRow(Icons.person_outline, course.teacher),
             _InfoRow(Icons.access_time_outlined, course.timeStr),
@@ -121,11 +131,13 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Row(children: [
-          Icon(icon, size: 18, color: Colors.grey),
-          const SizedBox(width: 10),
-          Expanded(child: Text(text)),
-        ]),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Row(
+      children: [
+        Icon(icon, size: 18, color: Colors.grey),
+        const SizedBox(width: 10),
+        Expanded(child: Text(text)),
+      ],
+    ),
+  );
 }

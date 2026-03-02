@@ -45,13 +45,12 @@ class _ApiCampusBackend implements CampusBackend {
     String password, {
     String? semester,
     bool forceRefresh = false,
-  }) =>
-      _api.getSchedule(
-        username,
-        password,
-        semester: semester,
-        forceRefresh: forceRefresh,
-      );
+  }) => _api.getSchedule(
+    username,
+    password,
+    semester: semester,
+    forceRefresh: forceRefresh,
+  );
 
   @override
   Future<({Map<String, String> summary, List<Grade> grades})> getGrades(
@@ -59,13 +58,12 @@ class _ApiCampusBackend implements CampusBackend {
     String password, {
     String semester = '',
     bool forceRefresh = false,
-  }) =>
-      _api.getGrades(
-        username,
-        password,
-        semester: semester,
-        forceRefresh: forceRefresh,
-      );
+  }) => _api.getGrades(
+    username,
+    password,
+    semester: semester,
+    forceRefresh: forceRefresh,
+  );
 
   @override
   Future<List<Exam>> getExams(
@@ -73,13 +71,12 @@ class _ApiCampusBackend implements CampusBackend {
     String password, {
     String? semester,
     bool forceRefresh = false,
-  }) =>
-      _api.getExams(
-        username,
-        password,
-        semester: semester,
-        forceRefresh: forceRefresh,
-      );
+  }) => _api.getExams(
+    username,
+    password,
+    semester: semester,
+    forceRefresh: forceRefresh,
+  );
 
   @override
   Future<String> getElecBalance(
@@ -87,13 +84,12 @@ class _ApiCampusBackend implements CampusBackend {
     String password, {
     bool forceRefresh = false,
     Map<String, String>? dormParams,
-  }) =>
-      _api.getElecBalance(
-        username,
-        password,
-        forceRefresh: forceRefresh,
-        dormParams: dormParams,
-      );
+  }) => _api.getElecBalance(
+    username,
+    password,
+    forceRefresh: forceRefresh,
+    dormParams: dormParams,
+  );
 
   @override
   Future<String> getCampusCardBalance(
@@ -101,18 +97,15 @@ class _ApiCampusBackend implements CampusBackend {
     String password, {
     bool forceRefresh = false,
   }) =>
-      _api.getCampusCardBalance(
-        username,
-        password,
-        forceRefresh: forceRefresh,
-      );
+      _api.getCampusCardBalance(username, password, forceRefresh: forceRefresh);
 
   @override
   Future<String> rechargeElec(String username, double amount) =>
       _api.rechargeElec(username, amount);
 
   @override
-  Future<String> getPayCodeToken(String username) => _api.getPayCodeToken(username);
+  Future<String> getPayCodeToken(String username) =>
+      _api.getPayCodeToken(username);
 
   @override
   Future<String> getCampusCardAlipayUrl(String username, double amount) =>
@@ -137,8 +130,10 @@ class CredentialsNotifier
 }
 
 final credentialsProvider =
-    NotifierProvider<CredentialsNotifier, ({String username, String password})?>(
-        CredentialsNotifier.new);
+    NotifierProvider<
+      CredentialsNotifier,
+      ({String username, String password})?
+    >(CredentialsNotifier.new);
 
 // ── 未设置宿舍时抛出的专用异常（供 UI 区分显示）────────────────
 class NoDormSetException implements Exception {
@@ -167,8 +162,9 @@ class DormRoomNotifier extends AsyncNotifier<DormRoom?> {
   }
 }
 
-final dormRoomProvider =
-    AsyncNotifierProvider<DormRoomNotifier, DormRoom?>(DormRoomNotifier.new);
+final dormRoomProvider = AsyncNotifierProvider<DormRoomNotifier, DormRoom?>(
+  DormRoomNotifier.new,
+);
 
 // ── 学期开始日期（当前/默认学期）────────────────────────────────
 class SemesterStartNotifier extends AsyncNotifier<DateTime?> {
@@ -185,7 +181,8 @@ class SemesterStartNotifier extends AsyncNotifier<DateTime?> {
 
 final semesterStartProvider =
     AsyncNotifierProvider<SemesterStartNotifier, DateTime?>(
-        SemesterStartNotifier.new);
+      SemesterStartNotifier.new,
+    );
 
 // ── 学期开始日期（按学期 key 存取，用于非当前学期）───────────────
 class SemesterStartForKeyNotifier
@@ -201,10 +198,12 @@ class SemesterStartForKeyNotifier
   }
 }
 
-final semesterStartForKeyProvider = AsyncNotifierProvider.family<
-    SemesterStartForKeyNotifier, DateTime?, String>(
-  SemesterStartForKeyNotifier.new,
-);
+final semesterStartForKeyProvider =
+    AsyncNotifierProvider.family<
+      SemesterStartForKeyNotifier,
+      DateTime?,
+      String
+    >(SemesterStartForKeyNotifier.new);
 
 // ── 课程表页当前选中的学期（null = 当前学期，持久化到 SharedPreferences）──
 // 使用 NotifierProvider 替换原来的 StateProvider，使其能在 App 重启后恢复。
@@ -214,8 +213,9 @@ class SelectedSemesterNotifier extends Notifier<String?> {
   String? build() {
     // 立即返回 null，再在后台异步恢复持久化的学期字符串
     Future.microtask(() async {
-      final saved =
-          await ref.read(semesterServiceProvider).loadSelectedSemester();
+      final saved = await ref
+          .read(semesterServiceProvider)
+          .loadSelectedSemester();
       if (saved != null && state == null) {
         state = saved;
       }
@@ -232,7 +232,8 @@ class SelectedSemesterNotifier extends Notifier<String?> {
 
 final selectedScheduleSemesterProvider =
     NotifierProvider<SelectedSemesterNotifier, String?>(
-        SelectedSemesterNotifier.new);
+      SelectedSemesterNotifier.new,
+    );
 
 // ── 生效的学期开始日期 ────────────────────────────────────────
 final activeSemesterStartProvider = Provider<AsyncValue<DateTime?>>((ref) {
@@ -248,15 +249,18 @@ final selectedWeekProvider = StateProvider<int>((ref) => 1);
 typedef ScheduleResult = ({List<Course> courses, String remark});
 
 // ── 课程表（按学期 family，null = 当前学期）──────────────────────
-final scheduleProvider =
-    FutureProvider.autoDispose.family<ScheduleResult, String?>(
-        (ref, semester) async {
-  final creds = ref.watch(credentialsProvider);
-  if (creds == null) throw Exception('未登录');
+final scheduleProvider = FutureProvider.autoDispose
+    .family<ScheduleResult, String?>((ref, semester) async {
+      final creds = ref.watch(credentialsProvider);
+      if (creds == null) throw Exception('未登录');
 
-  final backend = ref.watch(campusBackendProvider);
-  return backend.getSchedule(creds.username, creds.password, semester: semester);
-});
+      final backend = ref.watch(campusBackendProvider);
+      return backend.getSchedule(
+        creds.username,
+        creds.password,
+        semester: semester,
+      );
+    });
 
 // ── 根据当前时间返回轮询间隔 ─────────────────────────────────────
 Duration _pollingInterval() {
@@ -308,7 +312,10 @@ final campusCardBalanceProvider = FutureProvider<String>((ref) async {
   if (creds == null) throw Exception('未登录');
 
   final backend = ref.watch(campusBackendProvider);
-  final balance = await backend.getCampusCardBalance(creds.username, creds.password);
+  final balance = await backend.getCampusCardBalance(
+    creds.username,
+    creds.password,
+  );
 
   debugPrint('[FG] 校园卡余额获取成功：$balance');
   return balance;
@@ -326,8 +333,10 @@ final payCodeProvider = FutureProvider.autoDispose<String>((ref) async {
 // ── 成绩 ─────────────────────────────────────────────────────
 typedef GradeResult = ({Map<String, String> summary, List<Grade> grades});
 
-final gradesProvider =
-    FutureProvider.autoDispose.family<GradeResult, String>((ref, semester) async {
+final gradesProvider = FutureProvider.autoDispose.family<GradeResult, String>((
+  ref,
+  semester,
+) async {
   final creds = ref.watch(credentialsProvider);
   if (creds == null) throw Exception('未登录');
 
@@ -336,8 +345,10 @@ final gradesProvider =
 });
 
 // ── 考试安排 ─────────────────────────────────────────────────
-final examsProvider =
-    FutureProvider.autoDispose.family<List<Exam>, String?>((ref, semester) async {
+final examsProvider = FutureProvider.autoDispose.family<List<Exam>, String?>((
+  ref,
+  semester,
+) async {
   final creds = ref.watch(credentialsProvider);
   if (creds == null) throw Exception('未登录');
 

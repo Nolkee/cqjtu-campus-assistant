@@ -12,9 +12,7 @@ class CampusCardPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('校园卡'),
-      ),
+      appBar: AppBar(title: const Text('校园卡')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: const [
@@ -64,32 +62,43 @@ class _BalanceCard extends ConsumerWidget {
                 GestureDetector(
                   onTap: () async {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('正在刷新余额...'), duration: Duration(seconds: 1)),
+                      const SnackBar(
+                        content: Text('正在刷新余额...'),
+                        duration: Duration(seconds: 1),
+                      ),
                     );
                     try {
                       final creds = ref.read(credentialsProvider);
                       if (creds != null) {
                         // 先强制刷新后端缓存
-                        await ref.read(apiServiceProvider).getCampusCardBalance(
-                          creds.username, creds.password, forceRefresh: true,
-                        );
+                        await ref
+                            .read(apiServiceProvider)
+                            .getCampusCardBalance(
+                              creds.username,
+                              creds.password,
+                              forceRefresh: true,
+                            );
                       }
                       ref.invalidate(campusCardBalanceProvider);
                       await ref.read(campusCardBalanceProvider.future);
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('余额已更新')),
-                        );
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(const SnackBar(content: Text('余额已更新')));
                       }
                     } catch (e) {
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('刷新失败：$e')),
-                        );
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text('刷新失败：$e')));
                       }
                     }
                   },
-                  child: const Icon(Icons.refresh, color: Colors.white70, size: 20),
+                  child: const Icon(
+                    Icons.refresh,
+                    color: Colors.white70,
+                    size: 20,
+                  ),
                 ),
               ],
             ),
@@ -103,7 +112,9 @@ class _BalanceCard extends ConsumerWidget {
                     width: 24,
                     height: 24,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
@@ -113,9 +124,10 @@ class _BalanceCard extends ConsumerWidget {
                   const Text(
                     '获取失败',
                     style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold),
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -159,41 +171,58 @@ class _QrCard extends ConsumerWidget {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            const Row(children: [
-              Icon(Icons.qr_code_2, color: Colors.blue),
-              SizedBox(width: 8),
-              Text('消费二维码',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            ]),
+            const Row(
+              children: [
+                Icon(Icons.qr_code_2, color: Colors.blue),
+                SizedBox(width: 8),
+                Text(
+                  '消费二维码',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
             const SizedBox(height: 20),
             tokenAsync.when(
               loading: () => const SizedBox(
-                  height: 200,
-                  child: Center(child: CircularProgressIndicator())),
-              error: (e, _) => Column(children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                const SizedBox(height: 8),
-                Text(e.toString(),
+                height: 200,
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (e, _) => Column(
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 8),
+                  Text(
+                    e.toString(),
                     style: const TextStyle(color: Colors.red),
-                    textAlign: TextAlign.center),
-                const SizedBox(height: 12),
-                FilledButton(
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton(
                     onPressed: () => ref.invalidate(payCodeProvider),
-                    child: const Text('重新获取')),
-              ]),
-              data: (token) => Column(children: [
-                QrImageView(
-                    data: token, size: 220, backgroundColor: Colors.white),
-                const SizedBox(height: 12),
-                const Text('二维码仅用于当次消费，请勿截图保存',
-                    style: TextStyle(color: Colors.grey, fontSize: 12)),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.refresh, size: 18),
-                  label: const Text('刷新二维码'),
-                  onPressed: () => ref.invalidate(payCodeProvider),
-                ),
-              ]),
+                    child: const Text('重新获取'),
+                  ),
+                ],
+              ),
+              data: (token) => Column(
+                children: [
+                  QrImageView(
+                    data: token,
+                    size: 220,
+                    backgroundColor: Colors.white,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    '二维码仅用于当次消费，请勿截图保存',
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: const Text('刷新二维码'),
+                    onPressed: () => ref.invalidate(payCodeProvider),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -250,20 +279,22 @@ class _RechargeCardState extends ConsumerState<_RechargeCard>
                 try {
                   final creds = ref.read(credentialsProvider);
                   if (creds != null) {
-                    await ref.read(apiServiceProvider).getCampusCardBalance(
-                      creds.username,
-                      creds.password,
-                      forceRefresh: true,
-                    );
+                    await ref
+                        .read(apiServiceProvider)
+                        .getCampusCardBalance(
+                          creds.username,
+                          creds.password,
+                          forceRefresh: true,
+                        );
                   }
-                  
+
                   // 3. 击穿缓存后，令 Provider 失效，UI 自动获取最新余额
                   ref.invalidate(campusCardBalanceProvider);
-                  
+
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('余额已更新')),
-                    );
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(const SnackBar(content: Text('余额已更新')));
                   }
                 } catch (e) {
                   if (mounted) {
@@ -288,8 +319,9 @@ class _RechargeCardState extends ConsumerState<_RechargeCard>
   Future<void> _pay() async {
     final amount = double.tryParse(_ctrl.text.trim());
     if (amount == null || amount < 0.01 || amount > 500) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('请输入正确的金额')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('请输入正确的金额')));
       return;
     }
 
@@ -297,32 +329,40 @@ class _RechargeCardState extends ConsumerState<_RechargeCard>
     try {
       final creds = ref.read(credentialsProvider);
       if (creds == null) throw Exception('未登录');
-      final responseData =
-          await ref.read(apiServiceProvider).getCampusCardAlipayUrl(creds.username, amount);
+      final responseData = await ref
+          .read(apiServiceProvider)
+          .getCampusCardAlipayUrl(creds.username, amount);
 
       if (responseData.startsWith('alipays://') ||
           responseData.startsWith('alipay://')) {
         _waitingForReturn = true;
-        await launchUrl(Uri.parse(responseData),
-            mode: LaunchMode.externalApplication);
+        await launchUrl(
+          Uri.parse(responseData),
+          mode: LaunchMode.externalApplication,
+        );
       } else {
         if (mounted) {
-          Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => _AlipayBridgePage(
-              htmlData: responseData,
-              onRealUrlReady: (realUrl) async {
-                _waitingForReturn = true;
-                await launchUrl(Uri.parse(realUrl),
-                    mode: LaunchMode.externalApplication);
-              },
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => _AlipayBridgePage(
+                htmlData: responseData,
+                onRealUrlReady: (realUrl) async {
+                  _waitingForReturn = true;
+                  await launchUrl(
+                    Uri.parse(realUrl),
+                    mode: LaunchMode.externalApplication,
+                  );
+                },
+              ),
             ),
-          ));
+          );
         }
       }
     } on ApiException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.message)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -337,26 +377,37 @@ class _RechargeCardState extends ConsumerState<_RechargeCard>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(children: [
-              Icon(Icons.account_balance_wallet_outlined, color: Colors.green),
-              SizedBox(width: 8),
-              Text('校园卡充值（支付宝）',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            ]),
+            const Row(
+              children: [
+                Icon(
+                  Icons.account_balance_wallet_outlined,
+                  color: Colors.green,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  '校园卡充值（支付宝）',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
             const SizedBox(height: 16),
             Wrap(
               spacing: 8,
               children: _quickAmounts
-                  .map((a) => ActionChip(
+                  .map(
+                    (a) => ActionChip(
                       label: Text('¥${a.toInt()}'),
-                      onPressed: () => _ctrl.text = a.toStringAsFixed(0)))
+                      onPressed: () => _ctrl.text = a.toStringAsFixed(0),
+                    ),
+                  )
                   .toList(),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _ctrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: const InputDecoration(
                 labelText: '充值金额（元）',
                 prefixText: '¥ ',
@@ -373,7 +424,10 @@ class _RechargeCardState extends ConsumerState<_RechargeCard>
                         height: 18,
                         width: 18,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Text('跳转支付宝充值'),
                 onPressed: _loading ? null : _pay,
               ),
@@ -408,31 +462,33 @@ class _AlipayBridgePageState extends State<_AlipayBridgePage> {
     super.initState();
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(NavigationDelegate(
-        onNavigationRequest: (request) async {
-          final url = request.url;
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onNavigationRequest: (request) async {
+            final url = request.url;
 
-          if (url.startsWith('alipay') || url.startsWith('intent://')) {
-            if (!_handled) {
+            if (url.startsWith('alipay') || url.startsWith('intent://')) {
+              if (!_handled) {
+                _handled = true;
+                await widget.onRealUrlReady(url);
+                if (mounted) Navigator.pop(context);
+              }
+              return NavigationDecision.prevent;
+            }
+
+            if (!url.contains('mapi.alipay.com') &&
+                url.startsWith('https://') &&
+                !_handled) {
               _handled = true;
               await widget.onRealUrlReady(url);
               if (mounted) Navigator.pop(context);
+              return NavigationDecision.prevent;
             }
-            return NavigationDecision.prevent;
-          }
 
-          if (!url.contains('mapi.alipay.com') &&
-              url.startsWith('https://') &&
-              !_handled) {
-            _handled = true;
-            await widget.onRealUrlReady(url);
-            if (mounted) Navigator.pop(context);
-            return NavigationDecision.prevent;
-          }
-
-          return NavigationDecision.navigate;
-        },
-      ))
+            return NavigationDecision.navigate;
+          },
+        ),
+      )
       ..loadHtmlString(widget.htmlData, baseUrl: 'https://ecard.cqjtu.edu.cn');
   }
 

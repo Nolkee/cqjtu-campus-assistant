@@ -4,9 +4,7 @@ import 'package:campus_app/main.dart';
 
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      const ProviderScope(child: CampusApp()),
-    );
+    await tester.pumpWidget(const ProviderScope(child: CampusApp()));
     expect(find.byType(CampusApp), findsOneWidget);
   });
 }

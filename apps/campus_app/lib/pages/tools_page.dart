@@ -49,7 +49,8 @@ Future<String?> showSemesterPicker(
     context: context,
     isScrollControlled: true, // [新增] 允许弹窗高度随内容伸展
     shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
     builder: (ctx) {
       // [新增] 限制最大高度为屏幕的 70%，体验更好
       final maxHeight = MediaQuery.of(ctx).size.height * 0.7;
@@ -64,9 +65,12 @@ Future<String?> showSemesterPicker(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: Row(
                   children: [
-                    Text('选择学期',
-                        style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold)),
+                    Text(
+                      '选择学期',
+                      style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const Spacer(),
                     // 查全部入口
                     TextButton(
@@ -92,8 +96,10 @@ Future<String?> showSemesterPicker(
                       return ListTile(
                         title: Text(label),
                         trailing: isSelected
-                            ? Icon(Icons.check,
-                                color: Theme.of(ctx).colorScheme.primary)
+                            ? Icon(
+                                Icons.check,
+                                color: Theme.of(ctx).colorScheme.primary,
+                              )
                             : null,
                         selected: isSelected,
                         selectedColor: Theme.of(ctx).colorScheme.primary,
@@ -127,15 +133,19 @@ class ToolsPage extends ConsumerWidget {
             icon: Icons.grade_outlined,
             title: '成绩查询',
             subtitle: '查看历史学期成绩与 GPA 排名',
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const GradesPage())), // 已修改为公开的 GradesPage
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const GradesPage()),
+            ), // 已修改为公开的 GradesPage
           ),
           _ToolTile(
             icon: Icons.event_note_outlined,
             title: '考试安排',
             subtitle: '查看当前学期考试时间与考场',
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const ExamsPage())), // 已修改为公开的 ExamsPage
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ExamsPage()),
+            ), // 已修改为公开的 ExamsPage
           ),
         ],
       ),
@@ -148,11 +158,12 @@ class _ToolTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
-  const _ToolTile(
-      {required this.icon,
-      required this.title,
-      required this.subtitle,
-      required this.onTap});
+  const _ToolTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -160,8 +171,7 @@ class _ToolTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: Icon(icon, color: Colors.blue, size: 28),
-        title:
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(subtitle),
         trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
@@ -200,8 +210,7 @@ class _GradesPageState extends ConsumerState<GradesPage> {
           // 学期筛选入口：显示当前选中学期
           TextButton.icon(
             icon: const Icon(Icons.filter_list, size: 18),
-            label: Text(_semesterLabel,
-                style: const TextStyle(fontSize: 13)),
+            label: Text(_semesterLabel, style: const TextStyle(fontSize: 13)),
             onPressed: () async {
               final result = await showSemesterPicker(
                 context,
@@ -218,13 +227,17 @@ class _GradesPageState extends ConsumerState<GradesPage> {
       body: gradesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text(e.toString()),
-            const SizedBox(height: 12),
-            FilledButton(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(e.toString()),
+              const SizedBox(height: 12),
+              FilledButton(
                 onPressed: () => ref.invalidate(gradesProvider(_semester)),
-                child: const Text('重试')),
-          ]),
+                child: const Text('重试'),
+              ),
+            ],
+          ),
         ),
         data: (result) => ListView(
           padding: const EdgeInsets.all(16),
@@ -234,11 +247,11 @@ class _GradesPageState extends ConsumerState<GradesPage> {
             ...result.grades.map((g) => GradeItem(grade: g)),
             if (result.grades.isEmpty)
               const Center(
-                  child: Padding(
-                padding: EdgeInsets.all(32),
-                child: Text('暂无成绩数据',
-                    style: TextStyle(color: Colors.grey)),
-              )),
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Text('暂无成绩数据', style: TextStyle(color: Colors.grey)),
+                ),
+              ),
           ],
         ),
       ),
@@ -256,21 +269,25 @@ class _SummaryCard extends StatelessWidget {
       color: Colors.blue.shade50,
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('学业汇总',
-              style:
-                  TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _Item('GPA', summary['gpa'] ?? '-'),
-              _Item('均分', summary['avgScore'] ?? '-'),
-              _Item('班级排名', summary['classRank'] ?? '-'),
-              _Item('专业排名', summary['majorRank'] ?? '-'),
-            ],
-          ),
-        ]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '学业汇总',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _Item('GPA', summary['gpa'] ?? '-'),
+                _Item('均分', summary['avgScore'] ?? '-'),
+                _Item('班级排名', summary['classRank'] ?? '-'),
+                _Item('专业排名', summary['majorRank'] ?? '-'),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -282,15 +299,19 @@ class _Item extends StatelessWidget {
   const _Item(this.label, this.value);
 
   @override
-  Widget build(BuildContext context) => Column(children: [
-        Text(value,
-            style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.blue)),
-        Text(label,
-            style: const TextStyle(fontSize: 12, color: Colors.grey)),
-      ]);
+  Widget build(BuildContext context) => Column(
+    children: [
+      Text(
+        value,
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Colors.blue,
+        ),
+      ),
+      Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+    ],
+  );
 }
 
 // ── 考试安排页 (已修改为公开类) ─────────────────────────────────────────────────
@@ -323,8 +344,7 @@ class _ExamsPageState extends ConsumerState<ExamsPage> {
         actions: [
           TextButton.icon(
             icon: const Icon(Icons.filter_list, size: 18),
-            label: Text(_semesterLabel,
-                style: const TextStyle(fontSize: 13)),
+            label: Text(_semesterLabel, style: const TextStyle(fontSize: 13)),
             onPressed: () async {
               final result = await showSemesterPicker(
                 context,
@@ -346,8 +366,8 @@ class _ExamsPageState extends ConsumerState<ExamsPage> {
         data: (exams) {
           if (exams.isEmpty) {
             return const Center(
-                child: Text('当前学期暂无考试安排',
-                    style: TextStyle(color: Colors.grey)));
+              child: Text('当前学期暂无考试安排', style: TextStyle(color: Colors.grey)),
+            );
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -361,16 +381,24 @@ class _ExamsPageState extends ConsumerState<ExamsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(exam.courseName,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 15)),
+                      Text(
+                        exam.courseName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
                       const Divider(),
                       _ExamRow(Icons.access_time_outlined, exam.examTime),
                       _ExamRow(Icons.room_outlined, exam.examRoom),
-                      _ExamRow(Icons.event_seat_outlined,
-                          '座位号：${exam.seatNumber}'),
-                      _ExamRow(Icons.confirmation_number_outlined,
-                          '准考证：${exam.ticketNumber}'),
+                      _ExamRow(
+                        Icons.event_seat_outlined,
+                        '座位号：${exam.seatNumber}',
+                      ),
+                      _ExamRow(
+                        Icons.confirmation_number_outlined,
+                        '准考证：${exam.ticketNumber}',
+                      ),
                     ],
                   ),
                 ),
@@ -390,12 +418,13 @@ class _ExamRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(children: [
-          Icon(icon, size: 16, color: Colors.grey),
-          const SizedBox(width: 8),
-          Expanded(
-              child: Text(text, style: const TextStyle(fontSize: 13))),
-        ]),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.grey),
+        const SizedBox(width: 8),
+        Expanded(child: Text(text, style: const TextStyle(fontSize: 13))),
+      ],
+    ),
+  );
 }

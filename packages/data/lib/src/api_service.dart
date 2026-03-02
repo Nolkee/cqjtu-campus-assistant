@@ -113,8 +113,8 @@ class ApiService {
 
   // ── 消费二维码 Token ─────────────────────────────────────
   Future<String> getPayCodeToken(String username) async {
-    final res = await _dio.get('/api/elec/paycode',
-        queryParameters: {'username': username});
+    final res = await _dio
+        .get('/api/elec/paycode', queryParameters: {'username': username});
     _checkCode(res.data);
     return res.data['data'] as String;
   }

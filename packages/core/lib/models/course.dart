@@ -4,13 +4,13 @@ class Course {
   final String timeStr;
   final String classroom;
   final int dayOfWeek;
-  
+
   /// 起始小节（1-13，对应作息时间表中的第 N 小节）
   final int timeSlot;
-  
+
   /// 结束小节（含），默认等于 timeSlot（即只占 1 小节）
   final int endTimeSlot;
-  
+
   /// ✅ 新增：该课程的所有上课周数集合（替换原来的 startWeek 和 endWeek）
   final List<int> weekList;
 
@@ -46,7 +46,9 @@ class Course {
       timeSlot: json['timeSlot'] ?? 1,
       endTimeSlot: json['endTimeSlot'],
       // 关键：将后端传过来的 JSON 数组强转为 List<int>
-      weekList: (json['weekList'] as List<dynamic>?)?.map((e) => e as int).toList() ?? [],
+      weekList:
+          (json['weekList'] as List<dynamic>?)?.map((e) => e as int).toList() ??
+              [],
     );
   }
 }

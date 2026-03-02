@@ -27,9 +27,7 @@ void main() async {
     kBgTaskTag,
     kBgTaskName,
     frequency: const Duration(minutes: 15),
-    constraints: Constraints(
-      networkType: NetworkType.connected,
-    ),
+    constraints: Constraints(networkType: NetworkType.connected),
     existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
   );
 
@@ -49,9 +47,7 @@ class CampusApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('zh', 'CH'),
-      ],
+      supportedLocales: const [Locale('zh', 'CH')],
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
@@ -76,7 +72,9 @@ class _AuthGateState extends ConsumerState<_AuthGate> {
     super.initState();
     // 关键修复：将 Future 缓存起来，确保生命周期内只执行一次本地读取
     // 这样后续路由返回触发 build 时，就不会再出现加载圈和销毁状态了
-    _initFuture = ref.read(credentialsProvider.notifier).load(ref.read(credentialServiceProvider));
+    _initFuture = ref
+        .read(credentialsProvider.notifier)
+        .load(ref.read(credentialServiceProvider));
   }
 
   @override
@@ -163,11 +161,7 @@ class _MainShellState extends ConsumerState<_MainShell>
     }
   }
 
-  static const _pages = [
-    SchedulePage(),
-    CampusCardPage(),
-    ProfilePage(),
-  ];
+  static const _pages = [SchedulePage(), CampusCardPage(), ProfilePage()];
 
   static const _items = [
     BottomNavigationBarItem(
@@ -228,7 +222,8 @@ class _FirstRunBatteryGuideDialog extends StatefulWidget {
 }
 
 class _FirstRunBatteryGuideDialogState
-    extends State<_FirstRunBatteryGuideDialog> with WidgetsBindingObserver {
+    extends State<_FirstRunBatteryGuideDialog>
+    with WidgetsBindingObserver {
   bool? _step1Done;
   bool? _step2AppOps;
   bool _step2Opened = false;
@@ -285,11 +280,13 @@ class _FirstRunBatteryGuideDialogState
   Widget build(BuildContext context) {
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Row(children: [
-        Icon(Icons.notifications_active_outlined, color: Colors.orange),
-        SizedBox(width: 8),
-        Text('开启后台通知'),
-      ]),
+      title: const Row(
+        children: [
+          Icon(Icons.notifications_active_outlined, color: Colors.orange),
+          SizedBox(width: 8),
+          Text('开启后台通知'),
+        ],
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -309,24 +306,28 @@ class _FirstRunBatteryGuideDialogState
                   ? const SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2))
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : _step1Done!
-                      ? const Icon(Icons.check_circle,
-                          color: Colors.green, size: 20)
-                      : FilledButton.tonal(
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 2),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          onPressed: () async {
-                            await BatteryOptimizationService
-                                .requestIgnoreBatteryOptimizations();
-                          },
-                          child: const Text('去设置',
-                              style: TextStyle(fontSize: 12)),
+                  ? const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 20,
+                    )
+                  : FilledButton.tonal(
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 2,
                         ),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      onPressed: () async {
+                        await BatteryOptimizationService.requestIgnoreBatteryOptimizations();
+                      },
+                      child: const Text('去设置', style: TextStyle(fontSize: 12)),
+                    ),
             ),
             const SizedBox(height: 14),
             _StepRow(
@@ -336,29 +337,35 @@ class _FirstRunBatteryGuideDialogState
               desc: _step2AppOps == true
                   ? '已通过系统检测'
                   : _step2Opened
-                      ? '已进入设置页，请确认已开启'
-                      : '允许 App 开机自启，后台轮询不中断',
+                  ? '已进入设置页，请确认已开启'
+                  : '允许 App 开机自启，后台轮询不中断',
               statusWidget: _step2AppOps == true
-                  ? const Icon(Icons.check_circle,
-                      color: Colors.green, size: 20)
+                  ? const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 20,
+                    )
                   : _step2Opened
-                      ? const Icon(Icons.check_circle_outline,
-                          color: Colors.orange, size: 20)
-                      : FilledButton.tonal(
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 2),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          onPressed: () async {
-                            await _markStep2Opened();
-                            await BatteryOptimizationService
-                                .openMiuiAutostart();
-                          },
-                          child: const Text('去设置',
-                              style: TextStyle(fontSize: 12)),
+                  ? const Icon(
+                      Icons.check_circle_outline,
+                      color: Colors.orange,
+                      size: 20,
+                    )
+                  : FilledButton.tonal(
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 2,
                         ),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      onPressed: () async {
+                        await _markStep2Opened();
+                        await BatteryOptimizationService.openMiuiAutostart();
+                      },
+                      child: const Text('去设置', style: TextStyle(fontSize: 12)),
+                    ),
             ),
             const SizedBox(height: 14),
             _StepRow(
@@ -367,19 +374,22 @@ class _FirstRunBatteryGuideDialogState
               title: '第 3 步：锁定后台（MIUI）',
               desc: '最近任务界面 → 长按本应用 → 锁定',
               statusWidget: _step3Confirmed
-                  ? const Icon(Icons.check_circle,
-                      color: Colors.green, size: 20)
+                  ? const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 20,
+                    )
                   : OutlinedButton(
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 2),
+                          horizontal: 10,
+                          vertical: 2,
+                        ),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      onPressed: () =>
-                          setState(() => _step3Confirmed = true),
-                      child: const Text('已完成',
-                          style: TextStyle(fontSize: 12)),
+                      onPressed: () => setState(() => _step3Confirmed = true),
+                      child: const Text('已完成', style: TextStyle(fontSize: 12)),
                     ),
             ),
             if (_allDone) ...[
@@ -390,16 +400,18 @@ class _FirstRunBatteryGuideDialogState
                   color: Colors.green.shade50,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Row(children: [
-                  Icon(Icons.verified, color: Colors.green, size: 18),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '所有步骤已完成，后台通知已就绪！',
-                      style: TextStyle(color: Colors.green, fontSize: 13),
+                child: const Row(
+                  children: [
+                    Icon(Icons.verified, color: Colors.green, size: 18),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '所有步骤已完成，后台通知已就绪！',
+                        style: TextStyle(color: Colors.green, fontSize: 13),
+                      ),
                     ),
-                  ),
-                ]),
+                  ],
+                ),
               ),
             ],
           ],
@@ -446,12 +458,17 @@ class _StepRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w600, fontSize: 13)),
-              Text(desc,
-                  style: const TextStyle(
-                      color: Colors.grey, fontSize: 12)),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+              Text(
+                desc,
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              ),
             ],
           ),
         ),
