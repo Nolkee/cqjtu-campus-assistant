@@ -12,9 +12,9 @@ import 'package:campus_platform/services/notification_service.dart';
 import 'package:campus_platform/services/dorm_service.dart';
 
 import 'package:campus_app/config/app_config.dart';
+import 'package:core/utils/polling_utils.dart';
 import '../utils/semester_service.dart';
 
-import 'package:data/src/api_service.dart';
 import 'package:data/data.dart';
 
 import 'package:campus_adapters_mock/campus_adapters_mock.dart';
@@ -271,16 +271,9 @@ final scheduleProvider = FutureProvider.autoDispose
       );
     });
 
-// ── 根据当前时间返回轮询间隔 ─────────────────────────────────────
-Duration _pollingInterval() {
-  final hour = DateTime.now().hour;
-  if (hour >= 0 && hour < 6) return const Duration(hours: 3);
-  return const Duration(minutes: 30);
-}
-
 // ── 电费（时间感知轮询）──────────────────────────────────────────
 final electricityProvider = FutureProvider<String>((ref) async {
-  final interval = _pollingInterval();
+  final interval = pollingInterval();
   final timer = Timer(interval, () => ref.invalidateSelf());
   ref.onDispose(timer.cancel);
 
@@ -312,7 +305,7 @@ final electricityProvider = FutureProvider<String>((ref) async {
 
 // ── 校园卡余额（时间感知轮询）────────────────────────────────────
 final campusCardBalanceProvider = FutureProvider<String>((ref) async {
-  final interval = _pollingInterval();
+  final interval = pollingInterval();
   debugPrint('[FG] 校园卡 Timer 启动，${interval.inMinutes}min 后自动刷新');
   final timer = Timer(interval, () => ref.invalidateSelf());
   ref.onDispose(timer.cancel);

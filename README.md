@@ -1,7 +1,7 @@
 # CQJTU Campus Assistant
 
 重庆交通大学（CQJTU）校园生活助手，基于 **Flutter + Riverpod** 开发（当前以 Android 为主）。
-
+![CI](https://github.com/AAAAxuuuuu/cqjtu-campus-assistant/actions/workflows/ci.yml/badge.svg)
 ## Features
 
 ### 课程表
