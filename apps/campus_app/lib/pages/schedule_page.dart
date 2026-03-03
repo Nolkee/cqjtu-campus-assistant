@@ -350,7 +350,7 @@ Future<void> _pickSemesterStart(BuildContext context, WidgetRef ref) async {
 
   if (context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('已自动切换为 \${_semesterLabel(semesterStr)}')),
+      SnackBar(content: Text('已自动切换为 ${_semesterLabel(semesterStr)}')),
     );
   }
 }

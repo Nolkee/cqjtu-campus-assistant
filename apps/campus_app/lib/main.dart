@@ -293,7 +293,7 @@ class _FirstRunBatteryGuideDialogState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              '为了在电费/校园卡余额不足时及时提醒你，请完成以下设置（MIUI 必做）：',
+              '为了在电费/校园卡余额不足时及时提醒你，请完成以下设置：',
               style: TextStyle(fontSize: 14),
             ),
             const SizedBox(height: 20),
@@ -333,7 +333,7 @@ class _FirstRunBatteryGuideDialogState
             _StepRow(
               icon: Icons.autorenew_outlined,
               color: Colors.blue,
-              title: '第 2 步：开启自启动（MIUI）',
+              title: '第 2 步：开启自启动',
               desc: _step2AppOps == true
                   ? '已通过系统检测'
                   : _step2Opened
@@ -371,7 +371,7 @@ class _FirstRunBatteryGuideDialogState
             _StepRow(
               icon: Icons.lock_outline,
               color: Colors.purple,
-              title: '第 3 步：锁定后台（MIUI）',
+              title: '第 3 步：锁定后台任务',
               desc: '最近任务界面 → 长按本应用 → 锁定',
               statusWidget: _step3Confirmed
                   ? const Icon(

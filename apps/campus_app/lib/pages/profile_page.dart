@@ -1134,7 +1134,7 @@ class _BackgroundSettingsCardState
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('MIUI / HyperOS 会定期清理后台任务。\n锁定步骤：'),
+            Text('系统会定期清理后台任务。\n锁定步骤：'),
             SizedBox(height: 12),
             _GuideStep(step: '1', text: '点击底部"方块"按钮，打开最近任务'),
             SizedBox(height: 8),
