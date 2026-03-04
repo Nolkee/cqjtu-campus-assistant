@@ -183,9 +183,19 @@ class _RechargeCardState extends ConsumerState<_RechargeCard> {
     try {
       final creds = ref.read(credentialsProvider);
       if (creds == null) throw Exception('未登录');
+
+      // 👈 【核心修复】：获取当前选中的寝室参数
+      final dorm = ref.read(dormRoomProvider).valueOrNull;
+
+      // 👈 【核心修复】：把寝室参数传给充值接口
       final msg = await ref
           .read(apiServiceProvider)
-          .rechargeElec(creds.username, amount);
+          .rechargeElec(
+            creds.username,
+            amount,
+            dormParams: dorm?.toQueryParams(),
+          );
+
       if (mounted) {
         ScaffoldMessenger.of(
           context,

@@ -103,9 +103,14 @@ class ApiService {
   }
 
   // ── 电费充值（校园卡扣款）────────────────────────────────
-  Future<String> rechargeElec(String username, double amount) async {
-    final res = await _dio.get('/api/elec/recharge',
-        queryParameters: {'username': username, 'amount': amount});
+  Future<String> rechargeElec(String username, double amount,
+      {Map<String, String>? dormParams}) async {
+    final res = await _dio.get('/api/elec/recharge', queryParameters: {
+      'username': username,
+      'amount': amount,
+      // 如果有寝室参数，就拼接到请求参数里
+      if (dormParams != null) ...dormParams,
+    });
     _checkCode(res.data);
     return res.data['msg'] as String;
   }

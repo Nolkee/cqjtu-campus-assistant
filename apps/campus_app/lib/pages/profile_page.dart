@@ -21,6 +21,9 @@ class ProfilePage extends ConsumerWidget {
     ref.invalidate(payCodeProvider);
     await ref.read(dormRoomProvider.notifier).clear();
 
+    await NotificationService.cancelAllClassReminders();
+    debugPrint('[Profile] 账号已退出，所有本地通知调度已清空');
+
     if (context.mounted) {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const LoginPage()),

@@ -6,6 +6,7 @@ import 'package:campus_platform/services/notification_service.dart';
 import '../utils/providers.dart';
 import '../widgets/course_cell.dart';
 import '../widgets/error_view.dart';
+import 'webview_login_page.dart'; // 👈 新增引入：用于在此页面唤起验证码验证
 
 const int _kTotalWeeks = 20;
 const int _kTotalSlots = 13;
@@ -50,38 +51,29 @@ int _calcCurrentWeek(DateTime s) {
   final now = DateTime.now();
   final semesterMonday = _semesterMonday(s);
 
-  // 早于开学那一周的周一，判定为放假中（第0周）
   if (now.isBefore(semesterMonday)) return 0;
 
   final diff = now.difference(semesterMonday).inDays;
   final week = diff ~/ 7 + 1;
 
-  // 超过20周，判定为放假中（第21周）
   if (week > _kTotalWeeks) return 21;
 
   return week;
 }
 
 // ── 学期自动推算工具 ─────────────────────────────────────────────
-/// 根据选定的日期，自动识别属于哪个学期
 String _calculateSemester(DateTime date) {
   int year = date.year;
   int month = date.month;
-  // 8月~12月 -> 当年-下一年-1 (上学期)
   if (month >= 8) {
     return '$year-${year + 1}-1';
-  }
-  // 1月 -> 去年-当年-1 (上学期)
-  else if (month == 1) {
+  } else if (month == 1) {
     return '${year - 1}-$year-1';
-  }
-  // 2月~7月 -> 去年-当年-2 (下学期)
-  else {
+  } else {
     return '${year - 1}-$year-2';
   }
 }
 
-/// "2024-2025-1" → "24-25 第1学期"
 String _semesterLabel(String s) {
   final parts = s.split('-');
   if (parts.length != 3) return s;
@@ -94,12 +86,10 @@ class SchedulePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // selectedScheduleSemesterProvider 已改为 AsyncNotifier，需要解包
     final selectedSemesterAsync = ref.watch(selectedScheduleSemesterProvider);
     final selectedSemester = selectedSemesterAsync.valueOrNull;
     final semesterAsync = ref.watch(activeSemesterStartProvider);
 
-    // 开学日期变更时自动跳到对应当前周
     ref.listen<AsyncValue<DateTime?>>(activeSemesterStartProvider, (_, next) {
       final start = next.valueOrNull;
       if (start != null) {
@@ -177,6 +167,104 @@ class _ScheduleBody extends ConsumerWidget {
 
   const _ScheduleBody({required this.semesterStart, this.selectedSemester});
 
+  // ── 统一的刷新逻辑（包含验证码拦截和 WebView 处理）──────────────────
+  Future<void> _doRefresh(BuildContext context, WidgetRef ref) async {
+    final creds = ref.read(credentialsProvider);
+    if (creds == null) return;
+    final apiService = ref.read(apiServiceProvider);
+
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('正在同步最新课表...'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+
+      // 强制后端发起请求
+      await apiService.getSchedule(
+        creds.username,
+        creds.password,
+        semester: selectedSemester,
+        forceRefresh: true,
+      );
+
+      // 刷新本地状态
+      ref.invalidate(scheduleProvider(selectedSemester));
+      final result = await ref.read(scheduleProvider(selectedSemester).future);
+
+      debugPrint('[刷新] 课表已更新，重新调度课程通知...');
+      await NotificationService.scheduleClassReminders(
+        result.courses,
+        semesterStart,
+      );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('课表已更新')));
+      }
+    } catch (e) {
+      final errorStr = e.toString();
+      // 如果报错内容提示需要验证码，唤起 WebView
+      if (errorStr.contains('449') ||
+          errorStr.contains('验证码') ||
+          errorStr.contains('HTML') ||
+          errorStr.contains('CAS')) {
+        if (context.mounted) {
+          final result = await Navigator.of(context).push<Map<String, dynamic>>(
+            MaterialPageRoute(
+              builder: (_) => WebViewLoginPage(
+                username: creds.username,
+                password: creds.password,
+              ),
+            ),
+          );
+
+          // WebView 登录成功，拿到了 Cookies
+          if (result != null && context.mounted) {
+            try {
+              if (result['casCookies'] != null &&
+                  result['casCookies'].toString().isNotEmpty) {
+                await apiService.injectCookies(
+                  creds.username,
+                  'ids.cqjtu.edu.cn',
+                  result['casCookies'],
+                );
+              }
+              if (result['jwgCookies'] != null &&
+                  result['jwgCookies'].toString().isNotEmpty) {
+                await apiService.injectCookies(
+                  creds.username,
+                  'jwgln.cqjtu.edu.cn',
+                  result['jwgCookies'],
+                );
+              }
+
+              // 注入凭据后，再次使 Provider 失效重试
+              ref.invalidate(scheduleProvider(selectedSemester));
+            } catch (injectErr) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('会话恢复失败: $injectErr')));
+              }
+            }
+          }
+        }
+      } else {
+        // 普通的网络错误直接提示
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('刷新失败: ${errorStr.replaceAll('Exception: ', '')}'),
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheduleAsync = ref.watch(scheduleProvider(selectedSemester));
@@ -191,7 +279,6 @@ class _ScheduleBody extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('课程表'),
         actions: [
-          // ── 统一的学期/日期切换按钮 ─────────────────────────────────
           TextButton.icon(
             icon: const Icon(Icons.edit_calendar, size: 16),
             label: Text(
@@ -210,80 +297,39 @@ class _ScheduleBody extends ConsumerWidget {
             ),
             onPressed: () => _pickSemesterStart(context, ref),
           ),
-
-          // ── 回本周 ───────────────────────────────────────
           if (selectedWeek != currentWeek)
             TextButton(
               onPressed: () =>
                   ref.read(selectedWeekProvider.notifier).setWeek(currentWeek),
               child: const Text('回本周'),
             ),
-
-          // ── 刷新 ────────────────────────────────────────
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () async {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('正在同步最新课表...'),
-                  duration: Duration(seconds: 1),
-                ),
-              );
-              // 在第一个 await 前缓存所有需要用到的引用，
-              // 避免 await 后 widget 销毁导致 StateError
-              final creds = ref.read(credentialsProvider);
-              final apiService = ref.read(apiServiceProvider);
-              final semesterStart = ref
-                  .read(activeSemesterStartProvider)
-                  .valueOrNull;
-              try {
-                if (creds != null) {
-                  await apiService.getSchedule(
-                    creds.username,
-                    creds.password,
-                    semester: selectedSemester,
-                    forceRefresh: true,
-                  );
-                }
-                ref.invalidate(scheduleProvider(selectedSemester));
-                final result = await ref.read(
-                  scheduleProvider(selectedSemester).future,
-                );
-
-                // 课表拉取成功后，清空旧调度并重新注册通知
-                if (semesterStart != null) {
-                  debugPrint('[刷新] 课表已更新，重新调度课程通知...');
-                  await NotificationService.scheduleClassReminders(
-                    result.courses,
-                    semesterStart,
-                  );
-                  debugPrint('[刷新] 课程通知调度完成');
-                } else {
-                  debugPrint('[刷新] 未设置开学日期，跳过通知调度');
-                }
-
-                if (context.mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('课表已更新')));
-                }
-              } catch (_) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('刷新失败，请检查网络')));
-                }
-              }
-            },
+            // ✅ 将右上角的刷新也指向通用的 _doRefresh
+            onPressed: () => _doRefresh(context, ref),
           ),
         ],
       ),
       body: scheduleAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => ErrorView(
-          message: e.toString(),
-          onRetry: () => ref.invalidate(scheduleProvider(selectedSemester)),
-        ),
+        error: (e, _) {
+          String errMsg = e.toString();
+          // ✅ 错误提示美化：去掉乱码，转换为直观提示
+          if (errMsg.contains('449') ||
+              errMsg.contains('验证码') ||
+              errMsg.contains('HTML') ||
+              errMsg.contains('CAS')) {
+            errMsg = '系统会话已过期或需要安全验证\n请点击下方重试按钮进行验证';
+          } else {
+            errMsg = errMsg.replaceAll('Exception: ', '');
+          }
+
+          return ErrorView(
+            message: errMsg,
+            // ✅ 将屏幕中间的重试按钮也指向 _doRefresh
+            onRetry: () => _doRefresh(context, ref),
+          );
+        },
         data: (result) => Column(
           children: [
             _WeekNavigator(
@@ -306,7 +352,8 @@ class _ScheduleBody extends ConsumerWidget {
   }
 }
 
-// ── 统一开学日期选择与学期推算逻辑 ─────────────────────────────────────────
+// ── 以下其余部分保持不变 (选期逻辑、导航栏、表格绘制等) ─────────────────────────────────────────
+
 Future<void> _pickSemesterStart(BuildContext context, WidgetRef ref) async {
   final now = DateTime.now();
   final initial = ref.read(activeSemesterStartProvider).valueOrNull ?? now;
@@ -321,10 +368,6 @@ Future<void> _pickSemesterStart(BuildContext context, WidgetRef ref) async {
 
   if (picked == null) return;
 
-  // ✅ StateError 修复：在第一个 await 之前把所有 notifier 缓存为本地变量。
-  //    showDatePicker await 返回后 widget 可能已被销毁，此时再调用
-  //    ref.read() 会抛出 "Cannot use ref after widget was disposed"。
-  //    notifier 对象本身是独立存活的，缓存后可安全在 async gap 后使用。
   final semesterStr = _calculateSemester(picked);
   final forKeyNotifier = ref.read(
     semesterStartForKeyProvider(semesterStr).notifier,
@@ -335,17 +378,9 @@ Future<void> _pickSemesterStart(BuildContext context, WidgetRef ref) async {
   );
   final selectedWeekNotifier = ref.read(selectedWeekProvider.notifier);
 
-  // 1. 存储选定日期的开学时间（按学期 key）
   await forKeyNotifier.set(picked);
-
-  // 2. 同时写入默认 semesterStartProvider，作为 activeSemesterStartProvider 的 fallback。
-  //    避免 selectedScheduleSemesterProvider 重建时短暂为 null 导致显示"未设置开学日期"。
   await semesterStartNotifier.set(picked);
-
-  // 3. 切换当前学期，触发课表数据获取
   await selectedSemesterNotifier.set(semesterStr);
-
-  // 4. 计算周次并跳转
   selectedWeekNotifier.setWeek(_calcCurrentWeek(picked));
 
   if (context.mounted) {
@@ -355,7 +390,6 @@ Future<void> _pickSemesterStart(BuildContext context, WidgetRef ref) async {
   }
 }
 
-// ── 周次导航栏 ────────────────────────────────────────────────
 class _WeekNavigator extends ConsumerWidget {
   final DateTime semesterStart;
   final int selectedWeek;
@@ -370,14 +404,12 @@ class _WeekNavigator extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isVacation = selectedWeek == 0 || selectedWeek == 21;
-    // 如果是放假中，则直接用系统当前时间所在的周一作为顶部显示的日期区间
     final monday = isVacation
         ? _semesterMonday(DateTime.now())
         : _mondayOfWeek(semesterStart, selectedWeek);
     final sunday = monday.add(const Duration(days: 6));
     final isCur = selectedWeek == currentWeek;
 
-    // 左箭头逻辑：放假（0周）不可再向左，第1周向左滑入放假（0周），第21周向左滑入第20周
     VoidCallback? onLeft;
     if (selectedWeek > 1 && selectedWeek <= _kTotalWeeks) {
       onLeft = () =>
@@ -389,7 +421,6 @@ class _WeekNavigator extends ConsumerWidget {
       onLeft = () => ref.read(selectedWeekProvider.notifier).setWeek(0);
     }
 
-    // 右箭头逻辑：放假（21周）不可再向右，第20周向右滑入放假（21周），第0周向右滑入第1周
     VoidCallback? onRight;
     if (selectedWeek >= 1 && selectedWeek < _kTotalWeeks) {
       onRight = () =>
@@ -544,7 +575,6 @@ class _WeekNavigator extends ConsumerWidget {
   }
 }
 
-// ── 课程表网格（含备注行，随表格一起垂直滚动）──────────────────
 class _TimetableGrid extends StatelessWidget {
   final List<Course> courses;
   final String remark;
@@ -570,7 +600,6 @@ class _TimetableGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final dayMap = _buildDayMap();
     final isVacation = selectedWeek == 0 || selectedWeek == 21;
-    // 如果放假中，顶部日期头按系统时间的周一来算，保持视觉正常
     final monday = isVacation
         ? _semesterMonday(DateTime.now())
         : _mondayOfWeek(semesterStart, selectedWeek);
@@ -578,20 +607,15 @@ class _TimetableGrid extends StatelessWidget {
     final todayDay = DateTime(today.year, today.month, today.day);
     final gridH = _kTotalSlots * _kSlotH;
 
-    // 总宽度 = 时间列 + 7 天列
     final totalWidth = _kTimeW + _kDayW * 7;
-
     const dayLabels = ['一', '二', '三', '四', '五', '六', '日'];
 
     return SingleChildScrollView(
-      // 垂直滚动：可以从上午一直滚到备注
       child: SingleChildScrollView(
-        // 水平滚动
         scrollDirection: Axis.horizontal,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── 表头：星期 + 日期 ────────────────────────────
             Container(
               color: Colors.blue.shade50,
               child: Row(
@@ -609,8 +633,6 @@ class _TimetableGrid extends StatelessWidget {
               ),
             ),
             Container(height: 1, color: Colors.grey.shade300),
-
-            // ── 网格主体 ────────────────────────────────────
             SizedBox(
               height: gridH,
               child: Row(
@@ -627,8 +649,6 @@ class _TimetableGrid extends StatelessWidget {
                 ],
               ),
             ),
-
-            // ── 备注行（晚上课程下方，随表格一起滚动）──────────
             if (remark.isNotEmpty)
               Container(
                 width: totalWidth,
@@ -646,7 +666,6 @@ class _TimetableGrid extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 左侧图标对齐时间列宽度
                     SizedBox(
                       width: _kTimeW - 12,
                       child: Column(
@@ -669,7 +688,6 @@ class _TimetableGrid extends StatelessWidget {
                         ],
                       ),
                     ),
-                    // 备注文本
                     Expanded(
                       child: Text(
                         remark,
@@ -696,7 +714,6 @@ class _TimetableGrid extends StatelessWidget {
     DateTime todayDay,
     bool isVacation,
   ) {
-    // 放假中不高亮今天
     final isToday = date == todayDay && !isVacation;
     return SizedBox(
       width: _kDayW,
@@ -778,8 +795,6 @@ class _TimetableGrid extends StatelessWidget {
             _hDivider(s * _kSlotH, Colors.grey.shade200),
           _hDivider(5 * _kSlotH, Colors.blue.shade100, thickness: 1.5),
           _hDivider(10 * _kSlotH, Colors.indigo.shade100, thickness: 1.5),
-          // 由于 selectedWeek 为 0 或 21 时，course.isActiveInWeek 均会返回 false，
-          // 渲染时这里的 _cellColor 就会自动呈现出置灰效果，实现了放假中全局灰化。
           for (final course
               in [...dayCourses]..sort(
                 (a, b) => (a.isActiveInWeek(selectedWeek) ? 1 : 0).compareTo(
@@ -835,7 +850,6 @@ class _TimetableGrid extends StatelessWidget {
       );
 }
 
-// ── 时间列单元格 ──────────────────────────────────────────────
 class _SlotCell extends StatelessWidget {
   final int slot;
   const _SlotCell({required this.slot});
