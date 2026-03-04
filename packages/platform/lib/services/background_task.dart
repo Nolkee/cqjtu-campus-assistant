@@ -4,6 +4,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
+import 'package:core/models/dorm_room.dart';
 
 /// WorkManager 任务标识
 const kBgTaskName = 'balanceMonitor';
@@ -134,41 +135,19 @@ void backgroundCallbackDispatcher() {
 
 /// 按实际存储的 key 读取，然后手动拼出 buildid宿舍查询参数
 Map<String, String>? _readDormParams(SharedPreferences prefs) {
-  final gardenName = prefs.getString('dorm_garden');
-  final numberStr = prefs.getString('dorm_number');
-  final roomid = prefs.getString('dorm_roomid');
-
-  if (gardenName == null || numberStr == null || roomid == null) return null;
-
-  final number = int.tryParse(numberStr);
-  if (number == null) return null;
-
-  // 与 dorm_room.dart 的 buildDormId() 保持完全一致
-  // 德园 suffix=01，礼园 suffix=05
-  final String suffix;
-  final String gardenLabel;
-  switch (gardenName) {
-    case 'deYuan':
-      suffix = '01';
-      gardenLabel = '德园';
-      break;
-    case 'liYuan':
-      suffix = '05';
-      gardenLabel = '礼园';
-      break;
-    default:
-      return null; // 未知园区，拒绝构造错误参数
-  }
-
-  final numStr = number.toString().padLeft(2, '0');
-  final buildid = '${numStr}00_${suffix}_C_${gardenLabel}${number}舍';
-
-  return {
-    'sysid': '1',
-    'areaid': '1',
-    'buildid': buildid,
-    'roomid': roomid,
+  // 1. 尝试使用与 DormService.load() 相同的逻辑读取
+  final map = {
+    'dorm_campus': prefs.getString('dorm_campus'),
+    'dorm_garden': prefs.getString('dorm_garden'),
+    'dorm_number': prefs.getString('dorm_number'),
+    'dorm_roomid': prefs.getString('dorm_roomid'),
   };
+
+  // 2. 利用模型自身的工厂方法反序列化
+  final dormRoom = DormRoom.fromPrefsMap(map);
+
+  // 3. 直接调用模型已经封装好的 toQueryParams() 方法，保证与前台查询电费 100% 一致！
+  return dormRoom?.toQueryParams();
 }
 
 // ── 电费查询 ──────────────────────────────────────────────────
