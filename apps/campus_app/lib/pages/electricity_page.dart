@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:data/src/api_service.dart';
+import 'package:data/data.dart';
 import '../utils/providers.dart';
 import 'package:campus_platform/services/notification_service.dart';
 import '../widgets/error_view.dart';
@@ -39,7 +39,7 @@ class ElectricityPage extends ConsumerWidget {
                 if (creds != null) {
                   final dorm = ref.read(dormRoomProvider).valueOrNull;
                   await ref
-                      .read(apiServiceProvider)
+                      .read(campusBackendProvider)
                       .getElecBalance(
                         creds.username,
                         creds.password,
@@ -189,7 +189,7 @@ class _RechargeCardState extends ConsumerState<_RechargeCard> {
 
       // 👈 【核心修复】：把寝室参数传给充值接口
       final msg = await ref
-          .read(apiServiceProvider)
+          .read(campusBackendProvider)
           .rechargeElec(
             creds.username,
             amount,

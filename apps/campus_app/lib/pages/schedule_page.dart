@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:core/models/course.dart';
@@ -171,7 +170,9 @@ class _ScheduleBody extends ConsumerWidget {
   Future<void> _doRefresh(BuildContext context, WidgetRef ref) async {
     final creds = ref.read(credentialsProvider);
     if (creds == null) return;
+    final backend = ref.read(campusBackendProvider);
     final apiService = ref.read(apiServiceProvider);
+    final sessionManager = ref.read(sessionManagerProvider);
 
     try {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -182,7 +183,7 @@ class _ScheduleBody extends ConsumerWidget {
       );
 
       // 强制后端发起请求
-      await apiService.getSchedule(
+      await backend.getSchedule(
         creds.username,
         creds.password,
         semester: selectedSemester,
@@ -224,21 +225,55 @@ class _ScheduleBody extends ConsumerWidget {
           // WebView 登录成功，拿到了 Cookies
           if (result != null && context.mounted) {
             try {
-              if (result['casCookies'] != null &&
-                  result['casCookies'].toString().isNotEmpty) {
-                await apiService.injectCookies(
+              var sessionId = await sessionManager.ensureSessionId(
+                creds.username,
+              );
+              final ticket = result['ticket']?.toString() ?? '';
+              final casCookies = result['casCookies']?.toString() ?? '';
+              final jwgCookies = result['jwgCookies']?.toString() ?? '';
+
+              Future<void> bindWithSession(String currentSessionId) async {
+                await sessionManager.saveWebLoginArtifacts(
                   creds.username,
-                  'ids.cqjtu.edu.cn',
-                  result['casCookies'],
+                  ticket: ticket,
+                  casCookies: casCookies,
+                  jwgCookies: jwgCookies,
                 );
+
+                if (ticket.isNotEmpty) {
+                  await apiService.loginWithTicket(
+                    creds.username,
+                    ticket,
+                    sessionId: currentSessionId,
+                  );
+                }
+
+                if (casCookies.isNotEmpty) {
+                  await apiService.injectCookies(
+                    creds.username,
+                    'ids.cqjtu.edu.cn',
+                    casCookies,
+                    sessionId: currentSessionId,
+                  );
+                }
+                if (jwgCookies.isNotEmpty) {
+                  await apiService.injectCookies(
+                    creds.username,
+                    'jwgln.cqjtu.edu.cn',
+                    jwgCookies,
+                    sessionId: currentSessionId,
+                  );
+                }
               }
-              if (result['jwgCookies'] != null &&
-                  result['jwgCookies'].toString().isNotEmpty) {
-                await apiService.injectCookies(
+
+              try {
+                await bindWithSession(sessionId);
+              } catch (error) {
+                if (!sessionManager.isSessionExpiredError(error)) rethrow;
+                sessionId = await sessionManager.refreshSessionId(
                   creds.username,
-                  'jwgln.cqjtu.edu.cn',
-                  result['jwgCookies'],
                 );
+                await bindWithSession(sessionId);
               }
 
               // 注入凭据后，再次使 Provider 失效重试

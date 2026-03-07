@@ -58,7 +58,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     try {
       // 尝试静默获取课表来验证
-      await ref.read(apiServiceProvider).getSchedule(username, password);
+      final sessionManager = ref.read(sessionManagerProvider);
+      final sessionId = await sessionManager.refreshSessionId(username);
+      await ref.read(apiServiceProvider).getSchedule(
+        username,
+        password,
+        sessionId: sessionId,
+      );
       // 成功则保存凭证并进入 App
       await _saveCredentialsAndFinish(username, password);
     } catch (e) {
@@ -103,24 +109,56 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       final api = ref.read(apiServiceProvider);
 
       // 注入从 WebView 提取到的各域名的 Cookie
-      if (result['casCookies'] != null &&
-          result['casCookies'].toString().isNotEmpty) {
-        await api.injectCookies(
+      final sessionManager = ref.read(sessionManagerProvider);
+      var sessionId = await sessionManager.ensureSessionId(username);
+      final ticket = result['ticket']?.toString() ?? '';
+      final casCookies = result['casCookies']?.toString() ?? '';
+      final jwgCookies = result['jwgCookies']?.toString() ?? '';
+
+      Future<void> bindWithSession(String currentSessionId) async {
+        await sessionManager.saveWebLoginArtifacts(
           username,
-          'ids.cqjtu.edu.cn',
-          result['casCookies'],
+          ticket: ticket,
+          casCookies: casCookies,
+          jwgCookies: jwgCookies,
         );
+
+        if (ticket.isNotEmpty) {
+          await api.loginWithTicket(
+            username,
+            ticket,
+            sessionId: currentSessionId,
+          );
+        }
+
+        if (casCookies.isNotEmpty) {
+          await api.injectCookies(
+            username,
+            'ids.cqjtu.edu.cn',
+            casCookies,
+            sessionId: currentSessionId,
+          );
+        }
+        if (jwgCookies.isNotEmpty) {
+          await api.injectCookies(
+            username,
+            'jwgln.cqjtu.edu.cn',
+            jwgCookies,
+            sessionId: currentSessionId,
+          );
+        }
       }
-      if (result['jwgCookies'] != null &&
-          result['jwgCookies'].toString().isNotEmpty) {
-        await api.injectCookies(
-          username,
-          'jwgln.cqjtu.edu.cn',
-          result['jwgCookies'],
-        );
+
+      try {
+        await bindWithSession(sessionId);
+      } catch (error) {
+        if (!sessionManager.isSessionExpiredError(error)) rethrow;
+        sessionId = await sessionManager.refreshSessionId(username);
+        await bindWithSession(sessionId);
       }
 
       await _saveCredentialsAndFinish(username, password ?? "");
+      ref.read(sessionUpdateProvider.notifier).triggerRefresh();
     } catch (e) {
       setState(() => _error = 'WebView 会话注入失败: $e');
     } finally {

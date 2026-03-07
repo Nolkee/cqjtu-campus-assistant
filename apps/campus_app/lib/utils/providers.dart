@@ -1,43 +1,134 @@
 import 'dart:async';
+
+import 'package:campus_adapters_mock/campus_adapters_mock.dart';
+import 'package:campus_app/config/app_config.dart';
+import 'package:campus_platform/services/credential_service.dart';
+import 'package:campus_platform/services/dorm_service.dart';
+import 'package:campus_platform/services/notification_service.dart';
+import 'package:campus_platform/services/session_service.dart';
+import 'package:core/models/course.dart';
+import 'package:core/models/dorm_room.dart';
+import 'package:core/models/exam.dart';
+import 'package:core/models/grade.dart';
+import 'package:core/utils/polling_utils.dart';
+import 'package:data/data.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:core/models/course.dart';
-import 'package:core/models/grade.dart';
-import 'package:core/models/exam.dart';
-import 'package:core/models/dorm_room.dart';
-
-import 'package:campus_platform/services/credential_service.dart';
-import 'package:campus_platform/services/notification_service.dart';
-import 'package:campus_platform/services/dorm_service.dart';
-
-import 'package:campus_app/config/app_config.dart';
-import 'package:core/utils/polling_utils.dart';
 import '../utils/semester_service.dart';
 
-import 'package:data/data.dart';
-
-import 'package:campus_adapters_mock/campus_adapters_mock.dart';
-
-/// 仍保留 ApiService（给你现有代码用）
-/// 生产环境下会用它去实现 CampusBackend
 final apiServiceProvider = Provider<ApiService>((ref) {
   return ApiService(baseUrl: AppConfig.baseUrl);
 });
 
-/// 统一入口：mock / prod 都从这里拿
+final sessionManagerProvider = Provider<SessionManager>((ref) {
+  final api = ref.read(apiServiceProvider);
+  final sessionService = ref.read(sessionServiceProvider);
+  return SessionManager(api, sessionService);
+});
+
+class SessionManager {
+  SessionManager(this._api, this._sessionService);
+
+  final ApiService _api;
+  final SessionService _sessionService;
+
+  static const _casDomain = 'ids.cqjtu.edu.cn';
+  static const _jwgDomain = 'jwgln.cqjtu.edu.cn';
+
+  Future<String> ensureSessionId(String username) async {
+    final cached = await _sessionService.loadSessionId(username);
+    if (cached != null && cached.isNotEmpty) return cached;
+    return refreshSessionId(username);
+  }
+
+  Future<String> refreshSessionId(String username) async {
+    final sessionId = await _api.createSession(username);
+    await _sessionService.saveSessionId(username, sessionId);
+    return sessionId;
+  }
+
+  Future<void> saveWebLoginArtifacts(
+    String username, {
+    String? ticket,
+    String? casCookies,
+    String? jwgCookies,
+  }) async {
+    if (ticket != null && ticket.isNotEmpty) {
+      await _sessionService.saveTicket(username, ticket);
+    }
+    if (casCookies != null && casCookies.isNotEmpty) {
+      await _sessionService.saveCasCookies(username, casCookies);
+    }
+    if (jwgCookies != null && jwgCookies.isNotEmpty) {
+      await _sessionService.saveJwgCookies(username, jwgCookies);
+    }
+  }
+
+  Future<void> restoreLoginState(String username, String sessionId) async {
+    final ticket = await _sessionService.loadTicket(username);
+    if (ticket != null && ticket.isNotEmpty) {
+      await _api.loginWithTicket(username, ticket, sessionId: sessionId);
+      return;
+    }
+
+    final casCookies = await _sessionService.loadCasCookies(username);
+    if (casCookies != null && casCookies.isNotEmpty) {
+      await _api.injectCookies(
+        username,
+        _casDomain,
+        casCookies,
+        sessionId: sessionId,
+      );
+    }
+
+    final jwgCookies = await _sessionService.loadJwgCookies(username);
+    if (jwgCookies != null && jwgCookies.isNotEmpty) {
+      await _api.injectCookies(
+        username,
+        _jwgDomain,
+        jwgCookies,
+        sessionId: sessionId,
+      );
+    }
+  }
+
+  bool isSessionExpiredError(Object error) {
+    if (error is! ApiException) return false;
+    return error.code == 403 &&
+        error.message.toLowerCase().contains('sessionid');
+  }
+
+  Future<T> runWithSessionRetry<T>({
+    required String username,
+    required Future<T> Function(String sessionId) request,
+  }) async {
+    var sessionId = await ensureSessionId(username);
+    try {
+      return await request(sessionId);
+    } catch (error) {
+      if (!isSessionExpiredError(error)) rethrow;
+      sessionId = await refreshSessionId(username);
+      await restoreLoginState(username, sessionId);
+      return request(sessionId);
+    }
+  }
+}
+
 final campusBackendProvider = Provider<CampusBackend>((ref) {
   if (AppConfig.env == 'mock') {
     return MockCampusBackend();
   }
   final api = ref.read(apiServiceProvider);
-  return _ApiCampusBackend(api);
+  final sessionManager = ref.read(sessionManagerProvider);
+  return _ApiCampusBackend(api, sessionManager);
 });
 
-/// 不新增 http_campus_backend.dart，也能让 prod 走真实后端
 class _ApiCampusBackend implements CampusBackend {
-  _ApiCampusBackend(this._api);
+  _ApiCampusBackend(this._api, this._sessionManager);
+
   final ApiService _api;
+  final SessionManager _sessionManager;
 
   @override
   Future<({List<Course> courses, String remark})> getSchedule(
@@ -45,12 +136,17 @@ class _ApiCampusBackend implements CampusBackend {
     String password, {
     String? semester,
     bool forceRefresh = false,
-  }) => _api.getSchedule(
-    username,
-    password,
-    semester: semester,
-    forceRefresh: forceRefresh,
-  );
+  }) =>
+      _sessionManager.runWithSessionRetry(
+        username: username,
+        request: (sessionId) => _api.getSchedule(
+          username,
+          password,
+          sessionId: sessionId,
+          semester: semester,
+          forceRefresh: forceRefresh,
+        ),
+      );
 
   @override
   Future<({Map<String, String> summary, List<Grade> grades})> getGrades(
@@ -58,12 +154,17 @@ class _ApiCampusBackend implements CampusBackend {
     String password, {
     String semester = '',
     bool forceRefresh = false,
-  }) => _api.getGrades(
-    username,
-    password,
-    semester: semester,
-    forceRefresh: forceRefresh,
-  );
+  }) =>
+      _sessionManager.runWithSessionRetry(
+        username: username,
+        request: (sessionId) => _api.getGrades(
+          username,
+          password,
+          sessionId: sessionId,
+          semester: semester,
+          forceRefresh: forceRefresh,
+        ),
+      );
 
   @override
   Future<List<Exam>> getExams(
@@ -71,12 +172,17 @@ class _ApiCampusBackend implements CampusBackend {
     String password, {
     String? semester,
     bool forceRefresh = false,
-  }) => _api.getExams(
-    username,
-    password,
-    semester: semester,
-    forceRefresh: forceRefresh,
-  );
+  }) =>
+      _sessionManager.runWithSessionRetry(
+        username: username,
+        request: (sessionId) => _api.getExams(
+          username,
+          password,
+          sessionId: sessionId,
+          semester: semester,
+          forceRefresh: forceRefresh,
+        ),
+      );
 
   @override
   Future<String> getElecBalance(
@@ -84,12 +190,17 @@ class _ApiCampusBackend implements CampusBackend {
     String password, {
     bool forceRefresh = false,
     Map<String, String>? dormParams,
-  }) => _api.getElecBalance(
-    username,
-    password,
-    forceRefresh: forceRefresh,
-    dormParams: dormParams,
-  );
+  }) =>
+      _sessionManager.runWithSessionRetry(
+        username: username,
+        request: (sessionId) => _api.getElecBalance(
+          username,
+          password,
+          sessionId: sessionId,
+          forceRefresh: forceRefresh,
+          dormParams: dormParams,
+        ),
+      );
 
   @override
   Future<String> getCampusCardBalance(
@@ -97,24 +208,50 @@ class _ApiCampusBackend implements CampusBackend {
     String password, {
     bool forceRefresh = false,
   }) =>
-      _api.getCampusCardBalance(username, password, forceRefresh: forceRefresh);
+      _sessionManager.runWithSessionRetry(
+        username: username,
+        request: (sessionId) => _api.getCampusCardBalance(
+          username,
+          password,
+          sessionId: sessionId,
+          forceRefresh: forceRefresh,
+        ),
+      );
 
   @override
-  Future<String> rechargeElec(String username, double amount) =>
-      _api.rechargeElec(username, amount);
+  Future<String> rechargeElec(
+    String username,
+    double amount, {
+    Map<String, String>? dormParams,
+  }) =>
+      _sessionManager.runWithSessionRetry(
+        username: username,
+        request: (sessionId) => _api.rechargeElec(
+          username,
+          amount,
+          sessionId: sessionId,
+          dormParams: dormParams,
+        ),
+      );
 
   @override
   Future<String> getPayCodeToken(String username) =>
-      _api.getPayCodeToken(username);
+      _sessionManager.runWithSessionRetry(
+        username: username,
+        request: (sessionId) =>
+            _api.getPayCodeToken(username, sessionId: sessionId),
+      );
 
   @override
   Future<String> getCampusCardAlipayUrl(String username, double amount) =>
-      _api.getCampusCardAlipayUrl(username, amount);
+      _sessionManager.runWithSessionRetry(
+        username: username,
+        request: (sessionId) =>
+            _api.getCampusCardAlipayUrl(username, amount, sessionId: sessionId),
+      );
 }
 
-// ── 凭据状态 ─────────────────────────────────────────────────
-class CredentialsNotifier
-    extends Notifier<({String username, String password})?> {
+class CredentialsNotifier extends Notifier<({String username, String password})?> {
   @override
   ({String username, String password})? build() => null;
 
@@ -130,27 +267,21 @@ class CredentialsNotifier
 }
 
 final credentialsProvider =
-    NotifierProvider<
-      CredentialsNotifier,
-      ({String username, String password})?
-    >(CredentialsNotifier.new);
+    NotifierProvider<CredentialsNotifier, ({String username, String password})?>(
+      CredentialsNotifier.new,
+    );
 
-// ── 未设置宿舍时抛出的专用异常（供 UI 区分显示）────────────────
 class NoDormSetException implements Exception {
   @override
   String toString() => '请先设置宿舍';
 }
 
-// ── 已选宿舍状态 ──────────────────────────────────────────────
 class DormRoomNotifier extends AsyncNotifier<DormRoom?> {
   @override
   Future<DormRoom?> build() async {
     return ref.read(dormServiceProvider).load();
   }
 
-  /// 保存宿舍后更新状态。
-  /// electricityProvider 通过 ref.watch(dormRoomProvider) 建立了依赖，
-  /// state 改变时 Riverpod 会自动使其失效并重新执行，触发新的电费请求。
   Future<void> set(DormRoom room) async {
     await ref.read(dormServiceProvider).save(room);
     state = AsyncData(room);
@@ -166,7 +297,6 @@ final dormRoomProvider = AsyncNotifierProvider<DormRoomNotifier, DormRoom?>(
   DormRoomNotifier.new,
 );
 
-// ── 学期开始日期（当前/默认学期）────────────────────────────────
 class SemesterStartNotifier extends AsyncNotifier<DateTime?> {
   @override
   Future<DateTime?> build() async {
@@ -184,9 +314,7 @@ final semesterStartProvider =
       SemesterStartNotifier.new,
     );
 
-// ── 学期开始日期（按学期 key 存取，用于非当前学期）───────────────
-class SemesterStartForKeyNotifier
-    extends FamilyAsyncNotifier<DateTime?, String> {
+class SemesterStartForKeyNotifier extends FamilyAsyncNotifier<DateTime?, String> {
   @override
   Future<DateTime?> build(String arg) async {
     return ref.read(semesterServiceProvider).loadForKey(arg);
@@ -199,24 +327,16 @@ class SemesterStartForKeyNotifier
 }
 
 final semesterStartForKeyProvider =
-    AsyncNotifierProvider.family<
-      SemesterStartForKeyNotifier,
-      DateTime?,
-      String
-    >(SemesterStartForKeyNotifier.new);
+    AsyncNotifierProvider.family<SemesterStartForKeyNotifier, DateTime?, String>(
+      SemesterStartForKeyNotifier.new,
+    );
 
-// ── 课程表页当前选中的学期（null = 当前学期，持久化到 SharedPreferences）──
-// 使用 AsyncNotifierProvider：build() 直接 await 读取持久化值，
-// 彻底消除旧版 Future.microtask 写法在 Provider 重建时引发的 race condition
-// （旧写法：build() 同步返回 null → activeSemesterStartProvider 瞬间看到 null
-//  → semesterStartProvider 从未被写入 → 展示"尚未设置开学日期"页面）。
 class SelectedSemesterNotifier extends AsyncNotifier<String?> {
   @override
   Future<String?> build() async {
     return ref.read(semesterServiceProvider).loadSelectedSemester();
   }
 
-  /// 更新选中学期并持久化
   Future<void> set(String? value) async {
     state = AsyncData(value);
     await ref.read(semesterServiceProvider).saveSelectedSemester(value);
@@ -228,10 +348,7 @@ final selectedScheduleSemesterProvider =
       SelectedSemesterNotifier.new,
     );
 
-// ── 生效的学期开始日期 ────────────────────────────────────────
 final activeSemesterStartProvider = Provider<AsyncValue<DateTime?>>((ref) {
-  // selectedScheduleSemesterProvider 现在是 AsyncNotifier，正在加载时返回 loading，
-  // 避免 UI 在初始化瞬间因 selected=null 而误判为"未设置开学日期"。
   final selectedAsync = ref.watch(selectedScheduleSemesterProvider);
   if (selectedAsync.isLoading) return const AsyncValue.loading();
   if (selectedAsync.hasError) {
@@ -243,7 +360,6 @@ final activeSemesterStartProvider = Provider<AsyncValue<DateTime?>>((ref) {
   return ref.watch(semesterStartForKeyProvider(selected));
 });
 
-// ── 已选周（独立状态，默认第 1 周）───────────────────────────────
 class SelectedWeekNotifier extends Notifier<int> {
   @override
   int build() => 1;
@@ -255,29 +371,25 @@ final selectedWeekProvider = NotifierProvider<SelectedWeekNotifier, int>(
   SelectedWeekNotifier.new,
 );
 
-// ── 课程表返回类型 ────────────────────────────────────────────
 typedef ScheduleResult = ({List<Course> courses, String remark});
 
-// ── 课程表（按学期 family，null = 当前学期）──────────────────────
-final scheduleProvider = FutureProvider.family<ScheduleResult, String?>((
-  ref,
-  semester,
-) async {
-  ref.watch(sessionUpdateProvider); // 监听全局会话更新，触发时刷新课程表数据
-  final creds = ref.watch(credentialsProvider);
-  if (creds == null) throw Exception('未登录');
+final scheduleProvider = FutureProvider.family<ScheduleResult, String?>(
+  (ref, semester) async {
+    ref.watch(sessionUpdateProvider);
+    final creds = ref.watch(credentialsProvider);
+    if (creds == null) throw Exception('未登录');
 
-  final backend = ref.watch(campusBackendProvider);
-  return backend.getSchedule(
-    creds.username,
-    creds.password,
-    semester: semester,
-  );
-});
+    final backend = ref.watch(campusBackendProvider);
+    return backend.getSchedule(
+      creds.username,
+      creds.password,
+      semester: semester,
+    );
+  },
+);
 
-// ── 电费（时间感知轮询）──────────────────────────────────────────
 final electricityProvider = FutureProvider<String>((ref) async {
-  ref.watch(sessionUpdateProvider); // 监听全局会话更新，触发时刷新电费数据
+  ref.watch(sessionUpdateProvider);
   final interval = pollingInterval();
   final timer = Timer(interval, () => ref.invalidateSelf());
   ref.onDispose(timer.cancel);
@@ -286,8 +398,6 @@ final electricityProvider = FutureProvider<String>((ref) async {
   if (creds == null) throw Exception('未登录');
 
   final backend = ref.watch(campusBackendProvider);
-
-  // 监听宿舍状态
   final dormAsync = ref.watch(dormRoomProvider);
   final dorm = await dormAsync.when(
     loading: () => ref.read(dormRoomProvider.future),
@@ -297,22 +407,20 @@ final electricityProvider = FutureProvider<String>((ref) async {
 
   if (dorm == null) throw NoDormSetException();
 
-  debugPrint('[FG] 查询电费，宿舍=${dorm.displayName}');
+  debugPrint('[FG] 查询电费: ${dorm.displayName}');
   final balance = await backend.getElecBalance(
     creds.username,
     creds.password,
     dormParams: dorm.toQueryParams(),
   );
-  debugPrint('[FG] 电费余额获取成功：$balance');
+  debugPrint('[FG] 电费余额获取成功: $balance');
   NotificationService.checkAndNotify(balance);
   return balance;
 });
 
-// ── 校园卡余额（时间感知轮询）────────────────────────────────────
 final campusCardBalanceProvider = FutureProvider<String>((ref) async {
-  ref.watch(sessionUpdateProvider); // 监听全局会话更新，触发时刷新余额数据
+  ref.watch(sessionUpdateProvider);
   final interval = pollingInterval();
-  debugPrint('[FG] 校园卡 Timer 启动，${interval.inMinutes}min 后自动刷新');
   final timer = Timer(interval, () => ref.invalidateSelf());
   ref.onDispose(timer.cancel);
 
@@ -324,12 +432,9 @@ final campusCardBalanceProvider = FutureProvider<String>((ref) async {
     creds.username,
     creds.password,
   );
-
-  debugPrint('[FG] 校园卡余额获取成功：$balance');
   return balance;
 });
 
-// ── 消费二维码 ────────────────────────────────────────────────
 final payCodeProvider = FutureProvider.autoDispose<String>((ref) async {
   ref.watch(sessionUpdateProvider);
   final creds = ref.watch(credentialsProvider);
@@ -339,38 +444,40 @@ final payCodeProvider = FutureProvider.autoDispose<String>((ref) async {
   return backend.getPayCodeToken(creds.username);
 });
 
-// ── 成绩 ─────────────────────────────────────────────────────
 typedef GradeResult = ({Map<String, String> summary, List<Grade> grades});
 
-final gradesProvider = FutureProvider.autoDispose.family<GradeResult, String>((
-  ref,
-  semester,
-) async {
-  final creds = ref.watch(credentialsProvider);
-  if (creds == null) throw Exception('未登录');
+final gradesProvider = FutureProvider.autoDispose.family<GradeResult, String>(
+  (ref, semester) async {
+    final creds = ref.watch(credentialsProvider);
+    if (creds == null) throw Exception('未登录');
 
-  final backend = ref.watch(campusBackendProvider);
-  return backend.getGrades(creds.username, creds.password, semester: semester);
-});
+    final backend = ref.watch(campusBackendProvider);
+    return backend.getGrades(
+      creds.username,
+      creds.password,
+      semester: semester,
+    );
+  },
+);
 
-// ── 考试安排 ─────────────────────────────────────────────────
-final examsProvider = FutureProvider.autoDispose.family<List<Exam>, String?>((
-  ref,
-  semester,
-) async {
-  final creds = ref.watch(credentialsProvider);
-  if (creds == null) throw Exception('未登录');
+final examsProvider = FutureProvider.autoDispose.family<List<Exam>, String?>(
+  (ref, semester) async {
+    final creds = ref.watch(credentialsProvider);
+    if (creds == null) throw Exception('未登录');
 
-  final backend = ref.watch(campusBackendProvider);
-  return backend.getExams(creds.username, creds.password, semester: semester);
-});
+    final backend = ref.watch(campusBackendProvider);
+    return backend.getExams(
+      creds.username,
+      creds.password,
+      semester: semester,
+    );
+  },
+);
 
-// ── 全局会话更新触发器 ──────────────────────────────
 class SessionUpdateNotifier extends Notifier<int> {
   @override
   int build() => 0;
 
-  // 每次 WebView 登录成功或注入新 Cookie 后调用
   void triggerRefresh() => state++;
 }
 

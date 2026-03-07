@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:data/src/api_service.dart';
+import 'package:data/data.dart';
 import '../utils/providers.dart';
 
 class CampusCardPage extends ConsumerWidget {
@@ -72,7 +72,7 @@ class _BalanceCard extends ConsumerWidget {
                       if (creds != null) {
                         // 先强制刷新后端缓存
                         await ref
-                            .read(apiServiceProvider)
+                            .read(campusBackendProvider)
                             .getCampusCardBalance(
                               creds.username,
                               creds.password,
@@ -280,7 +280,7 @@ class _RechargeCardState extends ConsumerState<_RechargeCard>
                   final creds = ref.read(credentialsProvider);
                   if (creds != null) {
                     await ref
-                        .read(apiServiceProvider)
+                        .read(campusBackendProvider)
                         .getCampusCardBalance(
                           creds.username,
                           creds.password,
@@ -330,7 +330,7 @@ class _RechargeCardState extends ConsumerState<_RechargeCard>
       final creds = ref.read(credentialsProvider);
       if (creds == null) throw Exception('未登录');
       final responseData = await ref
-          .read(apiServiceProvider)
+          .read(campusBackendProvider)
           .getCampusCardAlipayUrl(creds.username, amount);
 
       if (responseData.startsWith('alipays://') ||

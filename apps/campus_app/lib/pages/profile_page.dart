@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -106,7 +105,7 @@ class ProfilePage extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
+                color: Colors.blue.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Text(
@@ -127,7 +126,7 @@ class ProfilePage extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -170,7 +169,7 @@ class ProfilePage extends ConsumerWidget {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: color),
@@ -252,7 +251,7 @@ class _DormSettingsCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -263,7 +262,7 @@ class _DormSettingsCard extends ConsumerWidget {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.amber.withOpacity(0.1),
+            color: Colors.amber.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: const Icon(Icons.home_outlined, color: Colors.amber),
@@ -277,7 +276,7 @@ class _DormSettingsCard extends ConsumerWidget {
             '加载中...',
             style: TextStyle(fontSize: 12, color: Colors.grey),
           ),
-          error: (_, __) => const Text(
+          error: (_, _) => const Text(
             '加载失败',
             style: TextStyle(fontSize: 12, color: Colors.red),
           ),
@@ -447,7 +446,7 @@ class _DormPickerSheetState extends State<_DormPickerSheet> {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: Colors.amber.withOpacity(0.1),
+                      color: Colors.amber.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(
@@ -502,7 +501,7 @@ class _DormPickerSheetState extends State<_DormPickerSheet> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '已选：${_selectedGarden.label}${_selectedNumber}舍',
+                    '已选：${_selectedGarden.label}$_selectedNumber舍',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.amber.shade800,
@@ -528,7 +527,7 @@ class _DormPickerSheetState extends State<_DormPickerSheet> {
                             height: 44,
                             margin: const EdgeInsets.symmetric(horizontal: 8),
                             decoration: BoxDecoration(
-                              color: Colors.amber.withOpacity(0.1),
+                              color: Colors.amber.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
@@ -582,7 +581,7 @@ class _DormPickerSheetState extends State<_DormPickerSheet> {
                             height: 44,
                             margin: const EdgeInsets.symmetric(horizontal: 8),
                             decoration: BoxDecoration(
-                              color: Colors.amber.withOpacity(0.1),
+                              color: Colors.amber.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
@@ -712,7 +711,7 @@ class _SecurityNoticeCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -723,7 +722,7 @@ class _SecurityNoticeCard extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.green.withOpacity(0.1),
+            color: Colors.green.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: const Icon(Icons.verified_user_outlined, color: Colors.green),
@@ -840,7 +839,7 @@ class _NoticeSection extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: iconColor.withOpacity(0.1),
+            color: iconColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, size: 18, color: iconColor),
@@ -891,8 +890,13 @@ class _BackgroundSettingsCardState
   bool? _isIgnoring;
   bool? _autostartAppOps;
   bool _autostartOpened = false;
+  bool _lockBackgroundDone = false;
+  bool _backgroundSettingsExpanded = false;
   bool? _courseReminderEnabled;
   int? _courseReminderMinutes;
+
+  static const _autostartOpenedKey = 'autostart_page_opened';
+  static const _lockBackgroundDoneKey = 'lock_background_done';
 
   static const List<int> _reminderMinuteOptions = [
     15,
@@ -912,7 +916,7 @@ class _BackgroundSettingsCardState
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _refreshStatus();
-    _loadAutostartFlag();
+    _loadLocalFlags();
   }
 
   @override
@@ -923,7 +927,10 @@ class _BackgroundSettingsCardState
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _refreshStatus();
+    if (state == AppLifecycleState.resumed) {
+      _refreshStatus();
+      _loadLocalFlags();
+    }
   }
 
   Future<void> _refreshStatus() async {
@@ -943,22 +950,43 @@ class _BackgroundSettingsCardState
     }
   }
 
-  Future<void> _loadAutostartFlag() async {
+  Future<void> _loadLocalFlags() async {
     final prefs = await SharedPreferences.getInstance();
-    if (mounted)
-      setState(
-        () =>
-            _autostartOpened = prefs.getBool('autostart_page_opened') ?? false,
-      );
+    final autostartOpened = prefs.getBool(_autostartOpenedKey) ?? false;
+    final lockBackgroundDone = prefs.getBool(_lockBackgroundDoneKey) ?? false;
+    if (mounted) {
+      if (_autostartOpened == autostartOpened &&
+          _lockBackgroundDone == lockBackgroundDone) {
+        return;
+      }
+      setState(() {
+        _autostartOpened = autostartOpened;
+        _lockBackgroundDone = lockBackgroundDone;
+      });
+    }
   }
 
   Future<void> _markAutostartOpened() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('autostart_page_opened', true);
-    if (mounted) setState(() => _autostartOpened = true);
+    await prefs.setBool(_autostartOpenedKey, true);
+    if (mounted) {
+      setState(() => _autostartOpened = true);
+    }
+  }
+
+  Future<void> _markLockBackgroundDone() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_lockBackgroundDoneKey, true);
+    if (mounted) {
+      setState(() => _lockBackgroundDone = true);
+    }
   }
 
   bool get _autostartDone => _autostartAppOps == true || _autostartOpened;
+  bool get _backgroundSetupCompleted =>
+      _isIgnoring == true && _autostartDone && _lockBackgroundDone;
+  bool get _showCompactBackgroundCard =>
+      _backgroundSetupCompleted && !_backgroundSettingsExpanded;
 
   String get _autostartSubtitle {
     if (_autostartAppOps == true) return '✅ 已开启，App 可开机自启';
@@ -1042,7 +1070,7 @@ class _BackgroundSettingsCardState
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1106,7 +1134,7 @@ class _BackgroundSettingsCardState
                   )
                 : Switch(
                     value: _courseReminderEnabled!,
-                    activeColor: Colors.deepOrange,
+                    activeThumbColor: Colors.deepOrange,
                     onChanged: (val) async {
                       await NotificationService.setCourseReminderEnabled(val);
                       setState(() => _courseReminderEnabled = val);
@@ -1114,11 +1142,10 @@ class _BackgroundSettingsCardState
                       if (!val) {
                         await NotificationService.cancelAllClassReminders();
                         debugPrint('[Profile] 课前通知已关闭，所有调度已清空');
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('课前提醒已关闭')),
-                          );
-                        }
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('课前提醒已关闭')),
+                        );
                       } else {
                         final minutes =
                             _courseReminderMinutes ??
@@ -1131,88 +1158,153 @@ class _BackgroundSettingsCardState
                   ),
           ),
           const Divider(height: 1, indent: 56, color: Color(0xFFF0F0F0)),
-          _SettingTile(
-            icon: Icons.battery_saver_outlined,
-            iconColor: _isIgnoring == true ? Colors.green : Colors.orange,
-            title: '关闭电池优化',
-            subtitle: _isIgnoring == null
-                ? '检测中...'
-                : _isIgnoring!
-                ? '✅ 已设置，后台任务可正常运行'
-                : '⚠️ 未设置，后台通知可能无法推送',
-            trailing: _isIgnoring == true
-                ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
-                : FilledButton.tonal(
-                    onPressed: () async {
-                      await BatteryOptimizationService.requestIgnoreBatteryOptimizations();
-                      await Future.delayed(const Duration(seconds: 1));
-                      _refreshStatus();
-                    },
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
+          if (_showCompactBackgroundCard)
+            _buildCompactBackgroundCard()
+          else ...[
+            if (_backgroundSetupCompleted)
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 2,
+                ),
+                leading: const Icon(
+                  Icons.verified_outlined,
+                  color: Colors.green,
+                ),
+                title: const Text(
+                  '后台保活设置已完成',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+                subtitle: const Text(
+                  '电池优化、自启动、锁后台均已完成',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                trailing: TextButton(
+                  onPressed: () =>
+                      setState(() => _backgroundSettingsExpanded = false),
+                  child: const Text('收起'),
+                ),
+              ),
+            if (_backgroundSetupCompleted)
+              const Divider(height: 1, indent: 56, color: Color(0xFFF0F0F0)),
+            _SettingTile(
+              icon: Icons.battery_saver_outlined,
+              iconColor: _isIgnoring == true ? Colors.green : Colors.orange,
+              title: '关闭电池优化',
+              subtitle: _isIgnoring == null
+                  ? '检测中...'
+                  : _isIgnoring!
+                  ? '✅ 已设置，后台任务可正常运行'
+                  : '⚠️ 未设置，后台通知可能无法推送',
+              trailing: _isIgnoring == true
+                  ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
+                  : FilledButton.tonal(
+                      onPressed: () async {
+                        await BatteryOptimizationService.requestIgnoreBatteryOptimizations();
+                        await Future.delayed(const Duration(seconds: 1));
+                        _refreshStatus();
+                      },
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: const Text('去设置', style: TextStyle(fontSize: 13)),
-                  ),
-          ),
-          const Divider(height: 1, indent: 56, color: Color(0xFFF0F0F0)),
-          _SettingTile(
-            icon: Icons.autorenew_outlined,
-            iconColor: _autostartDone ? Colors.blue : Colors.blueGrey,
-            title: '开启自启动',
-            subtitle: _autostartSubtitle,
-            trailing: _autostartDone
-                ? Icon(
-                    _autostartAppOps == true
-                        ? Icons.check_circle
-                        : Icons.check_circle_outline,
-                    color: _autostartAppOps == true
-                        ? Colors.green
-                        : Colors.orange,
-                    size: 20,
-                  )
-                : OutlinedButton(
-                    onPressed: () async {
-                      await _markAutostartOpened();
-                      await BatteryOptimizationService.openMiuiAutostart();
-                    },
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
+                      child: const Text(
+                        '去设置',
+                        style: TextStyle(fontSize: 13),
                       ),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    child: const Text('去设置', style: TextStyle(fontSize: 13)),
-                  ),
-          ),
-          const Divider(height: 1, indent: 56, color: Color(0xFFF0F0F0)),
-          _SettingTile(
-            icon: Icons.lock_outline,
-            iconColor: Colors.purple,
-            title: '锁定后台',
-            subtitle: '在最近任务界面长按本应用 → 锁定，防止被清理',
-            trailing: const Icon(
-              Icons.info_outline,
-              color: Colors.grey,
-              size: 20,
             ),
-            onTap: () => _showLockGuideDialog(context),
-          ),
+            const Divider(height: 1, indent: 56, color: Color(0xFFF0F0F0)),
+            _SettingTile(
+              icon: Icons.autorenew_outlined,
+              iconColor: _autostartDone ? Colors.blue : Colors.blueGrey,
+              title: '开启自启动',
+              subtitle: _autostartSubtitle,
+              trailing: _autostartDone
+                  ? Icon(
+                      _autostartAppOps == true
+                          ? Icons.check_circle
+                          : Icons.check_circle_outline,
+                      color: _autostartAppOps == true
+                          ? Colors.green
+                          : Colors.orange,
+                      size: 20,
+                    )
+                  : OutlinedButton(
+                      onPressed: () async {
+                        await _markAutostartOpened();
+                        await BatteryOptimizationService.openMiuiAutostart();
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text(
+                        '去设置',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                    ),
+            ),
+            const Divider(height: 1, indent: 56, color: Color(0xFFF0F0F0)),
+            _SettingTile(
+              icon: Icons.lock_outline,
+              iconColor: _lockBackgroundDone ? Colors.green : Colors.purple,
+              title: '锁定后台',
+              subtitle: _lockBackgroundDone
+                  ? '✅ 已完成，后台任务更稳定'
+                  : '在最近任务界面长按本应用 → 锁定，防止被清理',
+              trailing: Icon(
+                _lockBackgroundDone ? Icons.check_circle : Icons.info_outline,
+                color: _lockBackgroundDone ? Colors.green : Colors.grey,
+                size: 20,
+              ),
+              onTap: () => _showLockGuideDialog(context),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  void _showLockGuideDialog(BuildContext context) {
-    showDialog(
+  Widget _buildCompactBackgroundCard() {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.green.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Icon(Icons.verified_outlined, color: Colors.green),
+      ),
+      title: const Text(
+        '后台保活设置已完成',
+        style: TextStyle(fontSize: 15, color: Colors.black87),
+      ),
+      subtitle: const Text(
+        '电池优化、自启动、锁后台均已完成',
+        style: TextStyle(fontSize: 12, color: Colors.grey),
+      ),
+      trailing: TextButton(
+        onPressed: () => setState(() => _backgroundSettingsExpanded = true),
+        child: const Text('展开'),
+      ),
+      onTap: () => setState(() => _backgroundSettingsExpanded = true),
+    );
+  }
+
+  Future<void> _showLockGuideDialog(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
@@ -1242,12 +1334,24 @@ class _BackgroundSettingsCardState
           ],
         ),
         actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('稍后'),
+          ),
           FilledButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('知道了'),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('我已锁定'),
           ),
         ],
       ),
+    );
+
+    if (confirmed != true) return;
+
+    await _markLockBackgroundDone();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('已标记为完成锁定后台')),
     );
   }
 }
@@ -1278,7 +1382,7 @@ class _SettingTile extends StatelessWidget {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: iconColor.withOpacity(0.1),
+          color: iconColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: iconColor),
@@ -1314,7 +1418,7 @@ class _GuideStep extends StatelessWidget {
           height: 22,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: Colors.purple.withOpacity(0.15),
+            color: Colors.purple.withValues(alpha: 0.15),
             shape: BoxShape.circle,
           ),
           child: Text(
@@ -1359,7 +1463,7 @@ class _ElectricityCardWidget extends ConsumerWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF243B55).withOpacity(0.4),
+              color: const Color(0xFF243B55).withValues(alpha: 0.4),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),
@@ -1376,7 +1480,7 @@ class _ElectricityCardWidget extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(
@@ -1518,7 +1622,7 @@ class _ElectricityCardWidget extends ConsumerWidget {
                                             (isLowBalance
                                                     ? Colors.redAccent
                                                     : Colors.greenAccent)
-                                                .withOpacity(0.6),
+                                                .withValues(alpha: 0.6),
                                         blurRadius: 6,
                                         spreadRadius: 1,
                                       ),
@@ -1547,7 +1651,7 @@ class _ElectricityCardWidget extends ConsumerWidget {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.15),
+                                color: Colors.white.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: const Row(

@@ -52,7 +52,11 @@ class MockCampusBackend implements CampusBackend {
       '0.00';
 
   @override
-  Future<String> rechargeElec(String username, double amount) async =>
+  Future<String> rechargeElec(
+    String username,
+    double amount, {
+    Map<String, String>? dormParams,
+  }) async =>
       'Mock: recharge disabled';
 
   @override

@@ -180,14 +180,16 @@ class _MainShellState extends ConsumerState<_MainShell>
       return;
     }
 
-    if (mounted) {
-      await prefs.setBool('battery_guide_shown', true);
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const _FirstRunBatteryGuideDialog(),
-      );
-    }
+    if (!mounted) return;
+
+    await prefs.setBool('battery_guide_shown', true);
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const _FirstRunBatteryGuideDialog(),
+    );
   }
 
   static const _pages = [SchedulePage(), CampusCardPage(), ProfilePage()];
@@ -264,12 +266,15 @@ class _FirstRunBatteryGuideDialogState
   bool _step2Opened = false;
   bool _step3Confirmed = false;
 
+  static const _autostartOpenedKey = 'autostart_page_opened';
+  static const _lockBackgroundDoneKey = 'lock_background_done';
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _refreshStatus();
-    _loadStep2Flag();
+    _loadLocalFlags();
   }
 
   @override
@@ -280,7 +285,10 @@ class _FirstRunBatteryGuideDialogState
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _refreshStatus();
+    if (state == AppLifecycleState.resumed) {
+      _refreshStatus();
+      _loadLocalFlags();
+    }
   }
 
   Future<void> _refreshStatus() async {
@@ -294,18 +302,27 @@ class _FirstRunBatteryGuideDialogState
     });
   }
 
-  Future<void> _loadStep2Flag() async {
+  Future<void> _loadLocalFlags() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
     setState(() {
-      _step2Opened = prefs.getBool('autostart_page_opened') ?? false;
+      _step2Opened = prefs.getBool(_autostartOpenedKey) ?? false;
+      _step3Confirmed = prefs.getBool(_lockBackgroundDoneKey) ?? false;
     });
   }
 
   Future<void> _markStep2Opened() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('autostart_page_opened', true);
+    await prefs.setBool(_autostartOpenedKey, true);
     if (mounted) setState(() => _step2Opened = true);
+  }
+
+  Future<void> _markStep3Done() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_lockBackgroundDoneKey, true);
+    if (mounted) {
+      setState(() => _step3Confirmed = true);
+    }
   }
 
   bool get _step2Done => _step2AppOps == true || _step2Opened;
@@ -423,7 +440,7 @@ class _FirstRunBatteryGuideDialogState
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      onPressed: () => setState(() => _step3Confirmed = true),
+                      onPressed: _markStep3Done,
                       child: const Text('已完成', style: TextStyle(fontSize: 12)),
                     ),
             ),

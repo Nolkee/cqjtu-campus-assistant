@@ -37,7 +37,11 @@ abstract class CampusBackend {
     bool forceRefresh = false,
   });
 
-  Future<String> rechargeElec(String username, double amount);
+  Future<String> rechargeElec(
+    String username,
+    double amount, {
+    Map<String, String>? dormParams,
+  });
 
   Future<String> getPayCodeToken(String username);
 

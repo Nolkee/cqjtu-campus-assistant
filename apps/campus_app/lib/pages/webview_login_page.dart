@@ -25,6 +25,7 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
   late final WebViewController _controller;
   bool _isHandled = false;
   bool _isLoading = true;
+  String? _latestTicket;
 
   @override
   void initState() {
@@ -37,9 +38,11 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (url) {
+            _captureTicket(url);
             if (mounted) setState(() => _isLoading = true);
           },
           onPageFinished: (url) async {
+            _captureTicket(url);
             if (mounted) setState(() => _isLoading = false);
 
             // 1. 【新增】：如果停留在 CAS 登录页，自动注入 JS 填充账号密码！
@@ -75,6 +78,13 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
     _clearCookiesAndLoad();
   }
 
+  void _captureTicket(String url) {
+    final ticket = Uri.tryParse(url)?.queryParameters['ticket'];
+    if (ticket != null && ticket.isNotEmpty) {
+      _latestTicket = ticket;
+    }
+  }
+
   Future<void> _clearCookiesAndLoad() async {
     try {
       // 不仅清空 Cookie，还要清空 WebView 的本地缓存和 LocalStorage，做到 100% 干净
@@ -106,7 +116,11 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
       if (mounted) {
         Navigator.of(
           context,
-        ).pop({'casCookies': casCookies, 'jwgCookies': jwgCookies ?? ''});
+        ).pop({
+          'ticket': _latestTicket ?? '',
+          'casCookies': casCookies,
+          'jwgCookies': jwgCookies ?? '',
+        });
       }
     } catch (e) {
       _fail('Cookie 提取异常: $e');

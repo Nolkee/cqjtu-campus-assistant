@@ -2,3 +2,8 @@
 packages:
   - apps/**
   - packages/**
+
+scripts:
+  analyze:
+    description: Run static analysis for all workspace packages.
+    run: melos exec --fail-fast -- "dart analyze ."
