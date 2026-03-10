@@ -1,7 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-final sessionServiceProvider = Provider<SessionService>((ref) => SessionService());
+final sessionServiceProvider =
+    Provider<SessionService>((ref) => SessionService());
 
 class SessionService {
   static const _storage = FlutterSecureStorage(
@@ -12,6 +13,7 @@ class SessionService {
   static const _ticketPrefix = 'login_ticket_';
   static const _casCookiesPrefix = 'cas_cookies_';
   static const _jwgCookiesPrefix = 'jwg_cookies_';
+  static const _zoveTokenPrefix = 'zove_token_';
 
   Future<String?> loadSessionId(String username) =>
       _storage.read(key: _sessionKey(username));
@@ -37,11 +39,18 @@ class SessionService {
   Future<void> saveJwgCookies(String username, String cookies) =>
       _storage.write(key: _jwgCookiesKey(username), value: cookies);
 
+  Future<String?> loadZoveToken(String username) =>
+      _storage.read(key: _zoveTokenKey(username));
+
+  Future<void> saveZoveToken(String username, String token) =>
+      _storage.write(key: _zoveTokenKey(username), value: token);
+
   Future<void> clearForUsername(String username) async {
     await _storage.delete(key: _sessionKey(username));
     await _storage.delete(key: _ticketKey(username));
     await _storage.delete(key: _casCookiesKey(username));
     await _storage.delete(key: _jwgCookiesKey(username));
+    await _storage.delete(key: _zoveTokenKey(username));
   }
 
   String sessionKeyFor(String username) => _sessionKey(username);
@@ -53,4 +62,6 @@ class SessionService {
   String _casCookiesKey(String username) => '$_casCookiesPrefix$username';
 
   String _jwgCookiesKey(String username) => '$_jwgCookiesPrefix$username';
+
+  String _zoveTokenKey(String username) => '$_zoveTokenPrefix$username';
 }

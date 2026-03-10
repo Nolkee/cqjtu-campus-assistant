@@ -12,6 +12,7 @@ import 'pages/login_page.dart';
 import 'pages/schedule_page.dart';
 import 'pages/campus_card_page.dart';
 import 'pages/profile_page.dart';
+import 'widgets/silent_zove_token_bootstrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -214,9 +215,6 @@ class _MainShellState extends ConsumerState<_MainShell>
 
   @override
   Widget build(BuildContext context) {
-    ref.watch(electricityProvider);
-    ref.watch(campusCardBalanceProvider);
-
     // ✅ 核心修复 3：在 build 中也监听真正选中的学期
     final selectedSemester = ref
         .watch(selectedScheduleSemesterProvider)
@@ -231,10 +229,15 @@ class _MainShellState extends ConsumerState<_MainShell>
     });
 
     return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(),
-        children: _pages,
+      body: Stack(
+        children: [
+          PageView(
+            controller: _pageController,
+            physics: const NeverScrollableScrollPhysics(),
+            children: _pages,
+          ),
+          const SilentZoveTokenBootstrapper(),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,

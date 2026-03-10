@@ -1,16 +1,21 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+enum WebViewLoginMode { jwgSession, zoveTokenOnly }
+
 class WebViewLoginPage extends StatefulWidget {
-  // 接收传进来的账号和密码
   final String username;
   final String password;
+  final WebViewLoginMode mode;
 
   const WebViewLoginPage({
     super.key,
     required this.username,
     required this.password,
+    this.mode = WebViewLoginMode.jwgSession,
   });
 
   @override
@@ -20,12 +25,18 @@ class WebViewLoginPage extends StatefulWidget {
 class _WebViewLoginPageState extends State<WebViewLoginPage> {
   static const _loginUrl =
       'https://ids.cqjtu.edu.cn/authserver/login?service=http%3A%2F%2Fjwgln.cqjtu.edu.cn%2Fjsxsd%2Fsso.jsp';
+  static const _studentIndexUrl =
+      'https://zhxg.cqjtu.edu.cn/mobile/stuhall/studentindex';
   static const _cookieChannel = MethodChannel('campus_app/cookie_manager');
 
   late final WebViewController _controller;
   bool _isHandled = false;
   bool _isLoading = true;
   String? _latestTicket;
+  String? _capturedPassword;
+  Completer<void>? _pageLoadedCompleter;
+  Completer<String>? _tokenCompleter;
+  String? _capturedZoveToken;
 
   @override
   void initState() {
@@ -35,6 +46,31 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       )
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..addJavaScriptChannel(
+        'LoginCredential',
+        onMessageReceived: (msg) {
+          final password = msg.message;
+          if (password.isEmpty) return;
+          _capturedPassword = password;
+          debugPrint(
+            '[WebViewLoginPage] captured password len=${password.length}',
+          );
+        },
+      )
+      ..addJavaScriptChannel(
+        'ZoveToken',
+        onMessageReceived: (msg) {
+          final token = msg.message.trim();
+          if (token.isEmpty) return;
+          _capturedZoveToken = token;
+          debugPrint(
+            '[WebViewLoginPage] captured zoveToken len=${token.length}',
+          );
+          if (!(_tokenCompleter?.isCompleted ?? true)) {
+            _tokenCompleter?.complete(token);
+          }
+        },
+      )
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (url) {
@@ -43,33 +79,34 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
           },
           onPageFinished: (url) async {
             _captureTicket(url);
+            if (!(_pageLoadedCompleter?.isCompleted ?? true)) {
+              _pageLoadedCompleter?.complete();
+            }
             if (mounted) setState(() => _isLoading = false);
 
-            // 1. 【新增】：如果停留在 CAS 登录页，自动注入 JS 填充账号密码！
-            // 这样你再也不用输入第二次密码，只需要手动滑一下验证码即可。
             if (url.contains('authserver/login')) {
-              await _controller.runJavaScript('''
-                setTimeout(function() {
-                    var u = document.getElementById('username');
-                    var p = document.getElementById('password');
-                    if(u && p) {
-                        u.value = '${widget.username}';
-                        p.value = '${widget.password}';
-                        // 触发前端框架的事件，让网页知道内容已改变
-                        u.dispatchEvent(new Event('input', { bubbles: true }));
-                        p.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
-                }, 300); // 稍微延迟确保 DOM 加载完毕
-              ''');
+              await _installCredentialBridge();
+              await _autofillCredentials();
             }
 
-            // 2. 判断是否登录成功（必须用 startsWith 确保是真的跳回了教务系统）
+            if (widget.mode == WebViewLoginMode.zoveTokenOnly) {
+              await _controller.runJavaScript(_hookScript);
+            }
+
             final isJwgln =
                 url.startsWith('http://jwgln.cqjtu.edu.cn') ||
                 url.startsWith('https://jwgln.cqjtu.edu.cn');
-            if (!_isHandled && isJwgln) {
+            final isZhxgMobile = url.startsWith(
+              'https://zhxg.cqjtu.edu.cn/mobile/',
+            );
+
+            final shouldHandle = widget.mode == WebViewLoginMode.jwgSession
+                ? isJwgln
+                : isZhxgMobile;
+
+            if (!_isHandled && shouldHandle) {
               _isHandled = true;
-              await _extractAndReturnAllCookies();
+              await _extractAndReturnArtifacts();
             }
           },
         ),
@@ -85,46 +122,165 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
     }
   }
 
+  Future<void> _autofillCredentials() async {
+    await _controller.runJavaScript('''
+      setTimeout(function () {
+        var u = document.getElementById('username');
+        var p = document.getElementById('password');
+        if (u && p) {
+          u.value = '${widget.username}';
+          p.value = '${widget.password}';
+          u.dispatchEvent(new Event('input', { bubbles: true }));
+          p.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      }, 300);
+    ''');
+  }
+
   Future<void> _clearCookiesAndLoad() async {
     try {
-      // 不仅清空 Cookie，还要清空 WebView 的本地缓存和 LocalStorage，做到 100% 干净
       await WebViewCookieManager().clearCookies();
       await _controller.clearCache();
       await _controller.clearLocalStorage();
     } catch (_) {}
 
     if (mounted) {
-      await _controller.loadRequest(Uri.parse(_loginUrl));
+      final url = widget.mode == WebViewLoginMode.jwgSession
+          ? _loginUrl
+          : _studentIndexUrl;
+      await _controller.loadRequest(Uri.parse(url));
     }
   }
 
-  Future<void> _extractAndReturnAllCookies() async {
+  Future<void> _extractAndReturnArtifacts() async {
     try {
       final casCookies = await _cookieChannel.invokeMethod<String>(
         'getCookies',
         {'url': 'https://ids.cqjtu.edu.cn/authserver/'},
       );
-      final jwgCookies = await _cookieChannel.invokeMethod<String>(
-        'getCookies',
-        {'url': 'https://jwgln.cqjtu.edu.cn/jsxsd/'},
-      );
+      String jwgCookies = '';
+      if (widget.mode == WebViewLoginMode.jwgSession) {
+        jwgCookies =
+            await _cookieChannel.invokeMethod<String>('getCookies', {
+              'url': 'https://jwgln.cqjtu.edu.cn/jsxsd/',
+            }) ??
+            '';
+      }
 
       if (casCookies == null || casCookies.isEmpty) {
-        _fail('未能获取到全局授权凭证，请重试');
+        _fail('未能获取到统一认证 Cookie，请重试');
         return;
       }
+
+      final zoveToken = widget.mode == WebViewLoginMode.zoveTokenOnly
+          ? await _captureZoveToken()
+          : '';
+      final ticket = widget.mode == WebViewLoginMode.jwgSession
+          ? (_latestTicket ?? '')
+          : '';
+
       if (mounted) {
-        Navigator.of(
-          context,
-        ).pop({
-          'ticket': _latestTicket ?? '',
+        debugPrint(
+          '[WebViewLoginPage] return result mode=${widget.mode} ticketLen=${ticket.length} casCookieLen=${casCookies.length} jwgCookieLen=${jwgCookies.length} zoveTokenLen=${zoveToken.length} passwordLen=${(_capturedPassword ?? widget.password).length}',
+        );
+        Navigator.of(context).pop({
+          'ticket': ticket,
           'casCookies': casCookies,
-          'jwgCookies': jwgCookies ?? '',
+          'jwgCookies': jwgCookies,
+          'zoveToken': zoveToken,
+          'password': _capturedPassword ?? widget.password,
         });
       }
     } catch (e) {
-      _fail('Cookie 提取异常: $e');
+      _fail('WebView 会话提取异常: $e');
     }
+  }
+
+  Future<String> _captureZoveToken() async {
+    try {
+      _capturedZoveToken = null;
+      _tokenCompleter = Completer<String>();
+      await _loadAndWait(_studentIndexUrl);
+      await _controller.runJavaScript(_hookScript);
+      await _loadAndWait(_studentIndexUrl);
+
+      final byChannel = await _waitTokenFromChannel(
+        timeout: const Duration(seconds: 8),
+      );
+      if (byChannel != null && byChannel.isNotEmpty) return byChannel;
+
+      return _capturedZoveToken ?? await _readZoveToken() ?? '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  Future<String?> _waitTokenFromChannel({required Duration timeout}) async {
+    final completer = _tokenCompleter;
+    if (completer == null) return null;
+    final token = await completer.future.timeout(timeout, onTimeout: () => '');
+    return token.isEmpty ? null : token;
+  }
+
+  Future<void> _loadAndWait(String url) async {
+    _pageLoadedCompleter = Completer<void>();
+    await _controller.loadRequest(Uri.parse(url));
+    await _pageLoadedCompleter!.future.timeout(
+      const Duration(seconds: 20),
+      onTimeout: () {},
+    );
+  }
+
+  Future<String?> _readZoveToken() async {
+    final jsResult = await _controller.runJavaScriptReturningResult('''
+      (function() {
+        try {
+          return localStorage.getItem("zoveToken") || window.__zoveToken || "";
+        } catch (e) {
+          return "";
+        }
+      })();
+    ''');
+    return _normalizeJsString(jsResult);
+  }
+
+  Future<void> _installCredentialBridge() async {
+    await _controller.runJavaScript('''
+      (function () {
+        if (window.__credential_bridge_installed__) return;
+        window.__credential_bridge_installed__ = true;
+
+        var pwdInput = document.getElementById('password');
+        var form = document.querySelector('form');
+
+        function reportPassword() {
+          try {
+            var v = pwdInput && pwdInput.value ? pwdInput.value : "";
+            if (v) LoginCredential.postMessage(v);
+          } catch (_) {}
+        }
+
+        if (pwdInput) {
+          pwdInput.addEventListener('input', reportPassword);
+          pwdInput.addEventListener('change', reportPassword);
+          reportPassword();
+        }
+        if (form) {
+          form.addEventListener('submit', reportPassword);
+        }
+      })();
+    ''');
+  }
+
+  String? _normalizeJsString(Object? value) {
+    if (value == null) return null;
+    var text = value.toString().trim();
+    if (text == 'null' || text == 'undefined') return null;
+    if (text.length >= 2 && text.startsWith('"') && text.endsWith('"')) {
+      text = text.substring(1, text.length - 1);
+    }
+    text = text.replaceAll(r'\"', '"').replaceAll(r'\n', '\n').trim();
+    return text.isEmpty ? null : text;
   }
 
   void _fail(String msg) {
@@ -153,3 +309,33 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
     );
   }
 }
+
+const String _hookScript = r'''
+(() => {
+  if (window.__zove_hooked__) return;
+  window.__zove_hooked__ = true;
+
+  function report(t) {
+    if (!t) return;
+    localStorage.setItem("zoveToken", t);
+    window.__zoveToken = t;
+    try { ZoveToken.postMessage(t); } catch (_) {}
+  }
+
+  const oldFetch = window.fetch;
+  const oldSetHeader = XMLHttpRequest.prototype.setRequestHeader;
+
+  window.fetch = function (input, init) {
+    try {
+      const req = input instanceof Request ? input : new Request(input, init);
+      report(req.headers.get("h-zove-token"));
+    } catch (_) {}
+    return oldFetch.apply(this, arguments);
+  };
+
+  XMLHttpRequest.prototype.setRequestHeader = function (k, v) {
+    if (String(k).toLowerCase() === "h-zove-token") report(v);
+    return oldSetHeader.apply(this, arguments);
+  };
+})();
+''';

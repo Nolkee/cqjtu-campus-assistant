@@ -26,10 +26,16 @@ void backgroundCallbackDispatcher() {
       );
       final username = await storage.read(key: 'username');
       final password = await storage.read(key: 'password');
-      if (username == null || password == null) {
+      if (username == null ||
+          username.trim().isEmpty ||
+          password == null ||
+          password.trim().isEmpty) {
         debugPrint('[BG] credentials not found, skip');
         return true;
       }
+      debugPrint(
+        '[BG] credentials loaded username=$username passwordLen=${password.length}',
+      );
 
       final now = DateTime.now();
       final isNight = now.hour >= 0 && now.hour < 6;
@@ -51,10 +57,8 @@ void backgroundCallbackDispatcher() {
         ),
       );
 
-      final androidPlugin = plugin
-          .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin
-          >();
+      final androidPlugin = plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
       await androidPlugin?.createNotificationChannel(
         const AndroidNotificationChannel(
           _elecChannelId,
@@ -178,11 +182,28 @@ Future<void> _checkElec(
     if (dormParams != null) ...dormParams,
   };
 
-  final res = await dio.get('/api/elec/balance', queryParameters: queryParams);
+  var res = await dio.get('/api/elec/balance', queryParameters: queryParams);
   if (_isSessionExpiredResponse(res.data)) {
     throw _BgSessionExpiredException();
   }
-  if (res.data['code'] != 200) return;
+  if (res.data['code'] != 200) {
+    debugPrint(
+      '[BG] elec first attempt failed code=${res.data['code']} msg=${res.data['msg']}, retry with forceRefresh',
+    );
+    res = await dio.get(
+      '/api/elec/balance',
+      queryParameters: {...queryParams, 'forceRefresh': true},
+    );
+    if (_isSessionExpiredResponse(res.data)) {
+      throw _BgSessionExpiredException();
+    }
+    if (res.data['code'] != 200) {
+      debugPrint(
+        '[BG] elec retry failed code=${res.data['code']} msg=${res.data['msg']}',
+      );
+      return;
+    }
+  }
 
   final balStr = res.data['data'] as String? ?? '';
   final bal = _parseBalance(balStr);
@@ -217,7 +238,7 @@ Future<void> _checkCard(
   String sessionId,
   double threshold,
 ) async {
-  final res = await dio.get('/api/elec/cardBalance', queryParameters: {
+  var res = await dio.get('/api/elec/cardBalance', queryParameters: {
     'username': username,
     'password': password,
     'sessionId': sessionId,
@@ -225,7 +246,26 @@ Future<void> _checkCard(
   if (_isSessionExpiredResponse(res.data)) {
     throw _BgSessionExpiredException();
   }
-  if (res.data['code'] != 200) return;
+  if (res.data['code'] != 200) {
+    debugPrint(
+      '[BG] card first attempt failed code=${res.data['code']} msg=${res.data['msg']}, retry with forceRefresh',
+    );
+    res = await dio.get('/api/elec/cardBalance', queryParameters: {
+      'username': username,
+      'password': password,
+      'sessionId': sessionId,
+      'forceRefresh': true,
+    });
+    if (_isSessionExpiredResponse(res.data)) {
+      throw _BgSessionExpiredException();
+    }
+    if (res.data['code'] != 200) {
+      debugPrint(
+        '[BG] card retry failed code=${res.data['code']} msg=${res.data['msg']}',
+      );
+      return;
+    }
+  }
 
   final balStr = res.data['data'] as String? ?? '';
   final bal = _parseBalance(balStr);

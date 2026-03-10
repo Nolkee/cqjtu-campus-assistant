@@ -53,6 +53,7 @@ class SessionManager {
     String? ticket,
     String? casCookies,
     String? jwgCookies,
+    String? zoveToken,
   }) async {
     if (ticket != null && ticket.isNotEmpty) {
       await _sessionService.saveTicket(username, ticket);
@@ -63,17 +64,26 @@ class SessionManager {
     if (jwgCookies != null && jwgCookies.isNotEmpty) {
       await _sessionService.saveJwgCookies(username, jwgCookies);
     }
+    if (zoveToken != null && zoveToken.isNotEmpty) {
+      await _sessionService.saveZoveToken(username, zoveToken);
+    }
   }
 
   Future<void> restoreLoginState(String username, String sessionId) async {
     final ticket = await _sessionService.loadTicket(username);
     if (ticket != null && ticket.isNotEmpty) {
+      debugPrint(
+        '[SessionManager] restoreLoginState use ticket username=$username',
+      );
       await _api.loginWithTicket(username, ticket, sessionId: sessionId);
       return;
     }
 
     final casCookies = await _sessionService.loadCasCookies(username);
     if (casCookies != null && casCookies.isNotEmpty) {
+      debugPrint(
+        '[SessionManager] restoreLoginState inject CAS cookies username=$username',
+      );
       await _api.injectCookies(
         username,
         _casDomain,
@@ -84,6 +94,9 @@ class SessionManager {
 
     final jwgCookies = await _sessionService.loadJwgCookies(username);
     if (jwgCookies != null && jwgCookies.isNotEmpty) {
+      debugPrint(
+        '[SessionManager] restoreLoginState inject JWG cookies username=$username',
+      );
       await _api.injectCookies(
         username,
         _jwgDomain,
@@ -104,12 +117,21 @@ class SessionManager {
     required Future<T> Function(String sessionId) request,
   }) async {
     var sessionId = await ensureSessionId(username);
+    debugPrint(
+      '[SessionManager] request start username=$username sessionId=$sessionId',
+    );
     try {
       return await request(sessionId);
     } catch (error) {
       if (!isSessionExpiredError(error)) rethrow;
+      debugPrint(
+        '[SessionManager] session expired username=$username oldSessionId=$sessionId, refreshing',
+      );
       sessionId = await refreshSessionId(username);
       await restoreLoginState(username, sessionId);
+      debugPrint(
+        '[SessionManager] retry request username=$username newSessionId=$sessionId',
+      );
       return request(sessionId);
     }
   }
@@ -121,14 +143,137 @@ final campusBackendProvider = Provider<CampusBackend>((ref) {
   }
   final api = ref.read(apiServiceProvider);
   final sessionManager = ref.read(sessionManagerProvider);
-  return _ApiCampusBackend(api, sessionManager);
+  final credentialService = ref.read(credentialServiceProvider);
+  return _ApiCampusBackend(api, sessionManager, credentialService);
 });
 
 class _ApiCampusBackend implements CampusBackend {
-  _ApiCampusBackend(this._api, this._sessionManager);
+  _ApiCampusBackend(this._api, this._sessionManager, this._credentialService);
 
   final ApiService _api;
   final SessionManager _sessionManager;
+  final CredentialService _credentialService;
+  final Map<String, Future<String>> _oneCardRehydrateTasks = {};
+  final Map<String, Future<String>> _oneCardRestoreTasks = {};
+
+  bool _isOneCardAuthFailure(Object error) {
+    if (error is! ApiException) return false;
+    if (error.code == 401) return true;
+    if (error.code != 500) return false;
+    final msg = error.message;
+    return msg.contains('授权失败') ||
+        msg.contains('登录状态') ||
+        msg.contains('校园卡') ||
+        msg.contains('电费') ||
+        msg.contains('获取失败') ||
+        msg.contains('登录失败');
+  }
+
+  Future<void> _tryRestoreLoginState(String username, String sessionId) async {
+    try {
+      await _sessionManager.restoreLoginState(username, sessionId);
+    } catch (error) {
+      debugPrint(
+        '[ApiCampusBackend] restoreLoginState ignored username=$username sessionId=$sessionId reason=$error',
+      );
+    }
+  }
+
+  Future<String> _ensureRehydratedOneCardSession(
+    String username,
+    String? password,
+  ) {
+    final existing = _oneCardRehydrateTasks[username];
+    if (existing != null) {
+      debugPrint(
+        '[ApiCampusBackend] join in-flight one-card rehydrate username=$username',
+      );
+      return existing;
+    }
+
+    late final Future<String> task;
+    task = _rehydrateOneCardSession(username, password).whenComplete(() {
+      if (identical(_oneCardRehydrateTasks[username], task)) {
+        _oneCardRehydrateTasks.remove(username);
+      }
+    });
+    _oneCardRehydrateTasks[username] = task;
+    return task;
+  }
+
+  Future<String> _ensureRestoredOneCardSession(
+    String username,
+    String sessionId,
+  ) {
+    final taskKey = '$username@$sessionId';
+    final existing = _oneCardRestoreTasks[taskKey];
+    if (existing != null) {
+      debugPrint(
+        '[ApiCampusBackend] join in-flight one-card restore username=$username sessionId=$sessionId',
+      );
+      return existing;
+    }
+
+    late final Future<String> task;
+    task =
+        (() async {
+          await _tryRestoreLoginState(username, sessionId);
+          return sessionId;
+        })().whenComplete(() {
+          if (identical(_oneCardRestoreTasks[taskKey], task)) {
+            _oneCardRestoreTasks.remove(taskKey);
+          }
+        });
+    _oneCardRestoreTasks[taskKey] = task;
+    return task;
+  }
+
+  Future<String> _rehydrateOneCardSession(
+    String username,
+    String? password,
+  ) async {
+    final sessionId = await _sessionManager.refreshSessionId(username);
+    var passwordToSeed = password;
+    if (passwordToSeed == null || passwordToSeed.trim().isEmpty) {
+      final creds = await _credentialService.load();
+      if (creds != null && creds.username == username) {
+        passwordToSeed = creds.password;
+      }
+    }
+    if (passwordToSeed == null || passwordToSeed.trim().isEmpty) {
+      await _tryRestoreLoginState(username, sessionId);
+      debugPrint(
+        '[ApiCampusBackend] password seed unavailable, restored login state only username=$username sessionId=$sessionId',
+      );
+      return sessionId;
+    }
+
+    try {
+      // Force a password-based login on the fresh session so backend can cache
+      // reusable credentials for one-card auto re-login.
+      await _api.getSchedule(
+        username,
+        passwordToSeed,
+        sessionId: sessionId,
+        forceRefresh: true,
+      );
+      debugPrint(
+        '[ApiCampusBackend] password seed succeeded username=$username sessionId=$sessionId',
+      );
+      return sessionId;
+    } on ApiException catch (error) {
+      if (error.code == 401) rethrow;
+      debugPrint(
+        '[ApiCampusBackend] password seed failed, falling back to restored login state username=$username sessionId=$sessionId reason=$error',
+      );
+    } catch (error) {
+      debugPrint(
+        '[ApiCampusBackend] password seed failed, falling back to restored login state username=$username sessionId=$sessionId reason=$error',
+      );
+    }
+    await _tryRestoreLoginState(username, sessionId);
+    return sessionId;
+  }
 
   @override
   Future<({List<Course> courses, String remark})> getSchedule(
@@ -136,17 +281,16 @@ class _ApiCampusBackend implements CampusBackend {
     String password, {
     String? semester,
     bool forceRefresh = false,
-  }) =>
-      _sessionManager.runWithSessionRetry(
-        username: username,
-        request: (sessionId) => _api.getSchedule(
-          username,
-          password,
-          sessionId: sessionId,
-          semester: semester,
-          forceRefresh: forceRefresh,
-        ),
-      );
+  }) => _sessionManager.runWithSessionRetry(
+    username: username,
+    request: (sessionId) => _api.getSchedule(
+      username,
+      password,
+      sessionId: sessionId,
+      semester: semester,
+      forceRefresh: forceRefresh,
+    ),
+  );
 
   @override
   Future<({Map<String, String> summary, List<Grade> grades})> getGrades(
@@ -154,17 +298,16 @@ class _ApiCampusBackend implements CampusBackend {
     String password, {
     String semester = '',
     bool forceRefresh = false,
-  }) =>
-      _sessionManager.runWithSessionRetry(
-        username: username,
-        request: (sessionId) => _api.getGrades(
-          username,
-          password,
-          sessionId: sessionId,
-          semester: semester,
-          forceRefresh: forceRefresh,
-        ),
-      );
+  }) => _sessionManager.runWithSessionRetry(
+    username: username,
+    request: (sessionId) => _api.getGrades(
+      username,
+      password,
+      sessionId: sessionId,
+      semester: semester,
+      forceRefresh: forceRefresh,
+    ),
+  );
 
   @override
   Future<List<Exam>> getExams(
@@ -172,17 +315,16 @@ class _ApiCampusBackend implements CampusBackend {
     String password, {
     String? semester,
     bool forceRefresh = false,
-  }) =>
-      _sessionManager.runWithSessionRetry(
-        username: username,
-        request: (sessionId) => _api.getExams(
-          username,
-          password,
-          sessionId: sessionId,
-          semester: semester,
-          forceRefresh: forceRefresh,
-        ),
-      );
+  }) => _sessionManager.runWithSessionRetry(
+    username: username,
+    request: (sessionId) => _api.getExams(
+      username,
+      password,
+      sessionId: sessionId,
+      semester: semester,
+      forceRefresh: forceRefresh,
+    ),
+  );
 
   @override
   Future<String> getElecBalance(
@@ -190,68 +332,186 @@ class _ApiCampusBackend implements CampusBackend {
     String password, {
     bool forceRefresh = false,
     Map<String, String>? dormParams,
-  }) =>
-      _sessionManager.runWithSessionRetry(
-        username: username,
-        request: (sessionId) => _api.getElecBalance(
-          username,
-          password,
-          sessionId: sessionId,
-          forceRefresh: forceRefresh,
-          dormParams: dormParams,
-        ),
+  }) async {
+    var sessionId = await _sessionManager.ensureSessionId(username);
+    try {
+      return await _api.getElecBalance(
+        username,
+        password,
+        sessionId: sessionId,
+        forceRefresh: forceRefresh,
+        dormParams: dormParams,
       );
+    } catch (error) {
+      final sessionExpired = _sessionManager.isSessionExpiredError(error);
+      final oneCardAuthFailure = _isOneCardAuthFailure(error);
+      if (!sessionExpired && !oneCardAuthFailure) {
+        rethrow;
+      }
+      if (sessionExpired) {
+        debugPrint(
+          '[ApiCampusBackend] getElecBalance retry after session refresh username=$username reason=$error',
+        );
+        sessionId = await _ensureRehydratedOneCardSession(username, password);
+      } else {
+        debugPrint(
+          '[ApiCampusBackend] getElecBalance retry after login state restore username=$username sessionId=$sessionId reason=$error',
+        );
+        sessionId = await _ensureRestoredOneCardSession(username, sessionId);
+      }
+      return _api.getElecBalance(
+        username,
+        password,
+        sessionId: sessionId,
+        forceRefresh: true,
+        dormParams: dormParams,
+      );
+    }
+  }
 
   @override
   Future<String> getCampusCardBalance(
     String username,
     String password, {
     bool forceRefresh = false,
-  }) =>
-      _sessionManager.runWithSessionRetry(
-        username: username,
-        request: (sessionId) => _api.getCampusCardBalance(
-          username,
-          password,
-          sessionId: sessionId,
-          forceRefresh: forceRefresh,
-        ),
+  }) async {
+    var sessionId = await _sessionManager.ensureSessionId(username);
+    try {
+      return await _api.getCampusCardBalance(
+        username,
+        password,
+        sessionId: sessionId,
+        forceRefresh: forceRefresh,
       );
+    } catch (error) {
+      final sessionExpired = _sessionManager.isSessionExpiredError(error);
+      final oneCardAuthFailure = _isOneCardAuthFailure(error);
+      if (!sessionExpired && !oneCardAuthFailure) {
+        rethrow;
+      }
+      if (sessionExpired) {
+        debugPrint(
+          '[ApiCampusBackend] getCampusCardBalance retry after session refresh username=$username reason=$error',
+        );
+        sessionId = await _ensureRehydratedOneCardSession(username, password);
+      } else {
+        debugPrint(
+          '[ApiCampusBackend] getCampusCardBalance retry after login state restore username=$username sessionId=$sessionId reason=$error',
+        );
+        sessionId = await _ensureRestoredOneCardSession(username, sessionId);
+      }
+      return _api.getCampusCardBalance(
+        username,
+        password,
+        sessionId: sessionId,
+        forceRefresh: true,
+      );
+    }
+  }
 
   @override
   Future<String> rechargeElec(
     String username,
     double amount, {
     Map<String, String>? dormParams,
-  }) =>
-      _sessionManager.runWithSessionRetry(
-        username: username,
-        request: (sessionId) => _api.rechargeElec(
-          username,
-          amount,
-          sessionId: sessionId,
-          dormParams: dormParams,
-        ),
+  }) async {
+    var sessionId = await _sessionManager.ensureSessionId(username);
+    try {
+      return await _api.rechargeElec(
+        username,
+        amount,
+        sessionId: sessionId,
+        dormParams: dormParams,
       );
+    } catch (error) {
+      final sessionExpired = _sessionManager.isSessionExpiredError(error);
+      final oneCardAuthFailure = _isOneCardAuthFailure(error);
+      if (!sessionExpired && !oneCardAuthFailure) {
+        rethrow;
+      }
+      if (sessionExpired) {
+        debugPrint(
+          '[ApiCampusBackend] rechargeElec retry after session refresh username=$username reason=$error',
+        );
+        sessionId = await _ensureRehydratedOneCardSession(username, null);
+      } else {
+        debugPrint(
+          '[ApiCampusBackend] rechargeElec retry after login state restore username=$username sessionId=$sessionId reason=$error',
+        );
+        sessionId = await _ensureRestoredOneCardSession(username, sessionId);
+      }
+      return _api.rechargeElec(
+        username,
+        amount,
+        sessionId: sessionId,
+        dormParams: dormParams,
+      );
+    }
+  }
 
   @override
-  Future<String> getPayCodeToken(String username) =>
-      _sessionManager.runWithSessionRetry(
-        username: username,
-        request: (sessionId) =>
-            _api.getPayCodeToken(username, sessionId: sessionId),
-      );
+  Future<String> getPayCodeToken(String username) async {
+    var sessionId = await _sessionManager.ensureSessionId(username);
+    try {
+      return await _api.getPayCodeToken(username, sessionId: sessionId);
+    } catch (error) {
+      final sessionExpired = _sessionManager.isSessionExpiredError(error);
+      final oneCardAuthFailure = _isOneCardAuthFailure(error);
+      if (!sessionExpired && !oneCardAuthFailure) {
+        rethrow;
+      }
+      if (sessionExpired) {
+        debugPrint(
+          '[ApiCampusBackend] getPayCodeToken retry after session refresh username=$username reason=$error',
+        );
+        sessionId = await _ensureRehydratedOneCardSession(username, null);
+      } else {
+        debugPrint(
+          '[ApiCampusBackend] getPayCodeToken retry after login state restore username=$username sessionId=$sessionId reason=$error',
+        );
+        sessionId = await _ensureRestoredOneCardSession(username, sessionId);
+      }
+      return _api.getPayCodeToken(username, sessionId: sessionId);
+    }
+  }
 
   @override
-  Future<String> getCampusCardAlipayUrl(String username, double amount) =>
-      _sessionManager.runWithSessionRetry(
-        username: username,
-        request: (sessionId) =>
-            _api.getCampusCardAlipayUrl(username, amount, sessionId: sessionId),
+  Future<String> getCampusCardAlipayUrl(String username, double amount) async {
+    var sessionId = await _sessionManager.ensureSessionId(username);
+    try {
+      return await _api.getCampusCardAlipayUrl(
+        username,
+        amount,
+        sessionId: sessionId,
       );
+    } catch (error) {
+      final sessionExpired = _sessionManager.isSessionExpiredError(error);
+      final oneCardAuthFailure = _isOneCardAuthFailure(error);
+      if (!sessionExpired && !oneCardAuthFailure) {
+        rethrow;
+      }
+      if (sessionExpired) {
+        debugPrint(
+          '[ApiCampusBackend] getCampusCardAlipayUrl retry after session refresh username=$username reason=$error',
+        );
+        sessionId = await _ensureRehydratedOneCardSession(username, null);
+      } else {
+        debugPrint(
+          '[ApiCampusBackend] getCampusCardAlipayUrl retry after login state restore username=$username sessionId=$sessionId reason=$error',
+        );
+        sessionId = await _ensureRestoredOneCardSession(username, sessionId);
+      }
+      return _api.getCampusCardAlipayUrl(
+        username,
+        amount,
+        sessionId: sessionId,
+      );
+    }
+  }
 }
 
-class CredentialsNotifier extends Notifier<({String username, String password})?> {
+class CredentialsNotifier
+    extends Notifier<({String username, String password})?> {
   @override
   ({String username, String password})? build() => null;
 
@@ -267,9 +527,19 @@ class CredentialsNotifier extends Notifier<({String username, String password})?
 }
 
 final credentialsProvider =
-    NotifierProvider<CredentialsNotifier, ({String username, String password})?>(
-      CredentialsNotifier.new,
+    NotifierProvider<
+      CredentialsNotifier,
+      ({String username, String password})?
+    >(CredentialsNotifier.new);
+
+void _ensureCredentialPassword(({String username, String password}) creds) {
+  if (creds.password.trim().isEmpty) {
+    debugPrint(
+      '[Providers] empty password detected for username=${creds.username}',
     );
+    throw Exception('Credential password is empty, please login again');
+  }
+}
 
 class NoDormSetException implements Exception {
   @override
@@ -314,7 +584,8 @@ final semesterStartProvider =
       SemesterStartNotifier.new,
     );
 
-class SemesterStartForKeyNotifier extends FamilyAsyncNotifier<DateTime?, String> {
+class SemesterStartForKeyNotifier
+    extends FamilyAsyncNotifier<DateTime?, String> {
   @override
   Future<DateTime?> build(String arg) async {
     return ref.read(semesterServiceProvider).loadForKey(arg);
@@ -327,9 +598,11 @@ class SemesterStartForKeyNotifier extends FamilyAsyncNotifier<DateTime?, String>
 }
 
 final semesterStartForKeyProvider =
-    AsyncNotifierProvider.family<SemesterStartForKeyNotifier, DateTime?, String>(
-      SemesterStartForKeyNotifier.new,
-    );
+    AsyncNotifierProvider.family<
+      SemesterStartForKeyNotifier,
+      DateTime?,
+      String
+    >(SemesterStartForKeyNotifier.new);
 
 class SelectedSemesterNotifier extends AsyncNotifier<String?> {
   @override
@@ -373,20 +646,22 @@ final selectedWeekProvider = NotifierProvider<SelectedWeekNotifier, int>(
 
 typedef ScheduleResult = ({List<Course> courses, String remark});
 
-final scheduleProvider = FutureProvider.family<ScheduleResult, String?>(
-  (ref, semester) async {
-    ref.watch(sessionUpdateProvider);
-    final creds = ref.watch(credentialsProvider);
-    if (creds == null) throw Exception('未登录');
+final scheduleProvider = FutureProvider.family<ScheduleResult, String?>((
+  ref,
+  semester,
+) async {
+  ref.watch(sessionUpdateProvider);
+  final creds = ref.watch(credentialsProvider);
+  if (creds == null) throw Exception('Not logged in');
+  _ensureCredentialPassword(creds);
 
-    final backend = ref.watch(campusBackendProvider);
-    return backend.getSchedule(
-      creds.username,
-      creds.password,
-      semester: semester,
-    );
-  },
-);
+  final backend = ref.watch(campusBackendProvider);
+  return backend.getSchedule(
+    creds.username,
+    creds.password,
+    semester: semester,
+  );
+});
 
 final electricityProvider = FutureProvider<String>((ref) async {
   ref.watch(sessionUpdateProvider);
@@ -395,7 +670,8 @@ final electricityProvider = FutureProvider<String>((ref) async {
   ref.onDispose(timer.cancel);
 
   final creds = ref.watch(credentialsProvider);
-  if (creds == null) throw Exception('未登录');
+  if (creds == null) throw Exception('Not logged in');
+  _ensureCredentialPassword(creds);
 
   final backend = ref.watch(campusBackendProvider);
   final dormAsync = ref.watch(dormRoomProvider);
@@ -408,6 +684,9 @@ final electricityProvider = FutureProvider<String>((ref) async {
   if (dorm == null) throw NoDormSetException();
 
   debugPrint('[FG] 查询电费: ${dorm.displayName}');
+  debugPrint(
+    '[FG] getElecBalance request username=${creds.username} passwordLen=${creds.password.length}',
+  );
   final balance = await backend.getElecBalance(
     creds.username,
     creds.password,
@@ -425,9 +704,13 @@ final campusCardBalanceProvider = FutureProvider<String>((ref) async {
   ref.onDispose(timer.cancel);
 
   final creds = ref.watch(credentialsProvider);
-  if (creds == null) throw Exception('未登录');
+  if (creds == null) throw Exception('Not logged in');
+  _ensureCredentialPassword(creds);
 
   final backend = ref.watch(campusBackendProvider);
+  debugPrint(
+    '[FG] getCampusCardBalance request username=${creds.username} passwordLen=${creds.password.length}',
+  );
   final balance = await backend.getCampusCardBalance(
     creds.username,
     creds.password,
@@ -438,41 +721,41 @@ final campusCardBalanceProvider = FutureProvider<String>((ref) async {
 final payCodeProvider = FutureProvider.autoDispose<String>((ref) async {
   ref.watch(sessionUpdateProvider);
   final creds = ref.watch(credentialsProvider);
-  if (creds == null) throw Exception('未登录');
+  if (creds == null) throw Exception('Not logged in');
+  _ensureCredentialPassword(creds);
 
   final backend = ref.watch(campusBackendProvider);
+  debugPrint(
+    '[FG] getPayCodeToken request username=${creds.username} passwordLen=${creds.password.length}',
+  );
   return backend.getPayCodeToken(creds.username);
 });
 
 typedef GradeResult = ({Map<String, String> summary, List<Grade> grades});
 
-final gradesProvider = FutureProvider.autoDispose.family<GradeResult, String>(
-  (ref, semester) async {
-    final creds = ref.watch(credentialsProvider);
-    if (creds == null) throw Exception('未登录');
+final gradesProvider = FutureProvider.autoDispose.family<GradeResult, String>((
+  ref,
+  semester,
+) async {
+  final creds = ref.watch(credentialsProvider);
+  if (creds == null) throw Exception('Not logged in');
+  _ensureCredentialPassword(creds);
 
-    final backend = ref.watch(campusBackendProvider);
-    return backend.getGrades(
-      creds.username,
-      creds.password,
-      semester: semester,
-    );
-  },
-);
+  final backend = ref.watch(campusBackendProvider);
+  return backend.getGrades(creds.username, creds.password, semester: semester);
+});
 
-final examsProvider = FutureProvider.autoDispose.family<List<Exam>, String?>(
-  (ref, semester) async {
-    final creds = ref.watch(credentialsProvider);
-    if (creds == null) throw Exception('未登录');
+final examsProvider = FutureProvider.autoDispose.family<List<Exam>, String?>((
+  ref,
+  semester,
+) async {
+  final creds = ref.watch(credentialsProvider);
+  if (creds == null) throw Exception('Not logged in');
+  _ensureCredentialPassword(creds);
 
-    final backend = ref.watch(campusBackendProvider);
-    return backend.getExams(
-      creds.username,
-      creds.password,
-      semester: semester,
-    );
-  },
-);
+  final backend = ref.watch(campusBackendProvider);
+  return backend.getExams(creds.username, creds.password, semester: semester);
+});
 
 class SessionUpdateNotifier extends Notifier<int> {
   @override

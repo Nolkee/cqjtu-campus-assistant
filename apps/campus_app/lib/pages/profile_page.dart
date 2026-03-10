@@ -8,6 +8,7 @@ import 'package:campus_platform/services/battery_optimization_service.dart';
 import 'package:core/models/dorm_room.dart';
 import 'login_page.dart';
 import 'electricity_page.dart';
+import 'leave_apply_page.dart';
 import 'tools_page.dart';
 
 class ProfilePage extends ConsumerWidget {
@@ -151,6 +152,16 @@ class ProfilePage extends ConsumerWidget {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const ExamsPage()),
+            ),
+          ),
+          const Divider(height: 1, indent: 56, color: Color(0xFFF0F0F0)),
+          _buildMenuTile(
+            icon: Icons.exit_to_app_outlined,
+            color: Colors.teal,
+            title: '请假申请',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const LeaveApplyPage()),
             ),
           ),
         ],
@@ -1197,7 +1208,11 @@ class _BackgroundSettingsCardState
                   ? '✅ 已设置，后台任务可正常运行'
                   : '⚠️ 未设置，后台通知可能无法推送',
               trailing: _isIgnoring == true
-                  ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
+                  ? const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 20,
+                    )
                   : FilledButton.tonal(
                       onPressed: () async {
                         await BatteryOptimizationService.requestIgnoreBatteryOptimizations();
@@ -1212,10 +1227,7 @@ class _BackgroundSettingsCardState
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      child: const Text(
-                        '去设置',
-                        style: TextStyle(fontSize: 13),
-                      ),
+                      child: const Text('去设置', style: TextStyle(fontSize: 13)),
                     ),
             ),
             const Divider(height: 1, indent: 56, color: Color(0xFFF0F0F0)),
@@ -1247,10 +1259,7 @@ class _BackgroundSettingsCardState
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      child: const Text(
-                        '去设置',
-                        style: TextStyle(fontSize: 13),
-                      ),
+                      child: const Text('去设置', style: TextStyle(fontSize: 13)),
                     ),
             ),
             const Divider(height: 1, indent: 56, color: Color(0xFFF0F0F0)),
@@ -1350,9 +1359,9 @@ class _BackgroundSettingsCardState
 
     await _markLockBackgroundDone();
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('已标记为完成锁定后台')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('已标记为完成锁定后台')));
   }
 }
 

@@ -33,6 +33,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     String username,
     String password,
   ) async {
+    debugPrint(
+      '[LoginPage] save credentials username=$username passwordLen=${password.length}',
+    );
     await ref.read(credentialServiceProvider).save(username, password);
     ref.read(credentialsProvider.notifier).set(username, password);
   }
@@ -60,11 +63,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       // 尝试静默获取课表来验证
       final sessionManager = ref.read(sessionManagerProvider);
       final sessionId = await sessionManager.refreshSessionId(username);
-      await ref.read(apiServiceProvider).getSchedule(
-        username,
-        password,
-        sessionId: sessionId,
+      debugPrint(
+        '[LoginPage] silent login username=$username passwordLen=${password.length} sessionId=$sessionId',
       );
+      await ref
+          .read(apiServiceProvider)
+          .getSchedule(
+            username,
+            password,
+            sessionId: sessionId,
+            forceRefresh: true,
+          );
       // 成功则保存凭证并进入 App
       await _saveCredentialsAndFinish(username, password);
     } catch (e) {
@@ -88,6 +97,68 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
+  Future<String> _bindWebLoginResult({
+    required String username,
+    required Map<String, dynamic> result,
+  }) async {
+    final api = ref.read(apiServiceProvider);
+    final sessionManager = ref.read(sessionManagerProvider);
+    // Explicit login should always bind web auth artifacts to a fresh
+    // device-local session instead of reusing a cached one.
+    var sessionId = await sessionManager.refreshSessionId(username);
+
+    final ticket = result['ticket']?.toString() ?? '';
+    final casCookies = result['casCookies']?.toString() ?? '';
+    final jwgCookies = result['jwgCookies']?.toString() ?? '';
+    final zoveToken = result['zoveToken']?.toString() ?? '';
+
+    Future<void> bindWithSession(String currentSessionId) async {
+      await sessionManager.saveWebLoginArtifacts(
+        username,
+        ticket: ticket,
+        casCookies: casCookies,
+        jwgCookies: jwgCookies,
+        zoveToken: zoveToken,
+      );
+
+      if (ticket.isNotEmpty) {
+        await api.loginWithTicket(
+          username,
+          ticket,
+          sessionId: currentSessionId,
+        );
+      }
+
+      if (casCookies.isNotEmpty) {
+        await api.injectCookies(
+          username,
+          'ids.cqjtu.edu.cn',
+          casCookies,
+          sessionId: currentSessionId,
+        );
+      }
+      if (jwgCookies.isNotEmpty) {
+        await api.injectCookies(
+          username,
+          'jwgln.cqjtu.edu.cn',
+          jwgCookies,
+          sessionId: currentSessionId,
+        );
+      }
+    }
+
+    try {
+      await bindWithSession(sessionId);
+    } catch (error) {
+      if (!sessionManager.isSessionExpiredError(error)) rethrow;
+      sessionId = await sessionManager.refreshSessionId(username);
+      await bindWithSession(sessionId);
+    }
+
+    ref.read(sessionUpdateProvider.notifier).triggerRefresh();
+    return sessionId;
+  }
+
   // ── WebView 介入流程 ───────────────────────────────────
   Future<void> _openWebViewLogin(String username, [String? password]) async {
     final result = await Navigator.of(context).push<Map<String, dynamic>>(
@@ -106,59 +177,50 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     });
 
     try {
-      final api = ref.read(apiServiceProvider);
+      final sessionId = await _bindWebLoginResult(
+        username: username,
+        result: result,
+      );
 
-      // 注入从 WebView 提取到的各域名的 Cookie
-      final sessionManager = ref.read(sessionManagerProvider);
-      var sessionId = await sessionManager.ensureSessionId(username);
-      final ticket = result['ticket']?.toString() ?? '';
-      final casCookies = result['casCookies']?.toString() ?? '';
-      final jwgCookies = result['jwgCookies']?.toString() ?? '';
-
-      Future<void> bindWithSession(String currentSessionId) async {
-        await sessionManager.saveWebLoginArtifacts(
-          username,
-          ticket: ticket,
-          casCookies: casCookies,
-          jwgCookies: jwgCookies,
-        );
-
-        if (ticket.isNotEmpty) {
-          await api.loginWithTicket(
-            username,
-            ticket,
-            sessionId: currentSessionId,
-          );
-        }
-
-        if (casCookies.isNotEmpty) {
-          await api.injectCookies(
-            username,
-            'ids.cqjtu.edu.cn',
-            casCookies,
-            sessionId: currentSessionId,
-          );
-        }
-        if (jwgCookies.isNotEmpty) {
-          await api.injectCookies(
-            username,
-            'jwgln.cqjtu.edu.cn',
-            jwgCookies,
-            sessionId: currentSessionId,
-          );
+      final webPassword = result['password']?.toString() ?? '';
+      debugPrint(
+        '[LoginPage] webview result username=$username webPasswordLen=${webPassword.length} inputPasswordLen=${(password ?? '').length}',
+      );
+      var passwordToSave = webPassword.trim().isNotEmpty
+          ? webPassword
+          : (password ?? '');
+      if (passwordToSave.trim().isEmpty) {
+        final existing = await ref.read(credentialServiceProvider).load();
+        if (existing != null &&
+            existing.username == username &&
+            existing.password.trim().isNotEmpty) {
+          passwordToSave = existing.password;
         }
       }
 
+      if (passwordToSave.trim().isEmpty) {
+        setState(() {
+          _error = '登录成功，但未获取到教务密码。请返回输入密码后重新登录一次（用于电费/校园卡）。';
+        });
+        return;
+      }
+
+      debugPrint(
+        '[LoginPage] webview password resolved username=$username passwordLen=${passwordToSave.length} sessionId=$sessionId',
+      );
+      await _saveCredentialsAndFinish(username, passwordToSave);
       try {
-        await bindWithSession(sessionId);
-      } catch (error) {
-        if (!sessionManager.isSessionExpiredError(error)) rethrow;
-        sessionId = await sessionManager.refreshSessionId(username);
-        await bindWithSession(sessionId);
+        await ref
+            .read(apiServiceProvider)
+            .getSchedule(
+              username,
+              passwordToSave,
+              sessionId: sessionId,
+              forceRefresh: true,
+            );
+      } catch (_) {
+        // Keep login successful even if this warm-up request fails.
       }
-
-      await _saveCredentialsAndFinish(username, password ?? "");
-      ref.read(sessionUpdateProvider.notifier).triggerRefresh();
     } catch (e) {
       setState(() => _error = 'WebView 会话注入失败: $e');
     } finally {

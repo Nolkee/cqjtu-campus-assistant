@@ -225,12 +225,15 @@ class _ScheduleBody extends ConsumerWidget {
           // WebView 登录成功，拿到了 Cookies
           if (result != null && context.mounted) {
             try {
-              var sessionId = await sessionManager.ensureSessionId(
+              // Explicit re-login should always bind into a fresh session for
+              // this device instead of reusing a cached sessionId.
+              var sessionId = await sessionManager.refreshSessionId(
                 creds.username,
               );
               final ticket = result['ticket']?.toString() ?? '';
               final casCookies = result['casCookies']?.toString() ?? '';
               final jwgCookies = result['jwgCookies']?.toString() ?? '';
+              final zoveToken = result['zoveToken']?.toString() ?? '';
 
               Future<void> bindWithSession(String currentSessionId) async {
                 await sessionManager.saveWebLoginArtifacts(
@@ -238,6 +241,7 @@ class _ScheduleBody extends ConsumerWidget {
                   ticket: ticket,
                   casCookies: casCookies,
                   jwgCookies: jwgCookies,
+                  zoveToken: zoveToken,
                 );
 
                 if (ticket.isNotEmpty) {
