@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -40,6 +39,8 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
   Completer<String>? _tokenCompleter;
   String? _capturedZoveToken;
   bool _autoSubmitLogin = false;
+  bool _didLocaleWarmupReload = false;
+  Timer? _submitRecoveryTimer;
 
   @override
   void initState() {
@@ -71,6 +72,13 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
           }
         },
       )
+      ..addJavaScriptChannel(
+        'LoginSubmitSignal',
+        onMessageReceived: (_) {
+          if (widget.mode != WebViewLoginMode.jwgSession) return;
+          _scheduleSubmitRecoveryReload();
+        },
+      )
       ..setNavigationDelegate(
         NavigationDelegate(
           onNavigationRequest: (request) {
@@ -89,6 +97,12 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
             if (mounted) setState(() => _isLoading = false);
 
             if (url.contains('authserver/login')) {
+              if (widget.mode == WebViewLoginMode.jwgSession) {
+                final reloaded = await _ensureLocaleWarmupReload();
+                if (reloaded) {
+                  return;
+                }
+              }
               await _installCredentialBridge();
               await _autofillCredentials();
               if (_autoSubmitLogin) {
@@ -122,6 +136,12 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
     _clearCookiesAndLoad();
   }
 
+  @override
+  void dispose() {
+    _submitRecoveryTimer?.cancel();
+    super.dispose();
+  }
+
   void _captureTicket(String url) {
     final ticket = Uri.tryParse(url)?.queryParameters['ticket'];
     if (ticket != null && ticket.isNotEmpty) {
@@ -130,10 +150,8 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
   }
 
   Future<void> _autofillCredentials() async {
-    final shouldAutofillPassword = defaultTargetPlatform != TargetPlatform.iOS;
     final escapedUsername = _escapeForJs(widget.username);
     final escapedPassword = _escapeForJs(widget.password);
-    final passwordExpr = shouldAutofillPassword ? "'$escapedPassword'" : 'null';
     await _controller.runJavaScript('''
       setTimeout(function () {
         function setInputValue(el, v) {
@@ -157,17 +175,33 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
           setInputValue(u, '$escapedUsername');
         }
         if (p) {
-          setInputValue(p, $passwordExpr);
+          setInputValue(p, '$escapedPassword');
         }
       }, 300);
     ''');
   }
 
   Future<void> _clearCookiesAndLoad() async {
+    final cookieManager = WebViewCookieManager();
     try {
-      await WebViewCookieManager().clearCookies();
+      await cookieManager.clearCookies();
       await _controller.clearCache();
-      await _controller.clearLocalStorage();
+      if (widget.mode == WebViewLoginMode.zoveTokenOnly) {
+        await _controller.clearLocalStorage();
+      }
+      if (widget.mode == WebViewLoginMode.jwgSession) {
+        // ids 登录页脚本依赖语言 Cookie 做一次初始化与 reload，
+        // 预置该值可避免页面长时间停在密码框 loading 态。
+        await cookieManager.setCookie(
+          const WebViewCookie(
+            name:
+                'org.springframework.web.servlet.i18n.CookieLocaleResolver.LOCALE',
+            value: 'zh_CN',
+            domain: 'ids.cqjtu.edu.cn',
+            path: '/',
+          ),
+        );
+      }
     } catch (_) {}
 
     if (mounted) {
@@ -251,20 +285,22 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
   Future<String> _captureEcardCookies() async {
     try {
       _autoSubmitLogin = true;
-      final deadline = DateTime.now().add(const Duration(seconds: 12));
+      final deadline = DateTime.now().add(const Duration(seconds: 24));
       const probeUrls = <String>[
         _ecardEntryUrl,
         'https://ecard.cqjtu.edu.cn/epay/h5/',
+        'https://ecard.cqjtu.edu.cn/epay/',
+        'https://ecard.cqjtu.edu.cn/',
       ];
       String bestEffortCookies = '';
       for (final url in probeUrls) {
         if (DateTime.now().isAfter(deadline)) break;
-        await _loadAndWait(url, timeout: const Duration(seconds: 8));
+        await _loadAndWait(url, timeout: const Duration(seconds: 12));
         await Future.delayed(const Duration(milliseconds: 600));
         final cookies = await _readCookiesWithRetry(
           url,
-          maxAttempts: 3,
-          baseDelayMs: 200,
+          maxAttempts: 6,
+          baseDelayMs: 300,
         );
         if (cookies.isNotEmpty) {
           debugPrint(
@@ -352,15 +388,59 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
           reportPassword();
         }
         if (form) {
-          form.addEventListener('submit', reportPassword);
+          form.addEventListener('submit', function () {
+            reportPassword();
+            try { LoginSubmitSignal.postMessage('submit'); } catch (_) {}
+          });
         }
       })();
     ''');
   }
 
+  void _scheduleSubmitRecoveryReload() {
+    _submitRecoveryTimer?.cancel();
+    _submitRecoveryTimer = Timer(const Duration(seconds: 2), () async {
+      if (!mounted || _isHandled) return;
+      final currentUrl = await _controller.currentUrl() ?? '';
+      if (!currentUrl.contains('authserver/login')) return;
+
+      final jsResult = await _controller.runJavaScriptReturningResult('''
+        (function () {
+          try {
+            var btn =
+              document.querySelector('#login_submit') ||
+              document.querySelector('button[type="submit"]') ||
+              document.querySelector('input[type="submit"]');
+            var pwd = document.getElementById('password');
+            var user = document.getElementById('username');
+            var hasUser = !!(user && String(user.value || '').trim().length > 0);
+            var pwdClasses = ((pwd && pwd.className) || '') + ' ' +
+              ((pwd && pwd.parentElement && pwd.parentElement.className) || '');
+            var spinning = /loading|spinner|load/.test(pwdClasses.toLowerCase());
+            var disabled = !!(btn && (btn.disabled || btn.classList.contains('disabled')));
+            return (hasUser && (spinning || disabled)) ? 'stuck' : 'ok';
+          } catch (_) {
+            return 'stuck';
+          }
+        })();
+      ''');
+
+      final state = _normalizeJsString(jsResult) ?? 'ok';
+      if (state == 'stuck') {
+        await _controller.reload();
+      }
+    });
+  }
+
   Future<void> _submitLoginForm() async {
     await _controller.runJavaScript('''
       (function () {
+        var p =
+          document.getElementById('password') ||
+          document.querySelector('input[type="password"]');
+        if (p && (!p.value || String(p.value).trim() === '')) {
+          return;
+        }
         var btn =
           document.querySelector('#login_submit') ||
           document.querySelector('button[type="submit"]') ||
@@ -370,6 +450,29 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
         }
       })();
     ''');
+  }
+
+  Future<bool> _ensureLocaleWarmupReload() async {
+    if (_didLocaleWarmupReload) return false;
+    final jsResult = await _controller.runJavaScriptReturningResult('''
+      (function () {
+        try {
+          var key = 'org.springframework.web.servlet.i18n.CookieLocaleResolver.LOCALE';
+          if (document.cookie.indexOf(key + '=') === -1) {
+            document.cookie = key + '=zh_CN;path=/;secure;SameSite=None';
+          }
+          if (!sessionStorage.getItem('__campus_locale_warmed__')) {
+            sessionStorage.setItem('__campus_locale_warmed__', '1');
+            window.location.reload();
+            return 'reloaded';
+          }
+        } catch (_) {}
+        return 'skip';
+      })();
+    ''');
+    final flag = _normalizeJsString(jsResult) ?? '';
+    _didLocaleWarmupReload = true;
+    return flag == 'reloaded';
   }
 
   Future<void> _tryCaptureTicketFallback() async {

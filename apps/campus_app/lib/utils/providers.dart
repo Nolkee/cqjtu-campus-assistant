@@ -225,7 +225,6 @@ class _ApiCampusBackend implements CampusBackend {
   bool _isOneCardAuthFailure(Object error) {
     if (error is! ApiException) return false;
     if (error.code == 401 || error.code == 403) return true;
-    if (error.code != 500) return false;
     final msg = error.message;
     return msg.contains('授权失败') ||
         msg.contains('登录状态') ||
@@ -235,7 +234,9 @@ class _ApiCampusBackend implements CampusBackend {
         msg.contains('会话') ||
         msg.contains('cookie') ||
         msg.contains('获取失败') ||
-        msg.contains('登录失败');
+        msg.contains('登录失败') ||
+        msg.toLowerCase().contains('ecard') ||
+        msg.toLowerCase().contains('one card');
   }
 
   Future<void> _tryRestoreLoginState(String username, String sessionId) async {
