@@ -6,6 +6,7 @@ import 'package:campus_platform/services/credential_service.dart';
 import 'package:campus_platform/services/notification_service.dart';
 import 'package:campus_platform/services/battery_optimization_service.dart';
 import 'package:core/models/dorm_room.dart';
+import '../services/app_update_coordinator.dart';
 import 'login_page.dart';
 import 'electricity_page.dart';
 import 'leave_apply_page.dart';
@@ -15,6 +16,8 @@ class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
 
   void _logout(BuildContext context, WidgetRef ref) async {
+    ref.invalidate(sessionManagerProvider);
+    ref.invalidate(campusBackendProvider);
     await ref.read(credentialServiceProvider).clear();
     ref.invalidate(credentialsProvider);
     ref.invalidate(scheduleProvider);
@@ -59,6 +62,9 @@ class ProfilePage extends ConsumerWidget {
           const SizedBox(height: 20),
           _sectionLabel('通知与后台'),
           const _BackgroundSettingsCard(),
+          const SizedBox(height: 20),
+          _sectionLabel('版本更新'),
+          const _AppUpdateCard(),
           const SizedBox(height: 20),
           _sectionLabel('安全与隐私'),
           const _SecurityNoticeCard(),
@@ -711,6 +717,106 @@ class _DormPickerSheetState extends State<_DormPickerSheet> {
 // ══════════════════════════════════════════════════════════════
 // 安全与隐私声明卡片
 // ══════════════════════════════════════════════════════════════
+class _AppUpdateCard extends StatefulWidget {
+  const _AppUpdateCard();
+
+  @override
+  State<_AppUpdateCard> createState() => _AppUpdateCardState();
+}
+
+class _AppUpdateCardState extends State<_AppUpdateCard> {
+  String _versionLabel = '读取中...';
+  bool _checking = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersionLabel();
+  }
+
+  Future<void> _loadVersionLabel() async {
+    try {
+      final label = await AppUpdateCoordinator.currentVersionLabel();
+      if (!mounted) return;
+      setState(() => _versionLabel = label);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _versionLabel = '读取失败');
+    }
+  }
+
+  Future<void> _checkUpdate() async {
+    if (_checking) return;
+    setState(() => _checking = true);
+    try {
+      await AppUpdateCoordinator.checkAndPrompt(context, manual: true);
+    } finally {
+      if (mounted) {
+        setState(() => _checking = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.blue.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(Icons.system_update_alt, color: Colors.blue),
+        ),
+        title: const Text(
+          '检查更新',
+          style: TextStyle(fontSize: 15, color: Colors.black87),
+        ),
+        subtitle: Text(
+          '当前版本：$_versionLabel\n发现新版本后可直接打开下载链接',
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.grey,
+            height: 1.45,
+          ),
+        ),
+        trailing: _checking
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : FilledButton.tonal(
+                onPressed: _checkUpdate,
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('检查', style: TextStyle(fontSize: 13)),
+              ),
+        onTap: _checkUpdate,
+      ),
+    );
+  }
+}
+
 class _SecurityNoticeCard extends StatelessWidget {
   const _SecurityNoticeCard();
 

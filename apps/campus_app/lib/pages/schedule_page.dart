@@ -233,6 +233,7 @@ class _ScheduleBody extends ConsumerWidget {
               final ticket = result['ticket']?.toString() ?? '';
               final casCookies = result['casCookies']?.toString() ?? '';
               final jwgCookies = result['jwgCookies']?.toString() ?? '';
+              final ecardCookies = result['ecardCookies']?.toString() ?? '';
               final zoveToken = result['zoveToken']?.toString() ?? '';
 
               Future<void> bindWithSession(String currentSessionId) async {
@@ -241,6 +242,7 @@ class _ScheduleBody extends ConsumerWidget {
                   ticket: ticket,
                   casCookies: casCookies,
                   jwgCookies: jwgCookies,
+                  ecardCookies: ecardCookies,
                   zoveToken: zoveToken,
                 );
 
@@ -265,6 +267,14 @@ class _ScheduleBody extends ConsumerWidget {
                     creds.username,
                     'jwgln.cqjtu.edu.cn',
                     jwgCookies,
+                    sessionId: currentSessionId,
+                  );
+                }
+                if (ecardCookies.isNotEmpty) {
+                  await apiService.injectCookies(
+                    creds.username,
+                    'ecard.cqjtu.edu.cn',
+                    ecardCookies,
                     sessionId: currentSessionId,
                   );
                 }

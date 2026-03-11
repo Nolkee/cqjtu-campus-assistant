@@ -5,12 +5,14 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
+import 'app_update_service.dart';
 
 const kBgTaskName = 'balanceMonitor';
 const kBgTaskTag = 'com.axu.schedule.balanceMonitor';
 
 const _elecChannelId = 'elec_alert_v2';
 const _cardChannelId = 'card_alert_v2';
+const _updateChannelId = 'app_update_v1';
 const _sessionPrefix = 'session_id_';
 
 class _BgSessionExpiredException implements Exception {}
@@ -21,22 +23,6 @@ void backgroundCallbackDispatcher() {
     if (taskName != kBgTaskName) return true;
 
     try {
-      const storage = FlutterSecureStorage(
-        aOptions: AndroidOptions(encryptedSharedPreferences: true),
-      );
-      final username = await storage.read(key: 'username');
-      final password = await storage.read(key: 'password');
-      if (username == null ||
-          username.trim().isEmpty ||
-          password == null ||
-          password.trim().isEmpty) {
-        debugPrint('[BG] credentials not found, skip');
-        return true;
-      }
-      debugPrint(
-        '[BG] credentials loaded username=$username passwordLen=${password.length}',
-      );
-
       final now = DateTime.now();
       final isNight = now.hour >= 0 && now.hour < 6;
       if (isNight) {
@@ -80,7 +66,40 @@ void backgroundCallbackDispatcher() {
         ),
       );
 
+      await androidPlugin?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          _updateChannelId,
+          '应用更新',
+          description: '检测到新版本时提醒下载',
+          importance: Importance.high,
+          playSound: true,
+          enableVibration: true,
+        ),
+      );
+
       final prefs = await SharedPreferences.getInstance();
+      try {
+        await _checkAppUpdate(plugin);
+      } catch (e) {
+        debugPrint('[BG] app update check failed: $e');
+      }
+
+      const storage = FlutterSecureStorage(
+        aOptions: AndroidOptions(encryptedSharedPreferences: true),
+      );
+      final username = await storage.read(key: 'username');
+      final password = await storage.read(key: 'password');
+      if (username == null ||
+          username.trim().isEmpty ||
+          password == null ||
+          password.trim().isEmpty) {
+        debugPrint('[BG] credentials not found, skip');
+        return true;
+      }
+      debugPrint(
+        '[BG] credentials loaded username=$username passwordLen=${password.length}',
+      );
+
       final elecThreshold = prefs.getDouble('elec_threshold') ?? 10.0;
       final cardThreshold = prefs.getDouble('card_threshold') ?? 20.0;
       final dormParams = _readDormParams(prefs);
@@ -296,8 +315,6 @@ Future<String> _ensureSessionId(
   Dio dio,
   String username,
 ) async {
-  final cached = await storage.read(key: _sessionKey(username));
-  if (cached != null && cached.isNotEmpty) return cached;
   return _refreshSessionId(storage, dio, username);
 }
 
@@ -360,4 +377,36 @@ bool _canNotify(SharedPreferences prefs, String key) {
   const cooldown = Duration(hours: 4);
   final last = prefs.getInt(key) ?? 0;
   return _nowMs() - last > cooldown.inMilliseconds;
+}
+
+Future<void> _checkAppUpdate(FlutterLocalNotificationsPlugin plugin) async {
+  final result = await AppUpdateService.checkForStoredInstalledVersion();
+  if (result == null || !result.hasUpdate || result.latest == null) return;
+
+  final latest = result.latest!;
+  if (!await AppUpdateService.shouldNotify(latest)) return;
+
+  final body = latest.force
+      ? '检测到重要更新 ${latest.label}，打开 App 即可下载'
+      : '检测到新版本 ${latest.label}，打开 App 查看并下载';
+
+  await plugin.show(
+    103,
+    '发现新版本',
+    body,
+    const NotificationDetails(
+      android: AndroidNotificationDetails(
+        _updateChannelId,
+        '应用更新',
+        channelDescription: '检测到新版本时提醒下载',
+        importance: Importance.high,
+        priority: Priority.high,
+        playSound: true,
+        enableVibration: true,
+      ),
+    ),
+    payload: 'app_update',
+  );
+
+  await AppUpdateService.markNotified(latest);
 }

@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:campus_platform/services/credential_service.dart';
 import 'package:campus_platform/services/notification_service.dart';
 import 'package:campus_platform/services/battery_optimization_service.dart';
+import 'services/app_update_coordinator.dart';
 import 'utils/providers.dart';
 import 'package:campus_platform/services/background_task.dart';
 import 'pages/login_page.dart';
@@ -112,9 +113,11 @@ class _MainShellState extends ConsumerState<_MainShell>
     super.initState();
     _pageController = PageController(initialPage: _index);
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showBatteryGuideIfNeeded();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       _trySchedule();
+      await _showBatteryGuideIfNeeded();
+      if (!mounted) return;
+      await AppUpdateCoordinator.checkAndPrompt(context);
     });
   }
 

@@ -25,6 +25,7 @@ class WebViewLoginPage extends StatefulWidget {
 class _WebViewLoginPageState extends State<WebViewLoginPage> {
   static const _loginUrl =
       'https://ids.cqjtu.edu.cn/authserver/login?service=http%3A%2F%2Fjwgln.cqjtu.edu.cn%2Fjsxsd%2Fsso.jsp';
+  static const _ecardEntryUrl = 'https://ecard.cqjtu.edu.cn/epay/h5/payele';
   static const _studentIndexUrl =
       'https://zhxg.cqjtu.edu.cn/mobile/stuhall/studentindex';
   static const _cookieChannel = MethodChannel('campus_app/cookie_manager');
@@ -159,12 +160,14 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
         {'url': 'https://ids.cqjtu.edu.cn/authserver/'},
       );
       String jwgCookies = '';
+      String ecardCookies = '';
       if (widget.mode == WebViewLoginMode.jwgSession) {
         jwgCookies =
             await _cookieChannel.invokeMethod<String>('getCookies', {
               'url': 'https://jwgln.cqjtu.edu.cn/jsxsd/',
             }) ??
             '';
+        ecardCookies = await _captureEcardCookies();
       }
 
       if (casCookies == null || casCookies.isEmpty) {
@@ -181,12 +184,13 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
 
       if (mounted) {
         debugPrint(
-          '[WebViewLoginPage] return result mode=${widget.mode} ticketLen=${ticket.length} casCookieLen=${casCookies.length} jwgCookieLen=${jwgCookies.length} zoveTokenLen=${zoveToken.length} passwordLen=${(_capturedPassword ?? widget.password).length}',
+          '[WebViewLoginPage] return result mode=${widget.mode} ticketLen=${ticket.length} casCookieLen=${casCookies.length} jwgCookieLen=${jwgCookies.length} ecardCookieLen=${ecardCookies.length} zoveTokenLen=${zoveToken.length} passwordLen=${(_capturedPassword ?? widget.password).length}',
         );
         Navigator.of(context).pop({
           'ticket': ticket,
           'casCookies': casCookies,
           'jwgCookies': jwgCookies,
+          'ecardCookies': ecardCookies,
           'zoveToken': zoveToken,
           'password': _capturedPassword ?? widget.password,
         });
@@ -210,6 +214,18 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
       if (byChannel != null && byChannel.isNotEmpty) return byChannel;
 
       return _capturedZoveToken ?? await _readZoveToken() ?? '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  Future<String> _captureEcardCookies() async {
+    try {
+      await _loadAndWait(_ecardEntryUrl);
+      return await _cookieChannel.invokeMethod<String>('getCookies', {
+            'url': 'https://ecard.cqjtu.edu.cn/epay/h5/',
+          }) ??
+          '';
     } catch (_) {
       return '';
     }

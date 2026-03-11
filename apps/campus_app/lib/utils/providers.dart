@@ -32,18 +32,21 @@ class SessionManager {
 
   final ApiService _api;
   final SessionService _sessionService;
+  final Map<String, String> _sessionIdCache = {};
 
   static const _casDomain = 'ids.cqjtu.edu.cn';
   static const _jwgDomain = 'jwgln.cqjtu.edu.cn';
+  static const _ecardDomain = 'ecard.cqjtu.edu.cn';
 
   Future<String> ensureSessionId(String username) async {
-    final cached = await _sessionService.loadSessionId(username);
+    final cached = _sessionIdCache[username];
     if (cached != null && cached.isNotEmpty) return cached;
     return refreshSessionId(username);
   }
 
   Future<String> refreshSessionId(String username) async {
     final sessionId = await _api.createSession(username);
+    _sessionIdCache[username] = sessionId;
     await _sessionService.saveSessionId(username, sessionId);
     return sessionId;
   }
@@ -53,6 +56,7 @@ class SessionManager {
     String? ticket,
     String? casCookies,
     String? jwgCookies,
+    String? ecardCookies,
     String? zoveToken,
   }) async {
     if (ticket != null && ticket.isNotEmpty) {
@@ -63,6 +67,9 @@ class SessionManager {
     }
     if (jwgCookies != null && jwgCookies.isNotEmpty) {
       await _sessionService.saveJwgCookies(username, jwgCookies);
+    }
+    if (ecardCookies != null && ecardCookies.isNotEmpty) {
+      await _sessionService.saveEcardCookies(username, ecardCookies);
     }
     if (zoveToken != null && zoveToken.isNotEmpty) {
       await _sessionService.saveZoveToken(username, zoveToken);
@@ -76,7 +83,6 @@ class SessionManager {
         '[SessionManager] restoreLoginState use ticket username=$username',
       );
       await _api.loginWithTicket(username, ticket, sessionId: sessionId);
-      return;
     }
 
     final casCookies = await _sessionService.loadCasCookies(username);
@@ -101,6 +107,19 @@ class SessionManager {
         username,
         _jwgDomain,
         jwgCookies,
+        sessionId: sessionId,
+      );
+    }
+
+    final ecardCookies = await _sessionService.loadEcardCookies(username);
+    if (ecardCookies != null && ecardCookies.isNotEmpty) {
+      debugPrint(
+        '[SessionManager] restoreLoginState inject ECARD cookies username=$username',
+      );
+      await _api.injectCookies(
+        username,
+        _ecardDomain,
+        ecardCookies,
         sessionId: sessionId,
       );
     }
@@ -275,6 +294,56 @@ class _ApiCampusBackend implements CampusBackend {
     return sessionId;
   }
 
+  Future<T> _runOneCardRequest<T>({
+    required String operation,
+    required String username,
+    String? password,
+    required Future<T> Function(String sessionId) primaryRequest,
+    required Future<T> Function(String sessionId) recoveredRequest,
+  }) async {
+    var sessionId = await _sessionManager.ensureSessionId(username);
+    try {
+      return await primaryRequest(sessionId);
+    } catch (error) {
+      final sessionExpired = _sessionManager.isSessionExpiredError(error);
+      final oneCardAuthFailure = _isOneCardAuthFailure(error);
+      if (!sessionExpired && !oneCardAuthFailure) {
+        rethrow;
+      }
+
+      if (sessionExpired) {
+        debugPrint(
+          '[ApiCampusBackend] $operation retry after session refresh username=$username reason=$error',
+        );
+        sessionId = await _ensureRehydratedOneCardSession(username, password);
+        return recoveredRequest(sessionId);
+      }
+
+      debugPrint(
+        '[ApiCampusBackend] $operation retry after login state restore username=$username sessionId=$sessionId reason=$error',
+      );
+      sessionId = await _ensureRestoredOneCardSession(username, sessionId);
+
+      try {
+        return await recoveredRequest(sessionId);
+      } catch (retryError) {
+        final retrySessionExpired = _sessionManager.isSessionExpiredError(
+          retryError,
+        );
+        final retryOneCardAuthFailure = _isOneCardAuthFailure(retryError);
+        if (!retrySessionExpired && !retryOneCardAuthFailure) {
+          rethrow;
+        }
+
+        debugPrint(
+          '[ApiCampusBackend] $operation escalates to full rehydrate username=$username sessionId=$sessionId reason=$retryError',
+        );
+        sessionId = await _ensureRehydratedOneCardSession(username, password);
+        return recoveredRequest(sessionId);
+      }
+    }
+  }
+
   @override
   Future<({List<Course> courses, String remark})> getSchedule(
     String username,
@@ -333,40 +402,25 @@ class _ApiCampusBackend implements CampusBackend {
     bool forceRefresh = false,
     Map<String, String>? dormParams,
   }) async {
-    var sessionId = await _sessionManager.ensureSessionId(username);
-    try {
-      return await _api.getElecBalance(
+    return _runOneCardRequest(
+      operation: 'getElecBalance',
+      username: username,
+      password: password,
+      primaryRequest: (sessionId) => _api.getElecBalance(
         username,
         password,
         sessionId: sessionId,
         forceRefresh: forceRefresh,
         dormParams: dormParams,
-      );
-    } catch (error) {
-      final sessionExpired = _sessionManager.isSessionExpiredError(error);
-      final oneCardAuthFailure = _isOneCardAuthFailure(error);
-      if (!sessionExpired && !oneCardAuthFailure) {
-        rethrow;
-      }
-      if (sessionExpired) {
-        debugPrint(
-          '[ApiCampusBackend] getElecBalance retry after session refresh username=$username reason=$error',
-        );
-        sessionId = await _ensureRehydratedOneCardSession(username, password);
-      } else {
-        debugPrint(
-          '[ApiCampusBackend] getElecBalance retry after login state restore username=$username sessionId=$sessionId reason=$error',
-        );
-        sessionId = await _ensureRestoredOneCardSession(username, sessionId);
-      }
-      return _api.getElecBalance(
+      ),
+      recoveredRequest: (sessionId) => _api.getElecBalance(
         username,
         password,
         sessionId: sessionId,
         forceRefresh: true,
         dormParams: dormParams,
-      );
-    }
+      ),
+    );
   }
 
   @override
@@ -375,38 +429,23 @@ class _ApiCampusBackend implements CampusBackend {
     String password, {
     bool forceRefresh = false,
   }) async {
-    var sessionId = await _sessionManager.ensureSessionId(username);
-    try {
-      return await _api.getCampusCardBalance(
+    return _runOneCardRequest(
+      operation: 'getCampusCardBalance',
+      username: username,
+      password: password,
+      primaryRequest: (sessionId) => _api.getCampusCardBalance(
         username,
         password,
         sessionId: sessionId,
         forceRefresh: forceRefresh,
-      );
-    } catch (error) {
-      final sessionExpired = _sessionManager.isSessionExpiredError(error);
-      final oneCardAuthFailure = _isOneCardAuthFailure(error);
-      if (!sessionExpired && !oneCardAuthFailure) {
-        rethrow;
-      }
-      if (sessionExpired) {
-        debugPrint(
-          '[ApiCampusBackend] getCampusCardBalance retry after session refresh username=$username reason=$error',
-        );
-        sessionId = await _ensureRehydratedOneCardSession(username, password);
-      } else {
-        debugPrint(
-          '[ApiCampusBackend] getCampusCardBalance retry after login state restore username=$username sessionId=$sessionId reason=$error',
-        );
-        sessionId = await _ensureRestoredOneCardSession(username, sessionId);
-      }
-      return _api.getCampusCardBalance(
+      ),
+      recoveredRequest: (sessionId) => _api.getCampusCardBalance(
         username,
         password,
         sessionId: sessionId,
         forceRefresh: true,
-      );
-    }
+      ),
+    );
   }
 
   @override
@@ -415,98 +454,46 @@ class _ApiCampusBackend implements CampusBackend {
     double amount, {
     Map<String, String>? dormParams,
   }) async {
-    var sessionId = await _sessionManager.ensureSessionId(username);
-    try {
-      return await _api.rechargeElec(
+    return _runOneCardRequest(
+      operation: 'rechargeElec',
+      username: username,
+      primaryRequest: (sessionId) => _api.rechargeElec(
         username,
         amount,
         sessionId: sessionId,
         dormParams: dormParams,
-      );
-    } catch (error) {
-      final sessionExpired = _sessionManager.isSessionExpiredError(error);
-      final oneCardAuthFailure = _isOneCardAuthFailure(error);
-      if (!sessionExpired && !oneCardAuthFailure) {
-        rethrow;
-      }
-      if (sessionExpired) {
-        debugPrint(
-          '[ApiCampusBackend] rechargeElec retry after session refresh username=$username reason=$error',
-        );
-        sessionId = await _ensureRehydratedOneCardSession(username, null);
-      } else {
-        debugPrint(
-          '[ApiCampusBackend] rechargeElec retry after login state restore username=$username sessionId=$sessionId reason=$error',
-        );
-        sessionId = await _ensureRestoredOneCardSession(username, sessionId);
-      }
-      return _api.rechargeElec(
+      ),
+      recoveredRequest: (sessionId) => _api.rechargeElec(
         username,
         amount,
         sessionId: sessionId,
         dormParams: dormParams,
-      );
-    }
+      ),
+    );
   }
 
   @override
   Future<String> getPayCodeToken(String username) async {
-    var sessionId = await _sessionManager.ensureSessionId(username);
-    try {
-      return await _api.getPayCodeToken(username, sessionId: sessionId);
-    } catch (error) {
-      final sessionExpired = _sessionManager.isSessionExpiredError(error);
-      final oneCardAuthFailure = _isOneCardAuthFailure(error);
-      if (!sessionExpired && !oneCardAuthFailure) {
-        rethrow;
-      }
-      if (sessionExpired) {
-        debugPrint(
-          '[ApiCampusBackend] getPayCodeToken retry after session refresh username=$username reason=$error',
-        );
-        sessionId = await _ensureRehydratedOneCardSession(username, null);
-      } else {
-        debugPrint(
-          '[ApiCampusBackend] getPayCodeToken retry after login state restore username=$username sessionId=$sessionId reason=$error',
-        );
-        sessionId = await _ensureRestoredOneCardSession(username, sessionId);
-      }
-      return _api.getPayCodeToken(username, sessionId: sessionId);
-    }
+    return _runOneCardRequest(
+      operation: 'getPayCodeToken',
+      username: username,
+      primaryRequest: (sessionId) =>
+          _api.getPayCodeToken(username, sessionId: sessionId),
+      recoveredRequest: (sessionId) =>
+          _api.getPayCodeToken(username, sessionId: sessionId),
+    );
   }
 
   @override
   Future<String> getCampusCardAlipayUrl(String username, double amount) async {
-    var sessionId = await _sessionManager.ensureSessionId(username);
-    try {
-      return await _api.getCampusCardAlipayUrl(
-        username,
-        amount,
-        sessionId: sessionId,
-      );
-    } catch (error) {
-      final sessionExpired = _sessionManager.isSessionExpiredError(error);
-      final oneCardAuthFailure = _isOneCardAuthFailure(error);
-      if (!sessionExpired && !oneCardAuthFailure) {
-        rethrow;
-      }
-      if (sessionExpired) {
-        debugPrint(
-          '[ApiCampusBackend] getCampusCardAlipayUrl retry after session refresh username=$username reason=$error',
-        );
-        sessionId = await _ensureRehydratedOneCardSession(username, null);
-      } else {
-        debugPrint(
-          '[ApiCampusBackend] getCampusCardAlipayUrl retry after login state restore username=$username sessionId=$sessionId reason=$error',
-        );
-        sessionId = await _ensureRestoredOneCardSession(username, sessionId);
-      }
-      return _api.getCampusCardAlipayUrl(
-        username,
-        amount,
-        sessionId: sessionId,
-      );
-    }
+    return _runOneCardRequest(
+      operation: 'getCampusCardAlipayUrl',
+      username: username,
+      primaryRequest: (sessionId) =>
+          _api.getCampusCardAlipayUrl(username, amount, sessionId: sessionId),
+      recoveredRequest: (sessionId) =>
+          _api.getCampusCardAlipayUrl(username, amount, sessionId: sessionId),
+    );
   }
 }
 

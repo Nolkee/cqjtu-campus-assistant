@@ -43,6 +43,8 @@ dependencies:
   # ── Toast 提示 ────────────────────────────────────────────
   fluttertoast: ^8.2.4
   webview_flutter: ^4.13.1
+  package_info_plus: ^8.3.0
+  path_provider: ^2.1.5
   # ── 时间处理（上课提醒必备） ──────────────────────────────────
   timezone: ^0.9.4
   flutter_timezone: ^5.0.1

@@ -13,6 +13,7 @@ class SessionService {
   static const _ticketPrefix = 'login_ticket_';
   static const _casCookiesPrefix = 'cas_cookies_';
   static const _jwgCookiesPrefix = 'jwg_cookies_';
+  static const _ecardCookiesPrefix = 'ecard_cookies_';
   static const _zoveTokenPrefix = 'zove_token_';
 
   Future<String?> loadSessionId(String username) =>
@@ -39,6 +40,12 @@ class SessionService {
   Future<void> saveJwgCookies(String username, String cookies) =>
       _storage.write(key: _jwgCookiesKey(username), value: cookies);
 
+  Future<String?> loadEcardCookies(String username) =>
+      _storage.read(key: _ecardCookiesKey(username));
+
+  Future<void> saveEcardCookies(String username, String cookies) =>
+      _storage.write(key: _ecardCookiesKey(username), value: cookies);
+
   Future<String?> loadZoveToken(String username) =>
       _storage.read(key: _zoveTokenKey(username));
 
@@ -50,6 +57,7 @@ class SessionService {
     await _storage.delete(key: _ticketKey(username));
     await _storage.delete(key: _casCookiesKey(username));
     await _storage.delete(key: _jwgCookiesKey(username));
+    await _storage.delete(key: _ecardCookiesKey(username));
     await _storage.delete(key: _zoveTokenKey(username));
   }
 
@@ -62,6 +70,8 @@ class SessionService {
   String _casCookiesKey(String username) => '$_casCookiesPrefix$username';
 
   String _jwgCookiesKey(String username) => '$_jwgCookiesPrefix$username';
+
+  String _ecardCookiesKey(String username) => '$_ecardCookiesPrefix$username';
 
   String _zoveTokenKey(String username) => '$_zoveTokenPrefix$username';
 }

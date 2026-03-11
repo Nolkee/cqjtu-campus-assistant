@@ -110,6 +110,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final ticket = result['ticket']?.toString() ?? '';
     final casCookies = result['casCookies']?.toString() ?? '';
     final jwgCookies = result['jwgCookies']?.toString() ?? '';
+    final ecardCookies = result['ecardCookies']?.toString() ?? '';
     final zoveToken = result['zoveToken']?.toString() ?? '';
 
     Future<void> bindWithSession(String currentSessionId) async {
@@ -118,6 +119,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         ticket: ticket,
         casCookies: casCookies,
         jwgCookies: jwgCookies,
+        ecardCookies: ecardCookies,
         zoveToken: zoveToken,
       );
 
@@ -142,6 +144,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           username,
           'jwgln.cqjtu.edu.cn',
           jwgCookies,
+          sessionId: currentSessionId,
+        );
+      }
+      if (ecardCookies.isNotEmpty) {
+        await api.injectCookies(
+          username,
+          'ecard.cqjtu.edu.cn',
+          ecardCookies,
           sessionId: currentSessionId,
         );
       }
