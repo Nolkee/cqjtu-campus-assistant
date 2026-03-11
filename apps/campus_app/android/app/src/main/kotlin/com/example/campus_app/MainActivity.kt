@@ -13,51 +13,11 @@ import java.io.File
 
 class MainActivity : FlutterActivity() {
 
-    private val batteryChannel = "campus_app/battery"
     private val cookieChannel = "campus_app/cookie_manager"
     private val appUpdateChannel = "campus_app/app_update"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-
-        MethodChannel(
-            flutterEngine.dartExecutor.binaryMessenger,
-            batteryChannel
-        ).setMethodCallHandler { call, result ->
-            when (call.method) {
-                "isIgnoringBatteryOptimizations" -> {
-                    val pm = getSystemService(POWER_SERVICE)
-                            as android.os.PowerManager
-                    result.success(pm.isIgnoringBatteryOptimizations(packageName))
-                }
-                "requestIgnoreBatteryOptimizations" -> {
-                    val intent = Intent(
-                        Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
-                    ).apply {
-                        data = Uri.parse("package:$packageName")
-                    }
-                    startActivity(intent)
-                    result.success(null)
-                }
-                "openMiuiAutostart" -> {
-                    try {
-                        val intent = Intent().apply {
-                            component = android.content.ComponentName(
-                                "com.miui.securitycenter",
-                                "com.miui.permcenter.autostart.AutoStartManagementActivity"
-                            )
-                        }
-                        startActivity(intent)
-                        result.success(null)
-                    } catch (e: Exception) {
-                        openAppSettings(result)
-                    }
-                }
-                "checkMiuiAutostart" -> result.success(null)
-                "openBatterySettings" -> openAppSettings(result)
-                else -> result.notImplemented()
-            }
-        }
 
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
@@ -134,15 +94,5 @@ class MainActivity : FlutterActivity() {
         } catch (e: Exception) {
             result.error("INSTALL_FAILED", e.message, null)
         }
-    }
-
-    private fun openAppSettings(result: MethodChannel.Result) {
-        val intent = Intent(
-            Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-        ).apply {
-            data = Uri.parse("package:$packageName")
-        }
-        startActivity(intent)
-        result.success(null)
     }
 }

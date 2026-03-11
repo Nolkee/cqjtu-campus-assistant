@@ -46,13 +46,19 @@ flutter run
 本项目支持通过 `--dart-define` 配置后端地址：
 
 ```
-flutter run --dart-define=ENV=prod --dart-define=BASE_URL=http://127.0.0.1:8080
+flutter run --dart-define=ENV=prod
 ```
 
 打包 release：
 
 ```
-flutter build apk --release --dart-define=ENV=prod --dart-define=BASE_URL=http://127.0.0.1:8080
+flutter build apk --release --dart-define=ENV=prod
+```
+
+如需覆盖默认后端地址，可显式传入：
+
+```
+flutter run --dart-define=ENV=prod --dart-define=BASE_URL=http://你的服务器IP:8080
 ```
 
 ## Compliance & Security

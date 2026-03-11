@@ -38,14 +38,12 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
   Completer<void>? _pageLoadedCompleter;
   Completer<String>? _tokenCompleter;
   String? _capturedZoveToken;
+  bool _autoSubmitLogin = false;
 
   @override
   void initState() {
     super.initState();
     _controller = WebViewController()
-      ..setUserAgent(
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      )
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..addJavaScriptChannel(
         'LoginCredential',
@@ -88,6 +86,9 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
             if (url.contains('authserver/login')) {
               await _installCredentialBridge();
               await _autofillCredentials();
+              if (_autoSubmitLogin) {
+                await _submitLoginForm();
+              }
             }
 
             if (widget.mode == WebViewLoginMode.zoveTokenOnly) {
@@ -155,22 +156,19 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
 
   Future<void> _extractAndReturnArtifacts() async {
     try {
-      final casCookies = await _cookieChannel.invokeMethod<String>(
-        'getCookies',
-        {'url': 'https://ids.cqjtu.edu.cn/authserver/'},
+      final casCookies = await _readCookiesWithRetry(
+        'https://ids.cqjtu.edu.cn/authserver/',
       );
       String jwgCookies = '';
       String ecardCookies = '';
       if (widget.mode == WebViewLoginMode.jwgSession) {
-        jwgCookies =
-            await _cookieChannel.invokeMethod<String>('getCookies', {
-              'url': 'https://jwgln.cqjtu.edu.cn/jsxsd/',
-            }) ??
-            '';
+        jwgCookies = await _readCookiesWithRetry(
+          'https://jwgln.cqjtu.edu.cn/jsxsd/',
+        );
         ecardCookies = await _captureEcardCookies();
       }
 
-      if (casCookies == null || casCookies.isEmpty) {
+      if (casCookies.isEmpty) {
         _fail('未能获取到统一认证 Cookie，请重试');
         return;
       }
@@ -183,8 +181,11 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
           : '';
 
       if (mounted) {
+        final casNames = _cookieNamesSummary(casCookies);
+        final jwgNames = _cookieNamesSummary(jwgCookies);
+        final ecardNames = _cookieNamesSummary(ecardCookies);
         debugPrint(
-          '[WebViewLoginPage] return result mode=${widget.mode} ticketLen=${ticket.length} casCookieLen=${casCookies.length} jwgCookieLen=${jwgCookies.length} ecardCookieLen=${ecardCookies.length} zoveTokenLen=${zoveToken.length} passwordLen=${(_capturedPassword ?? widget.password).length}',
+          '[WebViewLoginPage] return result mode=${widget.mode} ticketLen=${ticket.length} casCookieLen=${casCookies.length} casNames=$casNames jwgCookieLen=${jwgCookies.length} jwgNames=$jwgNames ecardCookieLen=${ecardCookies.length} ecardNames=$ecardNames zoveTokenLen=${zoveToken.length} passwordLen=${(_capturedPassword ?? widget.password).length}',
         );
         Navigator.of(context).pop({
           'ticket': ticket,
@@ -221,14 +222,55 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
 
   Future<String> _captureEcardCookies() async {
     try {
-      await _loadAndWait(_ecardEntryUrl);
-      return await _cookieChannel.invokeMethod<String>('getCookies', {
-            'url': 'https://ecard.cqjtu.edu.cn/epay/h5/',
-          }) ??
-          '';
+      _autoSubmitLogin = true;
+      const probeUrls = <String>[
+        _ecardEntryUrl,
+        'https://ecard.cqjtu.edu.cn/epay/h5/',
+        'https://ecard.cqjtu.edu.cn/epay/',
+        'https://ecard.cqjtu.edu.cn/',
+      ];
+      String bestEffortCookies = '';
+      for (final url in probeUrls) {
+        await _loadAndWait(url);
+        await Future.delayed(const Duration(milliseconds: 600));
+        final cookies = await _readCookiesWithRetry(
+          url,
+          maxAttempts: 6,
+          baseDelayMs: 300,
+        );
+        if (cookies.isNotEmpty) {
+          debugPrint(
+            '[WebViewLoginPage] captured ecard cookies url=$url len=${cookies.length}',
+          );
+          bestEffortCookies = cookies;
+          if (_hasLikelySessionCookie(cookies)) {
+            return cookies;
+          }
+        }
+      }
+      return bestEffortCookies;
     } catch (_) {
       return '';
+    } finally {
+      _autoSubmitLogin = false;
     }
+  }
+
+  Future<String> _readCookiesWithRetry(
+    String url, {
+    int maxAttempts = 3,
+    int baseDelayMs = 250,
+  }) async {
+    for (var i = 0; i < maxAttempts; i++) {
+      final cookies =
+          await _cookieChannel.invokeMethod<String>('getCookies', {
+            'url': url,
+          }) ??
+          '';
+      if (cookies.isNotEmpty) return cookies;
+      await Future.delayed(Duration(milliseconds: baseDelayMs * (i + 1)));
+    }
+    return '';
   }
 
   Future<String?> _waitTokenFromChannel({required Duration timeout}) async {
@@ -288,6 +330,20 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
     ''');
   }
 
+  Future<void> _submitLoginForm() async {
+    await _controller.runJavaScript('''
+      (function () {
+        var btn =
+          document.querySelector('#login_submit') ||
+          document.querySelector('button[type="submit"]') ||
+          document.querySelector('input[type="submit"]');
+        if (btn && !btn.disabled) {
+          btn.click();
+        }
+      })();
+    ''');
+  }
+
   String? _normalizeJsString(Object? value) {
     if (value == null) return null;
     var text = value.toString().trim();
@@ -297,6 +353,29 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
     }
     text = text.replaceAll(r'\"', '"').replaceAll(r'\n', '\n').trim();
     return text.isEmpty ? null : text;
+  }
+
+  bool _hasLikelySessionCookie(String cookies) {
+    final lower = cookies.toLowerCase();
+    return lower.contains('jsessionid=') ||
+        lower.contains('sessionid=') ||
+        lower.contains('mod_auth_cas=');
+  }
+
+  String _cookieNamesSummary(String cookies) {
+    if (cookies.trim().isEmpty) return '[]';
+    final names =
+        cookies
+            .split(';')
+            .map((part) => part.trim())
+            .where((part) => part.contains('='))
+            .map((part) => part.split('=').first.trim())
+            .where((name) => name.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
+    if (names.isEmpty) return '[]';
+    return '[${names.join(',')}]';
   }
 
   void _fail(String msg) {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 // 移除报错的 import 'package:data/src/api_service.dart';
 import 'package:campus_platform/services/credential_service.dart';
@@ -20,6 +22,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   bool _loading = false;
   bool _obscure = true;
   String? _error;
+
+  String _formatLoginError(Object error) {
+    if (error is DioException) {
+      final uri = error.requestOptions.uri;
+      final host = uri.host.toLowerCase();
+      final isLoopback =
+          host == '127.0.0.1' || host == 'localhost' || host == '::1';
+      if (error.type == DioExceptionType.connectionError && isLoopback) {
+        return '当前后端地址是 ${uri.origin}，在 iPhone 上它指向“手机本机”，因此连接被拒绝。\n'
+            '请点击下方「体验模式（Mock 数据）」进入应用，或重新打包并设置可访问的 BASE_URL。';
+      }
+    }
+    return error.toString();
+  }
 
   @override
   void dispose() {
@@ -84,13 +100,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           errorStr.contains('HTML') ||
           errorStr.contains('CAS')) {
         setState(() {
-          _error = '系统要求安全验证，正在打开网页登录...';
+          _error = '系统要求安全验证，请点击下方「遇到验证码？点击此处使用网页登录」继续。';
           _loading = false;
         });
-        // 自动触发 WebView 登录
-        await _openWebViewLogin(username, password);
+        return;
       } else {
-        setState(() => _error = errorStr);
+        setState(() => _error = _formatLoginError(e));
       }
     } finally {
       if (mounted && _loading) setState(() => _loading = false);
@@ -430,7 +445,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   child: const Text('遇到验证码？点击此处使用网页登录'),
                 ),
 
-                if (AppConfig.env == 'mock') ...[
+                if (AppConfig.env == 'mock' || kDebugMode) ...[
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,

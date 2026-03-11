@@ -58,12 +58,23 @@ class NotificationService {
 
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
-    const settings = InitializationSettings(android: androidSettings);
+    const darwinSettings = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
+    const settings = InitializationSettings(
+      android: androidSettings,
+      iOS: darwinSettings,
+      macOS: darwinSettings,
+    );
     await _plugin.initialize(settings);
     debugPrint('[NOTIF] 插件初始化完成');
 
     final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
+    final iosPlugin = _plugin.resolvePlatformSpecificImplementation<
+        IOSFlutterLocalNotificationsPlugin>();
 
     await androidPlugin?.createNotificationChannel(
       const AndroidNotificationChannel(
@@ -112,6 +123,14 @@ class NotificationService {
         await androidPlugin?.requestExactAlarmsPermission() ?? false;
     debugPrint('[NOTIF] 精确闹钟权限申请结果: $alarmGranted'
         '${alarmGranted ? '' : ' ⚠️ 精确闹钟权限未获取，定时通知可能延迟或失效'}');
+
+    final iosPermissionGranted = await iosPlugin?.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        ) ??
+        true;
+    debugPrint('[NOTIF] iOS 通知权限申请结果: $iosPermissionGranted');
 
     debugPrint('[NOTIF] init() 完成 ✅');
   }

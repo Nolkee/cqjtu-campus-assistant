@@ -119,12 +119,21 @@ class ApiService {
       'forceRefresh': forceRefresh,
       if (dormParams != null) ...dormParams,
     });
+    final raw = _asJsonMap(
+      res.data,
+      statusCode: res.statusCode,
+      operation: '电费余额',
+    );
     dev.log(
-      '[ApiService] getElecBalance response code=${res.data['code']} msg=${res.data['msg']}',
+      '[ApiService] getElecBalance response code=${raw['code']} msg=${raw['msg']}',
       name: 'ApiService',
     );
-    _checkCode(res.data, statusCode: res.statusCode);
-    return res.data['data'] as String;
+    _checkCode(raw, statusCode: res.statusCode);
+    final data = raw['data'];
+    if (data == null) {
+      throw ApiException(500, '电费余额返回为空');
+    }
+    return data.toString();
   }
 
   Future<String> getCampusCardBalance(
@@ -143,12 +152,21 @@ class ApiService {
       if (sessionId != null && sessionId.isNotEmpty) 'sessionId': sessionId,
       'forceRefresh': forceRefresh,
     });
+    final raw = _asJsonMap(
+      res.data,
+      statusCode: res.statusCode,
+      operation: '校园卡余额',
+    );
     dev.log(
-      '[ApiService] getCampusCardBalance response code=${res.data['code']} msg=${res.data['msg']}',
+      '[ApiService] getCampusCardBalance response code=${raw['code']} msg=${raw['msg']}',
       name: 'ApiService',
     );
-    _checkCode(res.data, statusCode: res.statusCode);
-    return res.data['data'] as String;
+    _checkCode(raw, statusCode: res.statusCode);
+    final data = raw['data'];
+    if (data == null) {
+      throw ApiException(500, '校园卡余额返回为空');
+    }
+    return data.toString();
   }
 
   Future<String> rechargeElec(
@@ -163,8 +181,14 @@ class ApiService {
       'amount': amount,
       if (dormParams != null) ...dormParams,
     });
-    _checkCode(res.data, statusCode: res.statusCode);
-    return res.data['msg'] as String;
+    final raw = _asJsonMap(
+      res.data,
+      statusCode: res.statusCode,
+      operation: '电费充值',
+    );
+    _checkCode(raw, statusCode: res.statusCode);
+    final msg = raw['msg'];
+    return msg == null ? '充值成功' : msg.toString();
   }
 
   Future<String> getPayCodeToken(
@@ -175,8 +199,17 @@ class ApiService {
       'username': username,
       if (sessionId != null && sessionId.isNotEmpty) 'sessionId': sessionId,
     });
-    _checkCode(res.data, statusCode: res.statusCode);
-    return res.data['data'] as String;
+    final raw = _asJsonMap(
+      res.data,
+      statusCode: res.statusCode,
+      operation: '消费二维码',
+    );
+    _checkCode(raw, statusCode: res.statusCode);
+    final data = raw['data'];
+    if (data == null) {
+      throw ApiException(500, '消费二维码返回为空');
+    }
+    return data.toString();
   }
 
   Future<String> getCampusCardAlipayUrl(
@@ -189,8 +222,17 @@ class ApiService {
       if (sessionId != null && sessionId.isNotEmpty) 'sessionId': sessionId,
       'amount': amount,
     });
-    _checkCode(res.data, statusCode: res.statusCode);
-    return res.data['data'] as String;
+    final raw = _asJsonMap(
+      res.data,
+      statusCode: res.statusCode,
+      operation: '校园卡充值',
+    );
+    _checkCode(raw, statusCode: res.statusCode);
+    final data = raw['data'];
+    if (data == null) {
+      throw ApiException(500, '校园卡充值地址为空');
+    }
+    return data.toString();
   }
 
   Future<EnterLeaveApplyListResult> enterLeaveApplyList(
@@ -312,6 +354,19 @@ class ApiService {
     return null;
   }
 
+  Map<String, dynamic> _asJsonMap(
+    dynamic value, {
+    required int? statusCode,
+    required String operation,
+  }) {
+    final raw = _toMapStringDynamic(value);
+    if (raw.isNotEmpty) return raw;
+    throw ApiException(
+      statusCode ?? -1,
+      '$operation接口返回了非 JSON 数据，可能需要重新进行网页登录验证',
+    );
+  }
+
   String? _readSessionId(dynamic data) {
     final direct = data['sessionId'];
     if (direct is String && direct.isNotEmpty) return direct;
@@ -330,15 +385,15 @@ class ApiService {
 
   void _checkCode(dynamic data, {int? statusCode}) {
     final raw = _toMapStringDynamic(data);
+    if (raw.isEmpty) {
+      throw ApiException(statusCode ?? -1, '服务返回非 JSON 响应');
+    }
     final code = _toInt(raw['code']) ?? statusCode ?? -1;
     if (code == 449) {
       throw CaptchaRequiredException();
     }
     if (code == 200) return;
-    if (raw.isNotEmpty) {
-      throw ApiException(code, data['msg'] as String? ?? '未知错误');
-    }
-    throw ApiException(code, 'HTTP $code');
+    throw ApiException(code, raw['msg']?.toString() ?? 'HTTP $code');
   }
 }
 

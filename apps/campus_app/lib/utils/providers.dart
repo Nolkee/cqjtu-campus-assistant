@@ -174,16 +174,20 @@ class _ApiCampusBackend implements CampusBackend {
   final CredentialService _credentialService;
   final Map<String, Future<String>> _oneCardRehydrateTasks = {};
   final Map<String, Future<String>> _oneCardRestoreTasks = {};
+  final Set<String> _oneCardPreparedSessions = <String>{};
 
   bool _isOneCardAuthFailure(Object error) {
     if (error is! ApiException) return false;
-    if (error.code == 401) return true;
+    if (error.code == 401 || error.code == 403) return true;
     if (error.code != 500) return false;
     final msg = error.message;
     return msg.contains('授权失败') ||
         msg.contains('登录状态') ||
         msg.contains('校园卡') ||
         msg.contains('电费') ||
+        msg.contains('二维码') ||
+        msg.contains('会话') ||
+        msg.contains('cookie') ||
         msg.contains('获取失败') ||
         msg.contains('登录失败');
   }
@@ -247,6 +251,19 @@ class _ApiCampusBackend implements CampusBackend {
     return task;
   }
 
+  Future<String> _ensurePreparedOneCardSession(
+    String username,
+    String sessionId,
+  ) async {
+    final key = '$username@$sessionId';
+    if (_oneCardPreparedSessions.contains(key)) {
+      return sessionId;
+    }
+    final prepared = await _ensureRestoredOneCardSession(username, sessionId);
+    _oneCardPreparedSessions.add('$username@$prepared');
+    return prepared;
+  }
+
   Future<String> _rehydrateOneCardSession(
     String username,
     String? password,
@@ -302,6 +319,7 @@ class _ApiCampusBackend implements CampusBackend {
     required Future<T> Function(String sessionId) recoveredRequest,
   }) async {
     var sessionId = await _sessionManager.ensureSessionId(username);
+    sessionId = await _ensurePreparedOneCardSession(username, sessionId);
     try {
       return await primaryRequest(sessionId);
     } catch (error) {
@@ -316,6 +334,7 @@ class _ApiCampusBackend implements CampusBackend {
           '[ApiCampusBackend] $operation retry after session refresh username=$username reason=$error',
         );
         sessionId = await _ensureRehydratedOneCardSession(username, password);
+        sessionId = await _ensurePreparedOneCardSession(username, sessionId);
         return recoveredRequest(sessionId);
       }
 
@@ -323,6 +342,7 @@ class _ApiCampusBackend implements CampusBackend {
         '[ApiCampusBackend] $operation retry after login state restore username=$username sessionId=$sessionId reason=$error',
       );
       sessionId = await _ensureRestoredOneCardSession(username, sessionId);
+      _oneCardPreparedSessions.add('$username@$sessionId');
 
       try {
         return await recoveredRequest(sessionId);
@@ -339,6 +359,7 @@ class _ApiCampusBackend implements CampusBackend {
           '[ApiCampusBackend] $operation escalates to full rehydrate username=$username sessionId=$sessionId reason=$retryError',
         );
         sessionId = await _ensureRehydratedOneCardSession(username, password);
+        sessionId = await _ensurePreparedOneCardSession(username, sessionId);
         return recoveredRequest(sessionId);
       }
     }

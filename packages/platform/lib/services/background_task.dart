@@ -14,6 +14,16 @@ const _elecChannelId = 'elec_alert_v2';
 const _cardChannelId = 'card_alert_v2';
 const _updateChannelId = 'app_update_v1';
 const _sessionPrefix = 'session_id_';
+const _env = String.fromEnvironment('ENV', defaultValue: 'mock');
+const _baseUrlDefine = String.fromEnvironment('BASE_URL', defaultValue: '');
+const _prodDefaultBaseUrl = 'http://47.109.25.240:8080';
+const _localDefaultBaseUrl = 'http://127.0.0.1:8080';
+
+String _resolveBaseUrl() {
+  final defined = _baseUrlDefine.trim();
+  if (defined.isNotEmpty) return defined;
+  return _env == 'prod' ? _prodDefaultBaseUrl : _localDefaultBaseUrl;
+}
 
 class _BgSessionExpiredException implements Exception {}
 
@@ -106,10 +116,7 @@ void backgroundCallbackDispatcher() {
 
       final dio = Dio(
         BaseOptions(
-          baseUrl: const String.fromEnvironment(
-            'BASE_URL',
-            defaultValue: 'http://127.0.0.1:8080',
-          ),
+          baseUrl: _resolveBaseUrl(),
           connectTimeout: const Duration(seconds: 15),
           receiveTimeout: const Duration(seconds: 30),
         ),
