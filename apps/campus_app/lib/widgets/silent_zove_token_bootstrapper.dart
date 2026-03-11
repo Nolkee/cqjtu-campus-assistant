@@ -53,6 +53,7 @@ class _SilentZoveTokenBootstrapperState
               _pageLoadCompleter?.complete();
             }
             await _controller.runJavaScript(_hookScript);
+            if (!mounted) return;
             if (url.contains('ids.cqjtu.edu.cn/authserver/login')) {
               final creds = ref.read(credentialsProvider);
               if (creds != null) {
@@ -64,11 +65,13 @@ class _SilentZoveTokenBootstrapperState
       );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       _maybeStart();
     });
   }
 
   Future<void> _maybeStart() async {
+    if (!mounted) return;
     if (_running) return;
     final creds = ref.read(credentialsProvider);
     if (creds == null) return;
@@ -97,6 +100,7 @@ class _SilentZoveTokenBootstrapperState
       final token = await _waitForToken(timeout: const Duration(seconds: 8));
       if (token != null && token.isNotEmpty) {
         await sessionService.saveZoveToken(username, token);
+        if (!mounted) return;
         ref.read(sessionUpdateProvider.notifier).triggerRefresh();
       }
     } catch (_) {

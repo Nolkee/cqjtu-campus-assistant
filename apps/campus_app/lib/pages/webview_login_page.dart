@@ -72,6 +72,10 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
       )
       ..setNavigationDelegate(
         NavigationDelegate(
+          onNavigationRequest: (request) {
+            _captureTicket(request.url);
+            return NavigationDecision.navigate;
+          },
           onPageStarted: (url) {
             _captureTicket(url);
             if (mounted) setState(() => _isLoading = true);
@@ -156,6 +160,10 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
 
   Future<void> _extractAndReturnArtifacts() async {
     try {
+      if (widget.mode == WebViewLoginMode.jwgSession &&
+          (_latestTicket == null || _latestTicket!.isEmpty)) {
+        await _tryCaptureTicketFallback();
+      }
       final casCookies = await _readCookiesWithRetry(
         'https://ids.cqjtu.edu.cn/authserver/',
       );
@@ -342,6 +350,13 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
         }
       })();
     ''');
+  }
+
+  Future<void> _tryCaptureTicketFallback() async {
+    try {
+      await _loadAndWait(_loginUrl);
+      await Future.delayed(const Duration(milliseconds: 800));
+    } catch (_) {}
   }
 
   String? _normalizeJsString(Object? value) {
