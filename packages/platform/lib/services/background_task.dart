@@ -96,6 +96,9 @@ void backgroundCallbackDispatcher() {
 
       const storage = FlutterSecureStorage(
         aOptions: AndroidOptions(encryptedSharedPreferences: true),
+        iOptions: IOSOptions(
+          accessibility: KeychainAccessibility.first_unlock_this_device,
+        ),
       );
       final username = await storage.read(key: 'username');
       final password = await storage.read(key: 'password');

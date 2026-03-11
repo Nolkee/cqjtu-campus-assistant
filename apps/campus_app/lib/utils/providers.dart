@@ -41,6 +41,16 @@ class SessionManager {
   Future<String> ensureSessionId(String username) async {
     final cached = _sessionIdCache[username];
     if (cached != null && cached.isNotEmpty) return cached;
+
+    final persisted = await _sessionService.loadSessionId(username);
+    if (persisted != null && persisted.isNotEmpty) {
+      _sessionIdCache[username] = persisted;
+      debugPrint(
+        '[SessionManager] reuse persisted sessionId username=$username sessionId=$persisted',
+      );
+      return persisted;
+    }
+
     return refreshSessionId(username);
   }
 
@@ -131,6 +141,17 @@ class SessionManager {
         error.message.toLowerCase().contains('sessionid');
   }
 
+  bool isSecurityVerificationError(Object error) {
+    if (error is CaptchaRequiredException) return true;
+    if (error is! ApiException) return false;
+    if (error.code == 449) return true;
+    final msg = error.message.toLowerCase();
+    return msg.contains('验证码') ||
+        msg.contains('captcha') ||
+        msg.contains('cas') ||
+        msg.contains('html');
+  }
+
   Future<T> runWithSessionRetry<T>({
     required String username,
     required Future<T> Function(String sessionId) request,
@@ -142,15 +163,40 @@ class SessionManager {
     try {
       return await request(sessionId);
     } catch (error) {
-      if (!isSessionExpiredError(error)) rethrow;
+      if (isSessionExpiredError(error)) {
+        debugPrint(
+          '[SessionManager] session expired username=$username oldSessionId=$sessionId, refreshing',
+        );
+        sessionId = await refreshSessionId(username);
+        await restoreLoginState(username, sessionId);
+        debugPrint(
+          '[SessionManager] retry request username=$username newSessionId=$sessionId',
+        );
+        return request(sessionId);
+      }
+
+      if (!isSecurityVerificationError(error)) rethrow;
+
+      // First attempt: reuse the same session and inject cached login artifacts.
       debugPrint(
-        '[SessionManager] session expired username=$username oldSessionId=$sessionId, refreshing',
+        '[SessionManager] security verification required, try restore on current session username=$username sessionId=$sessionId',
+      );
+      await restoreLoginState(username, sessionId);
+      try {
+        return await request(sessionId);
+      } catch (retryError) {
+        if (!isSessionExpiredError(retryError) &&
+            !isSecurityVerificationError(retryError)) {
+          rethrow;
+        }
+      }
+
+      // Second attempt: refresh session and inject artifacts again.
+      debugPrint(
+        '[SessionManager] security verification persists, refresh session and retry username=$username',
       );
       sessionId = await refreshSessionId(username);
       await restoreLoginState(username, sessionId);
-      debugPrint(
-        '[SessionManager] retry request username=$username newSessionId=$sessionId',
-      );
       return request(sessionId);
     }
   }

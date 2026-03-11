@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -24,7 +25,7 @@ class WebViewLoginPage extends StatefulWidget {
 
 class _WebViewLoginPageState extends State<WebViewLoginPage> {
   static const _loginUrl =
-      'https://ids.cqjtu.edu.cn/authserver/login?service=http%3A%2F%2Fjwgln.cqjtu.edu.cn%2Fjsxsd%2Fsso.jsp';
+      'https://ids.cqjtu.edu.cn/authserver/login?service=https%3A%2F%2Fjwgln.cqjtu.edu.cn%2Fjsxsd%2Fsso.jsp';
   static const _ecardEntryUrl = 'https://ecard.cqjtu.edu.cn/epay/h5/payele';
   static const _studentIndexUrl =
       'https://zhxg.cqjtu.edu.cn/mobile/stuhall/studentindex';
@@ -129,15 +130,34 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
   }
 
   Future<void> _autofillCredentials() async {
+    final shouldAutofillPassword = defaultTargetPlatform != TargetPlatform.iOS;
+    final escapedUsername = _escapeForJs(widget.username);
+    final escapedPassword = _escapeForJs(widget.password);
+    final passwordExpr = shouldAutofillPassword ? "'$escapedPassword'" : 'null';
     await _controller.runJavaScript('''
       setTimeout(function () {
+        function setInputValue(el, v) {
+          if (!el || v === null || v === undefined) return;
+          try {
+            var setter = Object.getOwnPropertyDescriptor(
+              window.HTMLInputElement.prototype,
+              'value'
+            ).set;
+            setter.call(el, v);
+          } catch (_) {
+            el.value = v;
+          }
+          ['input', 'change', 'keyup', 'blur'].forEach(function (evt) {
+            el.dispatchEvent(new Event(evt, { bubbles: true }));
+          });
+        }
         var u = document.getElementById('username');
         var p = document.getElementById('password');
-        if (u && p) {
-          u.value = '${widget.username}';
-          p.value = '${widget.password}';
-          u.dispatchEvent(new Event('input', { bubbles: true }));
-          p.dispatchEvent(new Event('input', { bubbles: true }));
+        if (u) {
+          setInputValue(u, '$escapedUsername');
+        }
+        if (p) {
+          setInputValue(p, $passwordExpr);
         }
       }, 300);
     ''');
@@ -368,6 +388,14 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
     }
     text = text.replaceAll(r'\"', '"').replaceAll(r'\n', '\n').trim();
     return text.isEmpty ? null : text;
+  }
+
+  String _escapeForJs(String input) {
+    return input
+        .replaceAll(r'\', r'\\')
+        .replaceAll("'", r"\'")
+        .replaceAll('\n', r'\n')
+        .replaceAll('\r', r'\r');
   }
 
   bool _hasLikelySessionCookie(String cookies) {

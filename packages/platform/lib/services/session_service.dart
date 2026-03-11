@@ -7,6 +7,9 @@ final sessionServiceProvider =
 class SessionService {
   static const _storage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    iOptions: IOSOptions(
+      accessibility: KeychainAccessibility.first_unlock_this_device,
+    ),
   );
 
   static const _sessionPrefix = 'session_id_';
