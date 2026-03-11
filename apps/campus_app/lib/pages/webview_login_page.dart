@@ -231,20 +231,20 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
   Future<String> _captureEcardCookies() async {
     try {
       _autoSubmitLogin = true;
+      final deadline = DateTime.now().add(const Duration(seconds: 12));
       const probeUrls = <String>[
         _ecardEntryUrl,
         'https://ecard.cqjtu.edu.cn/epay/h5/',
-        'https://ecard.cqjtu.edu.cn/epay/',
-        'https://ecard.cqjtu.edu.cn/',
       ];
       String bestEffortCookies = '';
       for (final url in probeUrls) {
-        await _loadAndWait(url);
+        if (DateTime.now().isAfter(deadline)) break;
+        await _loadAndWait(url, timeout: const Duration(seconds: 8));
         await Future.delayed(const Duration(milliseconds: 600));
         final cookies = await _readCookiesWithRetry(
           url,
-          maxAttempts: 6,
-          baseDelayMs: 300,
+          maxAttempts: 3,
+          baseDelayMs: 200,
         );
         if (cookies.isNotEmpty) {
           debugPrint(
@@ -288,13 +288,13 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
     return token.isEmpty ? null : token;
   }
 
-  Future<void> _loadAndWait(String url) async {
+  Future<void> _loadAndWait(
+    String url, {
+    Duration timeout = const Duration(seconds: 20),
+  }) async {
     _pageLoadedCompleter = Completer<void>();
     await _controller.loadRequest(Uri.parse(url));
-    await _pageLoadedCompleter!.future.timeout(
-      const Duration(seconds: 20),
-      onTimeout: () {},
-    );
+    await _pageLoadedCompleter!.future.timeout(timeout, onTimeout: () {});
   }
 
   Future<String?> _readZoveToken() async {
