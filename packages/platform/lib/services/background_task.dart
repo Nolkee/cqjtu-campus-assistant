@@ -14,6 +14,13 @@ const _elecChannelId = 'elec_alert_v2';
 const _cardChannelId = 'card_alert_v2';
 const _updateChannelId = 'app_update_v1';
 const _sessionPrefix = 'session_id_';
+const _ticketPrefix = 'login_ticket_';
+const _casCookiesPrefix = 'cas_cookies_';
+const _jwgCookiesPrefix = 'jwg_cookies_';
+const _ecardCookiesPrefix = 'ecard_cookies_';
+const _casDomain = 'ids.cqjtu.edu.cn';
+const _jwgDomain = 'jwgln.cqjtu.edu.cn';
+const _ecardDomain = 'ecard.cqjtu.edu.cn';
 
 class _BgSessionExpiredException implements Exception {}
 
@@ -116,6 +123,7 @@ void backgroundCallbackDispatcher() {
       );
 
       var sessionId = await _ensureSessionId(storage, dio, username);
+      await _restoreLoginState(storage, dio, username, sessionId);
 
       try {
         await _checkElec(
@@ -130,6 +138,7 @@ void backgroundCallbackDispatcher() {
         );
       } on _BgSessionExpiredException {
         sessionId = await _refreshSessionId(storage, dio, username);
+        await _restoreLoginState(storage, dio, username, sessionId);
         await _checkElec(
           dio,
           plugin,
@@ -154,6 +163,7 @@ void backgroundCallbackDispatcher() {
         );
       } on _BgSessionExpiredException {
         sessionId = await _refreshSessionId(storage, dio, username);
+        await _restoreLoginState(storage, dio, username, sessionId);
         await _checkCard(
           dio,
           plugin,
@@ -344,6 +354,113 @@ Future<String> _createSession(Dio dio, String username) async {
   return sessionId;
 }
 
+Future<void> _restoreLoginState(
+  FlutterSecureStorage storage,
+  Dio dio,
+  String username,
+  String sessionId,
+) async {
+  final ticket = (await storage.read(key: _ticketKey(username)))?.trim() ?? '';
+  if (ticket.isNotEmpty) {
+    try {
+      await _loginWithTicket(dio, username, ticket, sessionId);
+    } catch (error) {
+      debugPrint('[BG] ticket restore failed username=$username reason=$error');
+    }
+  }
+
+  await _injectCookiesFromStorage(
+    storage: storage,
+    dio: dio,
+    username: username,
+    sessionId: sessionId,
+    storageKey: _casCookiesKey(username),
+    domain: _casDomain,
+    tag: 'CAS',
+  );
+  await _injectCookiesFromStorage(
+    storage: storage,
+    dio: dio,
+    username: username,
+    sessionId: sessionId,
+    storageKey: _jwgCookiesKey(username),
+    domain: _jwgDomain,
+    tag: 'JWG',
+  );
+  await _injectCookiesFromStorage(
+    storage: storage,
+    dio: dio,
+    username: username,
+    sessionId: sessionId,
+    storageKey: _ecardCookiesKey(username),
+    domain: _ecardDomain,
+    tag: 'ECARD',
+  );
+}
+
+Future<void> _injectCookiesFromStorage({
+  required FlutterSecureStorage storage,
+  required Dio dio,
+  required String username,
+  required String sessionId,
+  required String storageKey,
+  required String domain,
+  required String tag,
+}) async {
+  final cookies = (await storage.read(key: storageKey))?.trim() ?? '';
+  if (cookies.isEmpty) return;
+  try {
+    await _injectCookies(dio, username, sessionId, domain, cookies);
+  } catch (error) {
+    debugPrint(
+      '[BG] $tag cookie restore failed username=$username reason=$error',
+    );
+  }
+}
+
+Future<void> _loginWithTicket(
+  Dio dio,
+  String username,
+  String ticket,
+  String sessionId,
+) async {
+  final res = await dio.post(
+    '/api/auth/loginWithTicket',
+    queryParameters: {
+      'username': username,
+      'ticket': ticket,
+      'sessionId': sessionId,
+    },
+  );
+  _ensureSuccessCode(res.data, fallbackMessage: 'loginWithTicket failed');
+}
+
+Future<void> _injectCookies(
+  Dio dio,
+  String username,
+  String sessionId,
+  String domain,
+  String cookies,
+) async {
+  final res = await dio.post(
+    '/api/auth/injectCookies',
+    queryParameters: {
+      'username': username,
+      'sessionId': sessionId,
+      'domain': domain,
+      'cookies': cookies,
+    },
+  );
+  _ensureSuccessCode(res.data, fallbackMessage: 'injectCookies failed');
+}
+
+void _ensureSuccessCode(dynamic data, {required String fallbackMessage}) {
+  final code = data is Map ? data['code'] : null;
+  if (code == 200) return;
+  final msg = (data is Map ? data['msg'] : null)?.toString();
+  throw Exception(msg == null || msg.isEmpty ? fallbackMessage : msg);
+}
+
 String? _extractSessionId(dynamic data) {
   final direct = data['sessionId'];
   if (direct is String && direct.isNotEmpty) return direct;
@@ -367,6 +484,10 @@ bool _isSessionExpiredResponse(dynamic data) {
 }
 
 String _sessionKey(String username) => '$_sessionPrefix$username';
+String _ticketKey(String username) => '$_ticketPrefix$username';
+String _casCookiesKey(String username) => '$_casCookiesPrefix$username';
+String _jwgCookiesKey(String username) => '$_jwgCookiesPrefix$username';
+String _ecardCookiesKey(String username) => '$_ecardCookiesPrefix$username';
 
 double _parseBalance(String s) =>
     double.tryParse(s.replaceAll(RegExp(r'[^\-0-9.]'), '')) ?? double.nan;

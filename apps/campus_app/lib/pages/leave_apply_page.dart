@@ -111,7 +111,8 @@ class _LeaveApplyPageState extends ConsumerState<LeaveApplyPage> {
       if (opened) return;
 
       // Fallback: keep backend entry flow as a compatibility path.
-      var result = await sessionManager.runWithSessionRetry(
+      var result = await sessionManager.runWithRecovery(
+        domain: SystemDomain.leave,
         username: username,
         request: (sessionId) => api.enterLeaveApplyList(
           username,
@@ -131,8 +132,10 @@ class _LeaveApplyPageState extends ConsumerState<LeaveApplyPage> {
           return;
         }
 
-        result = await sessionManager.runWithSessionRetry(
+        result = await sessionManager.runWithRecovery(
+          domain: SystemDomain.leave,
           username: username,
+          forceRefresh: true,
           request: (sessionId) => api.enterLeaveApplyList(
             username,
             sessionId: sessionId,
@@ -151,6 +154,9 @@ class _LeaveApplyPageState extends ConsumerState<LeaveApplyPage> {
         _mobileLeaveUrl,
         headers: {'h-zove-token': zoveToken!},
       );
+    } on ManualVerificationRequiredException catch (error) {
+      _error =
+          '${error.domain.displayName} requires manual verification before loading leave page.';
     } on ApiException catch (error) {
       _error = 'Request failed: ${error.message} (code=${error.code})';
     } catch (error) {
@@ -173,7 +179,14 @@ class _LeaveApplyPageState extends ConsumerState<LeaveApplyPage> {
     if (!forceRefresh) {
       final cached = await sessionService.loadZoveToken(username);
       final token = cached?.trim() ?? '';
-      if (token.isNotEmpty) return token;
+      if (token.isNotEmpty) {
+        final updatedAt = await sessionService.loadZoveTokenUpdatedAt(username);
+        if (updatedAt == null) return token;
+        final ageMs = DateTime.now().millisecondsSinceEpoch - updatedAt;
+        if (ageMs < SystemDomain.leave.freshness.inMilliseconds) {
+          return token;
+        }
+      }
     }
 
     final token = await _extractZoveTokenFromWebView();

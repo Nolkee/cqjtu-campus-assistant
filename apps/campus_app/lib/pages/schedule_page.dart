@@ -360,6 +360,8 @@ class _ScheduleBody extends ConsumerWidget {
         ],
       ),
       body: scheduleAsync.when(
+        skipError: true,
+        skipLoadingOnRefresh: true,
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) {
           String errMsg = e.toString();

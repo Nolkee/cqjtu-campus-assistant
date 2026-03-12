@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:campus_platform/services/session_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -18,21 +19,33 @@ class SilentZoveTokenBootstrapper extends ConsumerStatefulWidget {
 }
 
 class _SilentZoveTokenBootstrapperState
-    extends ConsumerState<SilentZoveTokenBootstrapper> {
+    extends ConsumerState<SilentZoveTokenBootstrapper>
+    with WidgetsBindingObserver {
+  static const _loginUrl =
+      'https://ids.cqjtu.edu.cn/authserver/login?service=http%3A%2F%2Fjwgln.cqjtu.edu.cn%2Fjsxsd%2Fsso.jsp';
+  static const _ecardEntryUrl = 'https://ecard.cqjtu.edu.cn/epay/h5/payele';
   static const _studentIndexUrl =
       'https://zhxg.cqjtu.edu.cn/mobile/stuhall/studentindex';
+  static const _casCookieUrl = 'https://ids.cqjtu.edu.cn/authserver/';
+  static const _jwgCookieUrl = 'https://jwgln.cqjtu.edu.cn/jsxsd/';
+  static const _ecardCookieUrl = 'https://ecard.cqjtu.edu.cn/epay/h5/';
+  static const _healthCheckInterval = Duration(minutes: 10);
+  static const _cookieChannel = MethodChannel('campus_app/cookie_manager');
 
   late final WebViewController _controller;
   Completer<void>? _pageLoadCompleter;
   Completer<String>? _tokenCompleter;
   String? _capturedZoveToken;
+  String? _latestTicket;
+  Timer? _healthTimer;
 
   bool _running = false;
-  String? _runningUser;
+  String? _lastSeenUser;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..addJavaScriptChannel(
@@ -48,7 +61,11 @@ class _SilentZoveTokenBootstrapperState
       )
       ..setNavigationDelegate(
         NavigationDelegate(
+          onPageStarted: (url) {
+            _captureTicket(url);
+          },
           onPageFinished: (url) async {
+            _captureTicket(url);
             if (!(_pageLoadCompleter?.isCompleted ?? true)) {
               _pageLoadCompleter?.complete();
             }
@@ -64,56 +81,196 @@ class _SilentZoveTokenBootstrapperState
       );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _maybeStart();
+      unawaited(_maybeStart());
+    });
+    _healthTimer = Timer.periodic(_healthCheckInterval, (_) {
+      unawaited(_maybeStart());
     });
   }
 
-  Future<void> _maybeStart() async {
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _healthTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_maybeStart());
+    }
+  }
+
+  void _captureTicket(String url) {
+    final ticket = Uri.tryParse(url)?.queryParameters['ticket'];
+    if (ticket != null && ticket.isNotEmpty) {
+      _latestTicket = ticket;
+    }
+  }
+
+  Future<void> _maybeStart({bool force = false}) async {
     if (_running) return;
     final creds = ref.read(credentialsProvider);
     if (creds == null) return;
 
     final sessionService = ref.read(sessionServiceProvider);
-    final cached = (await sessionService.loadZoveToken(creds.username))?.trim();
-    if (cached != null && cached.isNotEmpty) return;
+    if (!force) {
+      final shouldRefresh = await _shouldRefreshArtifacts(
+        creds.username,
+        sessionService,
+      );
+      if (!shouldRefresh) return;
+    }
 
     _running = true;
-    _runningUser = creds.username;
-    unawaited(_bootstrap(creds.username, creds.password, sessionService));
+    unawaited(_bootstrap(creds.username, sessionService));
+  }
+
+  Future<bool> _shouldRefreshArtifacts(
+    String username,
+    SessionService sessionService,
+  ) async {
+    if (await _isArtifactMissingOrStale(
+      valueLoader: () => sessionService.loadTicket(username),
+      updatedAtLoader: () => sessionService.loadTicketUpdatedAt(username),
+      maxAge: SystemDomain.schedule.freshness,
+    )) {
+      return true;
+    }
+
+    if (await _isArtifactMissingOrStale(
+      valueLoader: () => sessionService.loadCasCookies(username),
+      updatedAtLoader: () => sessionService.loadCasCookiesUpdatedAt(username),
+      maxAge: SystemDomain.schedule.freshness,
+    )) {
+      return true;
+    }
+
+    if (await _isArtifactMissingOrStale(
+      valueLoader: () => sessionService.loadJwgCookies(username),
+      updatedAtLoader: () => sessionService.loadJwgCookiesUpdatedAt(username),
+      maxAge: SystemDomain.schedule.freshness,
+    )) {
+      return true;
+    }
+
+    if (await _isArtifactMissingOrStale(
+      valueLoader: () => sessionService.loadEcardCookies(username),
+      updatedAtLoader: () => sessionService.loadEcardCookiesUpdatedAt(username),
+      maxAge: SystemDomain.oneCard.freshness,
+    )) {
+      return true;
+    }
+
+    return _isArtifactMissingOrStale(
+      valueLoader: () => sessionService.loadZoveToken(username),
+      updatedAtLoader: () => sessionService.loadZoveTokenUpdatedAt(username),
+      maxAge: SystemDomain.leave.freshness,
+    );
+  }
+
+  Future<bool> _isArtifactMissingOrStale({
+    required Future<String?> Function() valueLoader,
+    required Future<int?> Function() updatedAtLoader,
+    required Duration maxAge,
+  }) async {
+    final value = (await valueLoader())?.trim() ?? '';
+    if (value.isEmpty) return true;
+
+    final updatedAt = await updatedAtLoader();
+    if (updatedAt == null) return true;
+
+    final age = DateTime.now().millisecondsSinceEpoch - updatedAt;
+    return age >= maxAge.inMilliseconds;
   }
 
   Future<void> _bootstrap(
     String username,
-    String password,
     SessionService sessionService,
   ) async {
     try {
+      _latestTicket = null;
+      await _refreshCookieArtifacts(
+        username,
+        sessionService,
+      );
+
       _capturedZoveToken = null;
       _tokenCompleter = Completer<String>();
       await _loadAndWait(_studentIndexUrl);
       await _controller.runJavaScript(_hookScript);
-      await _reloadAndWait();
+      await _loadAndWait(_studentIndexUrl);
 
       final token = await _waitForToken(timeout: const Duration(seconds: 8));
       if (token != null && token.isNotEmpty) {
         await sessionService.saveZoveToken(username, token);
-        ref.read(sessionUpdateProvider.notifier).triggerRefresh();
       }
     } catch (_) {
       // Silent mode: ignore errors and let leave page handle fallback.
     } finally {
       _running = false;
+      // Background credential warm-up should not interrupt visible pages by
+      // forcing all providers to refetch. The fresh artifacts stay in storage
+      // and will be used on the next real request/recovery.
     }
   }
 
+  Future<bool> _refreshCookieArtifacts(
+    String username,
+    SessionService sessionService,
+  ) async {
+    var updated = false;
+    try {
+      await _loadAndWait(_loginUrl);
+
+      final casCookies = await _readCookies(_casCookieUrl);
+      if (casCookies.isNotEmpty) {
+        await sessionService.saveCasCookies(username, casCookies);
+        updated = true;
+      }
+
+      final jwgCookies = await _readCookies(_jwgCookieUrl);
+      if (jwgCookies.isNotEmpty) {
+        await sessionService.saveJwgCookies(username, jwgCookies);
+        updated = true;
+      }
+
+      await _loadAndWait(_ecardEntryUrl);
+      final ecardCookies = await _readCookies(_ecardCookieUrl);
+      if (ecardCookies.isNotEmpty) {
+        await sessionService.saveEcardCookies(username, ecardCookies);
+        updated = true;
+      }
+
+      final ticket = _latestTicket?.trim() ?? '';
+      if (ticket.isNotEmpty) {
+        await sessionService.saveTicket(username, ticket);
+        updated = true;
+      }
+    } catch (_) {
+      // Silent mode: ignore errors and let foreground fallback handle it.
+    }
+    return updated;
+  }
+
+  Future<String> _readCookies(String url) async {
+    final cookies = await _cookieChannel.invokeMethod<String>('getCookies', {
+      'url': url,
+    });
+    return cookies?.trim() ?? '';
+  }
+
   Future<void> _autofillAndSubmit(String username, String password) async {
+    final escapedUsername = _escapeJs(username);
+    final escapedPassword = _escapeJs(password);
     await _controller.runJavaScript('''
       (function () {
         var u = document.getElementById('username');
         var p = document.getElementById('password');
         if (u && p) {
-          u.value = '${_escapeJs(username)}';
-          p.value = '${_escapeJs(password)}';
+          u.value = '$escapedUsername';
+          p.value = '$escapedPassword';
           u.dispatchEvent(new Event('input', { bubbles: true }));
           p.dispatchEvent(new Event('input', { bubbles: true }));
         }
@@ -139,15 +296,6 @@ class _SilentZoveTokenBootstrapperState
   Future<void> _loadAndWait(String url) async {
     _pageLoadCompleter = Completer<void>();
     await _controller.loadRequest(Uri.parse(url));
-    await _pageLoadCompleter!.future.timeout(
-      const Duration(seconds: 20),
-      onTimeout: () {},
-    );
-  }
-
-  Future<void> _reloadAndWait() async {
-    _pageLoadCompleter = Completer<void>();
-    await _controller.runJavaScript('location.reload();');
     await _pageLoadCompleter!.future.timeout(
       const Duration(seconds: 20),
       onTimeout: () {},
@@ -193,11 +341,13 @@ class _SilentZoveTokenBootstrapperState
   @override
   Widget build(BuildContext context) {
     final creds = ref.watch(credentialsProvider);
-    if (creds != null &&
-        !_running &&
-        (_runningUser == null || _runningUser != creds.username)) {
+    final username = creds?.username;
+    if (username == null) {
+      _lastSeenUser = null;
+    } else if (!_running && username != _lastSeenUser) {
+      _lastSeenUser = username;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _maybeStart();
+        unawaited(_maybeStart(force: true));
       });
     }
 

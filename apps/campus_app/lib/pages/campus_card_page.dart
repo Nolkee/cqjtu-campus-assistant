@@ -104,6 +104,8 @@ class _BalanceCard extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             balanceAsync.when(
+              skipError: true,
+              skipLoadingOnRefresh: true,
               loading: () => const SizedBox(
                 height: 42,
                 child: Align(
