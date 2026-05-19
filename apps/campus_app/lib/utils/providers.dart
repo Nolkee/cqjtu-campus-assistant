@@ -1038,6 +1038,27 @@ final selectedWeekProvider = NotifierProvider<SelectedWeekNotifier, int>(
   SelectedWeekNotifier.new,
 );
 
+const _scheduleSundayFirstKey = 'schedule_sunday_first';
+
+class ScheduleSundayFirstNotifier extends AsyncNotifier<bool> {
+  @override
+  Future<bool> build() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_scheduleSundayFirstKey) ?? false;
+  }
+
+  Future<void> setSundayFirst(bool value) async {
+    state = AsyncValue.data(value);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_scheduleSundayFirstKey, value);
+  }
+}
+
+final scheduleSundayFirstProvider =
+    AsyncNotifierProvider<ScheduleSundayFirstNotifier, bool>(
+      ScheduleSundayFirstNotifier.new,
+    );
+
 typedef ScheduleResult = ({List<Course> courses, String remark});
 
 final scheduleProvider = FutureProvider.family<ScheduleResult, String?>((

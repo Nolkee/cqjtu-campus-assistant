@@ -148,15 +148,12 @@ class AppUpdateService {
     'GITHUB_REPO',
     defaultValue: 'AAAAxuuuuu/cqjtu-campus-assistant',
   );
-  static const _baseUrl = String.fromEnvironment(
-    'BASE_URL',
-    defaultValue: '',
-  );
-  static const _env = String.fromEnvironment('ENV', defaultValue: 'mock');
 
   static const _installedVersionKey = 'app_installed_version';
   static const _installedBuildKey = 'app_installed_build_number';
   static const _lastNotifiedVersionKey = 'app_update_last_notified_version';
+  static const _updateFeedCacheKey = 'app_update_feed_cache_v1';
+  static const _updateFeedCacheTtl = Duration(hours: 6);
 
   static String get defaultReleasePageUrl =>
       'https://github.com/${_githubRepo.trim()}/releases/latest';
@@ -166,15 +163,8 @@ class AppUpdateService {
     if (explicit.isNotEmpty) return explicit;
 
     final repo = _githubRepo.trim();
-    if (repo.isNotEmpty) {
-      return 'https://api.github.com/repos/$repo/releases/latest';
-    }
-
-    if (_env == 'mock') return null;
-
-    final base = _baseUrl.trim();
-    if (base.isEmpty) return null;
-    return '${base.replaceFirst(RegExp(r'/+$'), '')}/api/app/version';
+    if (repo.isEmpty) return null;
+    return 'https://api.github.com/repos/$repo/releases/latest';
   }
 
   static Future<void> saveInstalledVersion(InstalledAppVersion version) async {
@@ -201,6 +191,7 @@ class AppUpdateService {
 
   static Future<AppUpdateCheckResult> checkForUpdate({
     required InstalledAppVersion current,
+    bool forceRefresh = false,
   }) async {
     final url = feedUrl;
     if (url == null || url.isEmpty) {
@@ -210,20 +201,34 @@ class AppUpdateService {
       );
     }
 
-    final latest = await _fetchLatestInfo(url);
-    if (_isNewerThanCurrent(latest, current)) {
-      return AppUpdateCheckResult(
-        status: AppUpdateCheckStatus.updateAvailable,
-        current: current,
-        latest: latest,
+    final cache = await _loadFeedCache();
+    if (!forceRefresh && cache != null && cache.isFresh(_updateFeedCacheTtl)) {
+      final latest = AppUpdateInfo.fromJson(
+        cache.data,
+        defaultReleasePageUrl: defaultReleasePageUrl,
       );
+      return _resultForCurrent(latest, current);
     }
 
-    return AppUpdateCheckResult(
-      status: AppUpdateCheckStatus.upToDate,
-      current: current,
-      latest: latest,
-    );
+    try {
+      final payload = await _fetchLatestFeed(url, cache: cache);
+      await _saveFeedCache(payload);
+      final latest = AppUpdateInfo.fromJson(
+        payload.data,
+        defaultReleasePageUrl: defaultReleasePageUrl,
+      );
+      return _resultForCurrent(latest, current);
+    } catch (error) {
+      if (cache != null) {
+        debugPrint('[UPDATE] using cached feed after error: $error');
+        final latest = AppUpdateInfo.fromJson(
+          cache.data,
+          defaultReleasePageUrl: defaultReleasePageUrl,
+        );
+        return _resultForCurrent(latest, current);
+      }
+      throw Exception('Unable to check for updates: $error');
+    }
   }
 
   static Future<bool> shouldNotify(AppUpdateInfo latest) async {
@@ -237,18 +242,32 @@ class AppUpdateService {
     await prefs.setString(_lastNotifiedVersionKey, latest.label);
   }
 
-  static Future<AppUpdateInfo> _fetchLatestInfo(String url) async {
+  static Future<_UpdateFeedPayload> _fetchLatestFeed(
+    String url, {
+    _UpdateFeedCache? cache,
+  }) async {
     final uri = Uri.tryParse(url);
     final dio = Dio(
       BaseOptions(
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 15),
         validateStatus: (status) => status != null && status < 600,
-        headers: _buildRequestHeaders(uri),
+        headers: _buildRequestHeaders(uri, cache?.etag),
       ),
     );
 
     final response = await dio.get<dynamic>(url);
+    if (response.statusCode == 304) {
+      if (cache == null) {
+        throw Exception('HTTP 304: no cached update feed available');
+      }
+      return _UpdateFeedPayload(
+        data: cache.data,
+        etag: cache.etag,
+        checkedAtMs: DateTime.now().millisecondsSinceEpoch,
+      );
+    }
+
     if ((response.statusCode ?? 500) >= 400) {
       final message = _extractErrorMessage(response.data);
       final prefix = 'HTTP ${response.statusCode}';
@@ -271,21 +290,31 @@ class AppUpdateService {
     final outer = _asMap(raw);
     final code = _readInt(outer, const ['code']);
     final data = code == 200 ? _asMap(outer['data']) : outer;
-    return AppUpdateInfo.fromJson(
-      data,
-      defaultReleasePageUrl: defaultReleasePageUrl,
+    return _UpdateFeedPayload(
+      data: data,
+      etag: response.headers.value('etag'),
+      checkedAtMs: DateTime.now().millisecondsSinceEpoch,
     );
   }
 
-  static Map<String, String> _buildRequestHeaders(Uri? uri) {
+  static Map<String, String> _buildRequestHeaders(
+    Uri? uri,
+    String? etag,
+  ) {
+    final headers = <String, String>{};
     if (uri?.host.toLowerCase() != 'api.github.com') {
-      return const <String, String>{};
+      return headers;
     }
-    return const <String, String>{
+    headers.addAll({
       'Accept': 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28',
       'User-Agent': 'cqjtu-campus-assistant',
-    };
+    });
+    final normalizedEtag = etag?.trim();
+    if (normalizedEtag != null && normalizedEtag.isNotEmpty) {
+      headers['If-None-Match'] = normalizedEtag;
+    }
+    return headers;
   }
 
   static String? _extractErrorMessage(dynamic raw) {
@@ -304,6 +333,54 @@ class AppUpdateService {
 
     final json = _asMap(data);
     return _readString(json, const ['message', 'msg', 'error', 'detail']);
+  }
+
+  static Future<_UpdateFeedCache?> _loadFeedCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_updateFeedCacheKey);
+    if (raw == null || raw.isEmpty) return null;
+
+    try {
+      final json = jsonDecode(raw);
+      if (json is! Map) return null;
+      final mapped = json.map((key, value) => MapEntry(key.toString(), value));
+      return _UpdateFeedCache.fromJson(mapped);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<void> _saveFeedCache(_UpdateFeedPayload payload) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _updateFeedCacheKey,
+      jsonEncode(
+        {
+          'data': payload.data,
+          'etag': payload.etag,
+          'checkedAtMs': payload.checkedAtMs,
+        },
+      ),
+    );
+  }
+
+  static AppUpdateCheckResult _resultForCurrent(
+    AppUpdateInfo latest,
+    InstalledAppVersion current,
+  ) {
+    if (_isNewerThanCurrent(latest, current)) {
+      return AppUpdateCheckResult(
+        status: AppUpdateCheckStatus.updateAvailable,
+        current: current,
+        latest: latest,
+      );
+    }
+
+    return AppUpdateCheckResult(
+      status: AppUpdateCheckStatus.upToDate,
+      current: current,
+      latest: latest,
+    );
   }
 
   static bool _isNewerThanCurrent(
@@ -460,4 +537,42 @@ class AppUpdateService {
     }
     return null;
   }
+}
+
+class _UpdateFeedCache {
+  const _UpdateFeedCache({
+    required this.data,
+    required this.checkedAtMs,
+    required this.etag,
+  });
+
+  final Map<String, dynamic> data;
+  final int checkedAtMs;
+  final String? etag;
+
+  bool isFresh(Duration ttl) {
+    final age = DateTime.now().millisecondsSinceEpoch - checkedAtMs;
+    return age >= 0 && age < ttl.inMilliseconds;
+  }
+
+  factory _UpdateFeedCache.fromJson(Map<String, dynamic> json) {
+    final data = AppUpdateService._asMap(json['data']);
+    return _UpdateFeedCache(
+      data: data,
+      checkedAtMs: int.tryParse(json['checkedAtMs']?.toString() ?? '') ?? 0,
+      etag: json['etag']?.toString(),
+    );
+  }
+}
+
+class _UpdateFeedPayload {
+  const _UpdateFeedPayload({
+    required this.data,
+    required this.checkedAtMs,
+    required this.etag,
+  });
+
+  final Map<String, dynamic> data;
+  final int checkedAtMs;
+  final String? etag;
 }

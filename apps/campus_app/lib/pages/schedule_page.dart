@@ -40,15 +40,45 @@ const Map<int, (String, String)> _kSlotTimes = {
 };
 
 // ── 日期工具 ─────────────────────────────────────────────────
-DateTime _semesterMonday(DateTime s) =>
-    s.subtract(Duration(days: s.weekday - 1));
+DateTime _startOfWeek(DateTime date, {required bool sundayFirst}) {
+  final dayOnly = DateTime(date.year, date.month, date.day);
+  final offset = sundayFirst ? date.weekday % 7 : date.weekday - 1;
+  return dayOnly.subtract(Duration(days: offset));
+}
 
-DateTime _mondayOfWeek(DateTime s, int week) =>
-    _semesterMonday(s).add(Duration(days: (week - 1) * 7));
+DateTime _startOfSemesterWeek(
+  DateTime semesterStart, {
+  required bool sundayFirst,
+}) {
+  return _startOfWeek(semesterStart, sundayFirst: sundayFirst);
+}
 
-int _calcCurrentWeek(DateTime s) {
+DateTime _weekStartOf(
+  DateTime semesterStart,
+  int week, {
+  required bool sundayFirst,
+}) {
+  return _startOfSemesterWeek(
+    semesterStart,
+    sundayFirst: sundayFirst,
+  ).add(Duration(days: (week - 1) * 7));
+}
+
+List<int> _orderedWeekdays({required bool sundayFirst}) {
+  return sundayFirst
+      ? const [DateTime.sunday, 1, 2, 3, 4, 5, 6]
+      : const [1, 2, 3, 4, 5, 6, DateTime.sunday];
+}
+
+List<String> _weekdayLabels({required bool sundayFirst}) {
+  return sundayFirst
+      ? const ['日', '一', '二', '三', '四', '五', '六']
+      : const ['一', '二', '三', '四', '五', '六', '日'];
+}
+
+int _calcCurrentWeek(DateTime s, {bool sundayFirst = false}) {
   final now = DateTime.now();
-  final semesterMonday = _semesterMonday(s);
+  final semesterMonday = _startOfSemesterWeek(s, sundayFirst: sundayFirst);
 
   if (now.isBefore(semesterMonday)) return 0;
 
@@ -88,13 +118,15 @@ class SchedulePage extends ConsumerWidget {
     final selectedSemesterAsync = ref.watch(selectedScheduleSemesterProvider);
     final selectedSemester = selectedSemesterAsync.valueOrNull;
     final semesterAsync = ref.watch(activeSemesterStartProvider);
+    final sundayFirst =
+        ref.watch(scheduleSundayFirstProvider).valueOrNull ?? false;
 
     ref.listen<AsyncValue<DateTime?>>(activeSemesterStartProvider, (_, next) {
       final start = next.valueOrNull;
       if (start != null) {
         ref
             .read(selectedWeekProvider.notifier)
-            .setWeek(_calcCurrentWeek(start));
+            .setWeek(_calcCurrentWeek(start, sundayFirst: sundayFirst));
       }
     });
 
@@ -110,6 +142,7 @@ class SchedulePage extends ConsumerWidget {
     return _ScheduleBody(
       semesterStart: semesterStart,
       selectedSemester: selectedSemester,
+      sundayFirst: sundayFirst,
     );
   }
 }
@@ -163,8 +196,13 @@ class _NoSemesterPage extends ConsumerWidget {
 class _ScheduleBody extends ConsumerWidget {
   final DateTime semesterStart;
   final String? selectedSemester;
+  final bool sundayFirst;
 
-  const _ScheduleBody({required this.semesterStart, this.selectedSemester});
+  const _ScheduleBody({
+    required this.semesterStart,
+    this.selectedSemester,
+    required this.sundayFirst,
+  });
 
   // ── 统一的刷新逻辑（包含验证码拦截和 WebView 处理）──────────────────
   Future<void> _doRefresh(BuildContext context, WidgetRef ref) async {
@@ -318,7 +356,10 @@ class _ScheduleBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scheduleAsync = ref.watch(scheduleProvider(selectedSemester));
     final selectedWeek = ref.watch(selectedWeekProvider);
-    final currentWeek = _calcCurrentWeek(semesterStart);
+    final currentWeek = _calcCurrentWeek(
+      semesterStart,
+      sundayFirst: sundayFirst,
+    );
 
     final semLabel = selectedSemester != null
         ? _semesterLabel(selectedSemester!)
@@ -387,6 +428,7 @@ class _ScheduleBody extends ConsumerWidget {
               semesterStart: semesterStart,
               selectedWeek: selectedWeek,
               currentWeek: currentWeek,
+              sundayFirst: sundayFirst,
             ),
             Expanded(
               child: _TimetableGrid(
@@ -394,6 +436,7 @@ class _ScheduleBody extends ConsumerWidget {
                 remark: result.remark,
                 semesterStart: semesterStart,
                 selectedWeek: selectedWeek,
+                sundayFirst: sundayFirst,
               ),
             ),
           ],
@@ -428,11 +471,15 @@ Future<void> _pickSemesterStart(BuildContext context, WidgetRef ref) async {
     selectedScheduleSemesterProvider.notifier,
   );
   final selectedWeekNotifier = ref.read(selectedWeekProvider.notifier);
+  final sundayFirst =
+      ref.read(scheduleSundayFirstProvider).valueOrNull ?? false;
 
   await forKeyNotifier.set(picked);
   await semesterStartNotifier.set(picked);
   await selectedSemesterNotifier.set(semesterStr);
-  selectedWeekNotifier.setWeek(_calcCurrentWeek(picked));
+  selectedWeekNotifier.setWeek(
+    _calcCurrentWeek(picked, sundayFirst: sundayFirst),
+  );
 
   if (context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -445,20 +492,22 @@ class _WeekNavigator extends ConsumerWidget {
   final DateTime semesterStart;
   final int selectedWeek;
   final int currentWeek;
+  final bool sundayFirst;
 
   const _WeekNavigator({
     required this.semesterStart,
     required this.selectedWeek,
     required this.currentWeek,
+    required this.sundayFirst,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isVacation = selectedWeek == 0 || selectedWeek == 21;
-    final monday = isVacation
-        ? _semesterMonday(DateTime.now())
-        : _mondayOfWeek(semesterStart, selectedWeek);
-    final sunday = monday.add(const Duration(days: 6));
+    final weekStart = isVacation
+        ? _startOfWeek(DateTime.now(), sundayFirst: sundayFirst)
+        : _weekStartOf(semesterStart, selectedWeek, sundayFirst: sundayFirst);
+    final weekEnd = weekStart.add(const Duration(days: 6));
     final isCur = selectedWeek == currentWeek;
 
     VoidCallback? onLeft;
@@ -535,8 +584,8 @@ class _WeekNavigator extends ConsumerWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${monday.month}/${monday.day} - '
-                    '${sunday.month}/${sunday.day}',
+                    '${weekStart.month}/${weekStart.day} - '
+                    '${weekEnd.month}/${weekEnd.day}',
                     style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                   ),
                 ],
@@ -626,22 +675,54 @@ class _WeekNavigator extends ConsumerWidget {
   }
 }
 
-class _TimetableGrid extends StatelessWidget {
+class _TimetableGrid extends StatefulWidget {
   final List<Course> courses;
   final String remark;
   final DateTime semesterStart;
   final int selectedWeek;
+  final bool sundayFirst;
 
   const _TimetableGrid({
     required this.courses,
     required this.remark,
     required this.semesterStart,
     required this.selectedWeek,
+    required this.sundayFirst,
   });
+
+  @override
+  State<_TimetableGrid> createState() => _TimetableGridState();
+}
+
+class _TimetableGridState extends State<_TimetableGrid> {
+  final ScrollController _horizontalController = ScrollController();
+  double _headerScrollOffset = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _horizontalController.addListener(_syncHeaderOffset);
+  }
+
+  @override
+  void dispose() {
+    _horizontalController.removeListener(_syncHeaderOffset);
+    _horizontalController.dispose();
+    super.dispose();
+  }
+
+  void _syncHeaderOffset() {
+    if (!mounted) return;
+    final next = _horizontalController.hasClients
+        ? _horizontalController.offset
+        : 0.0;
+    if (next == _headerScrollOffset) return;
+    setState(() => _headerScrollOffset = next);
+  }
 
   Map<int, List<Course>> _buildDayMap() {
     final map = <int, List<Course>>{};
-    for (final c in courses) {
+    for (final c in widget.courses) {
       map.putIfAbsent(c.dayOfWeek, () => []).add(c);
     }
     return map;
@@ -650,32 +731,36 @@ class _TimetableGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dayMap = _buildDayMap();
-    final isVacation = selectedWeek == 0 || selectedWeek == 21;
-    final monday = isVacation
-        ? _semesterMonday(DateTime.now())
-        : _mondayOfWeek(semesterStart, selectedWeek);
+    final isVacation = widget.selectedWeek == 0 || widget.selectedWeek == 21;
+    final weekStart = isVacation
+        ? _startOfWeek(DateTime.now(), sundayFirst: widget.sundayFirst)
+        : _weekStartOf(
+            widget.semesterStart,
+            widget.selectedWeek,
+            sundayFirst: widget.sundayFirst,
+          );
     final today = DateTime.now();
     final todayDay = DateTime(today.year, today.month, today.day);
     final gridH = _kTotalSlots * _kSlotH;
-
     final totalWidth = _kTimeW + _kDayW * 7;
-    const dayLabels = ['一', '二', '三', '四', '五', '六', '日'];
+    final dayLabels = _weekdayLabels(sundayFirst: widget.sundayFirst);
+    final orderedWeekdays = _orderedWeekdays(sundayFirst: widget.sundayFirst);
 
-    return SingleChildScrollView(
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              color: Colors.blue.shade50,
+    return Column(
+      children: [
+        Container(
+          height: 44,
+          color: Colors.blue.shade50,
+          child: ClipRect(
+            child: Transform.translate(
+              offset: Offset(-_headerScrollOffset, 0),
               child: Row(
                 children: [
-                  SizedBox(width: _kTimeW, height: 44),
+                  const SizedBox(width: _kTimeW, height: 44),
                   for (int d = 0; d < 7; d++)
                     _buildDayHeader(
                       context,
-                      monday.add(Duration(days: d)),
+                      weekStart.add(Duration(days: d)),
                       dayLabels[d],
                       todayDay,
                       isVacation,
@@ -683,78 +768,124 @@ class _TimetableGrid extends StatelessWidget {
                 ],
               ),
             ),
-            Container(height: 1, color: Colors.grey.shade300),
-            SizedBox(
-              height: gridH,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildTimeColumn(gridH),
-                  Container(
-                    width: 1,
-                    height: gridH,
-                    color: Colors.grey.shade300,
-                  ),
-                  for (int day = 1; day <= 7; day++)
-                    _buildDayColumn(context, dayMap[day] ?? [], day),
-                ],
-              ),
-            ),
-            if (remark.isNotEmpty)
-              Container(
-                width: totalWidth,
-                constraints: const BoxConstraints(minHeight: _kRemarkH),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.amber.shade50,
-                  border: Border(
-                    top: BorderSide(color: Colors.amber.shade200, width: 1),
-                  ),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+        ),
+        Container(height: 1, color: Colors.grey.shade300),
+        Expanded(
+          child: SingleChildScrollView(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final contentWidth = constraints.maxWidth > totalWidth
+                    ? constraints.maxWidth
+                    : totalWidth;
+
+                return Stack(
                   children: [
-                    SizedBox(
-                      width: _kTimeW - 12,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 2),
-                          Icon(
-                            Icons.sticky_note_2_outlined,
-                            size: 14,
-                            color: Colors.amber.shade800,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '备注',
-                            style: TextStyle(
-                              fontSize: 9,
-                              color: Colors.amber.shade800,
+                    SingleChildScrollView(
+                      controller: _horizontalController,
+                      scrollDirection: Axis.horizontal,
+                      child: SizedBox(
+                        width: contentWidth,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              height: gridH,
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(width: _kTimeW),
+                                  for (int day = 0; day < 7; day++)
+                                    _buildDayColumn(
+                                      context,
+                                      dayMap[orderedWeekdays[day]] ?? [],
+                                      weekStart.add(Duration(days: day)),
+                                    ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        remark,
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          color: Colors.brown.shade700,
-                          height: 1.6,
+                            if (widget.remark.isNotEmpty)
+                              Container(
+                                width: contentWidth,
+                                constraints: const BoxConstraints(
+                                  minHeight: _kRemarkH,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.shade50,
+                                  border: Border(
+                                    top: BorderSide(
+                                      color: Colors.amber.shade200,
+                                      width: 1,
+                                    ),
+                                  ),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    SizedBox(
+                                      width: _kTimeW - 12,
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        children: [
+                                          const SizedBox(height: 2),
+                                          Icon(
+                                            Icons.sticky_note_2_outlined,
+                                            size: 14,
+                                            color: Colors.amber.shade800,
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            '备注',
+                                            style: TextStyle(
+                                              fontSize: 9,
+                                              color: Colors.amber.shade800,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        widget.remark,
+                                        style: TextStyle(
+                                          fontSize: 11.5,
+                                          color: Colors.brown.shade700,
+                                          height: 1.6,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ),
+                    IgnorePointer(
+                      child: Container(
+                        width: _kTimeW,
+                        height: gridH,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border(
+                            right: BorderSide(color: Colors.grey.shade300),
+                          ),
+                        ),
+                        child: _buildTimeColumn(gridH),
+                      ),
+                    ),
                   ],
-                ),
-              ),
-          ],
+                );
+              },
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -830,7 +961,7 @@ class _TimetableGrid extends StatelessWidget {
   Widget _buildDayColumn(
     BuildContext context,
     List<Course> dayCourses,
-    int day,
+    DateTime courseDate,
   ) {
     final gridH = _kTotalSlots * _kSlotH;
     return Container(
@@ -848,9 +979,8 @@ class _TimetableGrid extends StatelessWidget {
           _hDivider(10 * _kSlotH, Colors.indigo.shade100, thickness: 1.5),
           for (final course
               in [...dayCourses]..sort(
-                (a, b) => (a.isActiveInWeek(selectedWeek) ? 1 : 0).compareTo(
-                  b.isActiveInWeek(selectedWeek) ? 1 : 0,
-                ),
+                (a, b) => (a.isActiveInWeek(widget.selectedWeek) ? 1 : 0)
+                    .compareTo(b.isActiveInWeek(widget.selectedWeek) ? 1 : 0),
               ))
             Positioned(
               key: ValueKey('${course.name}_${course.timeStr}'),
@@ -860,7 +990,7 @@ class _TimetableGrid extends StatelessWidget {
               height: course.slotSpan * _kSlotH - 4,
               child: CourseCell(
                 course: course,
-                isActive: course.isActiveInWeek(selectedWeek),
+                isActive: course.isActiveInWeek(widget.selectedWeek),
               ),
             ),
         ],

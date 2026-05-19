@@ -5,6 +5,8 @@ pubspec_overrides.yaml
 # Dart/Flutter 通用
 .dart_tool/
 build/
+.gradle-home/
+output/
 .flutter-plugins
 .flutter-plugins-dependencies
 *.iml

@@ -60,6 +60,9 @@ class ProfilePage extends ConsumerWidget {
           _sectionLabel('教务服务'),
           _buildServiceMenu(context),
           const SizedBox(height: 20),
+          _sectionLabel('课表偏好'),
+          const _SchedulePreferenceCard(),
+          const SizedBox(height: 20),
           _sectionLabel('通知与后台'),
           const _BackgroundSettingsCard(),
           const SizedBox(height: 20),
@@ -247,6 +250,55 @@ class ProfilePage extends ConsumerWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _SchedulePreferenceCard extends ConsumerWidget {
+  const _SchedulePreferenceCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sundayFirstAsync = ref.watch(scheduleSundayFirstProvider);
+    final sundayFirst = sundayFirstAsync.valueOrNull ?? false;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: _SettingTile(
+        icon: Icons.calendar_view_week_outlined,
+        iconColor: sundayFirst ? Colors.teal : Colors.blueGrey,
+        title: '周日作为每周起始日',
+        subtitle: sundayFirst ? '课表按周日到周六展示，并按周日起算当前周' : '课表按周一到周日展示，并按周一起算当前周',
+        trailing: sundayFirstAsync.isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Switch(
+                value: sundayFirst,
+                activeThumbColor: Colors.teal,
+                onChanged: (value) async {
+                  await ref
+                      .read(scheduleSundayFirstProvider.notifier)
+                      .setSundayFirst(value);
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(value ? '已切换为周日起始' : '已切换为周一起始')),
+                  );
+                },
+              ),
       ),
     );
   }

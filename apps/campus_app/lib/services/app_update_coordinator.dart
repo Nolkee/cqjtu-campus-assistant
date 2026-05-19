@@ -16,7 +16,10 @@ class AppUpdateCoordinator {
   }) async {
     try {
       final current = await _loadInstalledVersion();
-      final result = await AppUpdateService.checkForUpdate(current: current);
+      final result = await AppUpdateService.checkForUpdate(
+        current: current,
+        forceRefresh: manual,
+      );
       if (!context.mounted) return;
 
       switch (result.status) {
