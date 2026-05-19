@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,25 +14,27 @@ import 'pages/login_page.dart';
 import 'pages/schedule_page.dart';
 import 'pages/campus_card_page.dart';
 import 'pages/profile_page.dart';
+import 'theme/app_theme.dart';
+import 'widgets/responsive_scaffold.dart';
 import 'widgets/silent_zove_token_bootstrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await NotificationService.init();
-
-  await Workmanager().initialize(
-    backgroundCallbackDispatcher,
-    //isInDebugMode: false,
-  );
-
-  await Workmanager().registerPeriodicTask(
-    kBgTaskTag,
-    kBgTaskName,
-    frequency: const Duration(minutes: 15),
-    constraints: Constraints(networkType: NetworkType.connected),
-    existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
-  );
+  if (!kIsWeb) {
+    await NotificationService.init();
+    await Workmanager().initialize(
+      backgroundCallbackDispatcher,
+      //isInDebugMode: false,
+    );
+    await Workmanager().registerPeriodicTask(
+      kBgTaskTag,
+      kBgTaskName,
+      frequency: const Duration(minutes: 15),
+      constraints: Constraints(networkType: NetworkType.connected),
+      existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
+    );
+  }
 
   runApp(const ProviderScope(child: CampusApp()));
 }
@@ -50,10 +53,7 @@ class CampusApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [Locale('zh', 'CH')],
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.lightTheme,
       home: const _AuthGate(),
     );
   }
@@ -106,12 +106,10 @@ class _MainShell extends ConsumerStatefulWidget {
 class _MainShellState extends ConsumerState<_MainShell>
     with WidgetsBindingObserver {
   int _index = 0;
-  late final PageController _pageController;
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: _index);
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _trySchedule();
@@ -124,7 +122,6 @@ class _MainShellState extends ConsumerState<_MainShell>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _pageController.dispose();
     super.dispose();
   }
 
@@ -173,6 +170,10 @@ class _MainShellState extends ConsumerState<_MainShell>
   }
 
   Future<void> _showBatteryGuideIfNeeded() async {
+    if (kIsWeb || Theme.of(context).platform != TargetPlatform.android) {
+      return;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final alreadyShown = prefs.getBool('battery_guide_shown') ?? false;
     if (alreadyShown) return;
@@ -198,21 +199,24 @@ class _MainShellState extends ConsumerState<_MainShell>
 
   static const _pages = [SchedulePage(), CampusCardPage(), ProfilePage()];
 
-  static const _items = [
-    BottomNavigationBarItem(
-      icon: Icon(Icons.calendar_today_outlined),
-      activeIcon: Icon(Icons.calendar_today),
-      label: '课程表',
+  static const _destinations = [
+    NavigationDestination(icon: Icon(Icons.calendar_today), label: '课表'),
+    NavigationDestination(icon: Icon(Icons.credit_card), label: '校园卡'),
+    NavigationDestination(icon: Icon(Icons.person_outline), label: '我的'),
+  ];
+
+  static const _railDestinations = [
+    NavigationRailDestination(
+      icon: Icon(Icons.calendar_today),
+      label: Text('课表'),
     ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.credit_card_outlined),
-      activeIcon: Icon(Icons.credit_card),
-      label: '校园卡',
+    NavigationRailDestination(
+      icon: Icon(Icons.credit_card),
+      label: Text('校园卡'),
     ),
-    BottomNavigationBarItem(
+    NavigationRailDestination(
       icon: Icon(Icons.person_outline),
-      activeIcon: Icon(Icons.person),
-      label: '我的',
+      label: Text('我的'),
     ),
   ];
 
@@ -231,26 +235,19 @@ class _MainShellState extends ConsumerState<_MainShell>
       if (next.hasValue) _trySchedule();
     });
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          PageView(
-            controller: _pageController,
-            physics: const NeverScrollableScrollPhysics(),
-            children: _pages,
-          ),
-          const SilentZoveTokenBootstrapper(),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _index,
-        onTap: (i) {
-          setState(() => _index = i);
-          _pageController.jumpToPage(i);
-        },
-        type: BottomNavigationBarType.fixed,
-        items: _items,
-      ),
+    return Stack(
+      children: [
+        ResponsiveScaffold(
+          currentIndex: _index,
+          onTabSelected: (index) {
+            setState(() => _index = index);
+          },
+          pages: _pages,
+          destinations: _destinations,
+          railDestinations: _railDestinations,
+        ),
+        if (!kIsWeb) const SilentZoveTokenBootstrapper(),
+      ],
     );
   }
 }

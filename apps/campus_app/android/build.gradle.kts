@@ -1,5 +1,13 @@
 allprojects {
     repositories {
+        // Prefer the official Flutter engine repository when a mirror is missing
+        // a specific debug/profile/release artifact for the current engine revision.
+        maven {
+            url = uri("https://storage.googleapis.com/download.flutter.io")
+            content {
+                includeGroup("io.flutter")
+            }
+        }
         google()
         mavenCentral()
     }

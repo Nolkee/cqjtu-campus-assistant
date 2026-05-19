@@ -238,17 +238,29 @@ class AppUpdateService {
   }
 
   static Future<AppUpdateInfo> _fetchLatestInfo(String url) async {
+    final uri = Uri.tryParse(url);
     final dio = Dio(
       BaseOptions(
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 15),
         validateStatus: (status) => status != null && status < 600,
+        headers: _buildRequestHeaders(uri),
       ),
     );
 
     final response = await dio.get<dynamic>(url);
     if ((response.statusCode ?? 500) >= 400) {
-      throw Exception('HTTP ${response.statusCode}');
+      final message = _extractErrorMessage(response.data);
+      final prefix = 'HTTP ${response.statusCode}';
+      if (message != null && message.isNotEmpty) {
+        throw Exception('$prefix: $message');
+      }
+      if (response.statusCode == 403 && uri?.host == 'api.github.com') {
+        throw Exception(
+          '$prefix: GitHub API access forbidden. This is usually rate limiting or repository access restrictions.',
+        );
+      }
+      throw Exception(prefix);
     }
 
     dynamic raw = response.data;
@@ -263,6 +275,35 @@ class AppUpdateService {
       data,
       defaultReleasePageUrl: defaultReleasePageUrl,
     );
+  }
+
+  static Map<String, String> _buildRequestHeaders(Uri? uri) {
+    if (uri?.host.toLowerCase() != 'api.github.com') {
+      return const <String, String>{};
+    }
+    return const <String, String>{
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'cqjtu-campus-assistant',
+    };
+  }
+
+  static String? _extractErrorMessage(dynamic raw) {
+    if (raw == null) return null;
+
+    dynamic data = raw;
+    if (data is String) {
+      final trimmed = data.trim();
+      if (trimmed.isEmpty) return null;
+      try {
+        data = jsonDecode(trimmed);
+      } catch (_) {
+        return trimmed;
+      }
+    }
+
+    final json = _asMap(data);
+    return _readString(json, const ['message', 'msg', 'error', 'detail']);
   }
 
   static bool _isNewerThanCurrent(
