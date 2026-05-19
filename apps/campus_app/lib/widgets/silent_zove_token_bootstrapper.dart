@@ -191,10 +191,7 @@ class _SilentZoveTokenBootstrapperState
   ) async {
     try {
       _latestTicket = null;
-      await _refreshCookieArtifacts(
-        username,
-        sessionService,
-      );
+      await _refreshCookieArtifacts(username, sessionService);
 
       _capturedZoveToken = null;
       _tokenCompleter = Completer<String>();
