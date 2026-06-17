@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:core/models/course.dart';
 import 'package:campus_platform/services/notification_service.dart';
+import 'package:campus_platform/services/schedule_widget_service.dart';
 import '../utils/providers.dart';
 import '../widgets/course_cell.dart';
 import '../widgets/error_view.dart';
 import 'webview_login_page.dart'; // 👈 新增引入：用于在此页面唤起验证码验证
 
-const int _kTotalWeeks = 20;
 const int _kTotalSlots = 13;
 
 /// 每小节高度（px）
@@ -21,6 +21,9 @@ const double _kTimeW = 52.0;
 
 /// 备注行高度
 const double _kRemarkH = 52.0;
+
+/// 课表底部避让浮动按钮和底部导航，防止备注被遮挡。
+const double _kTimetableBottomInset = 56.0;
 
 /// 每小节的时间区间（重庆交通大学作息时间表）
 const Map<int, (String, String)> _kSlotTimes = {
@@ -76,7 +79,11 @@ List<String> _weekdayLabels({required bool sundayFirst}) {
       : const ['一', '二', '三', '四', '五', '六', '日'];
 }
 
-int _calcCurrentWeek(DateTime s, {bool sundayFirst = false}) {
+int _calcCurrentWeek(
+  DateTime s, {
+  bool sundayFirst = false,
+  int totalWeeks = defaultSemesterTotalWeeks,
+}) {
   final now = DateTime.now();
   final semesterMonday = _startOfSemesterWeek(s, sundayFirst: sundayFirst);
 
@@ -85,7 +92,7 @@ int _calcCurrentWeek(DateTime s, {bool sundayFirst = false}) {
   final diff = now.difference(semesterMonday).inDays;
   final week = diff ~/ 7 + 1;
 
-  if (week > _kTotalWeeks) return 21;
+  if (week > totalWeeks) return totalWeeks + 1;
 
   return week;
 }
@@ -120,13 +127,22 @@ class SchedulePage extends ConsumerWidget {
     final semesterAsync = ref.watch(activeSemesterStartProvider);
     final sundayFirst =
         ref.watch(scheduleSundayFirstProvider).valueOrNull ?? false;
+    final totalWeeks =
+        ref.watch(semesterTotalWeeksProvider(selectedSemester)).valueOrNull ??
+        defaultSemesterTotalWeeks;
 
     ref.listen<AsyncValue<DateTime?>>(activeSemesterStartProvider, (_, next) {
       final start = next.valueOrNull;
       if (start != null) {
         ref
             .read(selectedWeekProvider.notifier)
-            .setWeek(_calcCurrentWeek(start, sundayFirst: sundayFirst));
+            .setWeek(
+              _calcCurrentWeek(
+                start,
+                sundayFirst: sundayFirst,
+                totalWeeks: totalWeeks,
+              ),
+            );
       }
     });
 
@@ -143,6 +159,7 @@ class SchedulePage extends ConsumerWidget {
       semesterStart: semesterStart,
       selectedSemester: selectedSemester,
       sundayFirst: sundayFirst,
+      totalWeeks: totalWeeks,
     );
   }
 }
@@ -197,11 +214,13 @@ class _ScheduleBody extends ConsumerWidget {
   final DateTime semesterStart;
   final String? selectedSemester;
   final bool sundayFirst;
+  final int totalWeeks;
 
   const _ScheduleBody({
     required this.semesterStart,
     this.selectedSemester,
     required this.sundayFirst,
+    required this.totalWeeks,
   });
 
   // ── 统一的刷新逻辑（包含验证码拦截和 WebView 处理）──────────────────
@@ -236,6 +255,14 @@ class _ScheduleBody extends ConsumerWidget {
       await NotificationService.scheduleClassReminders(
         result.courses,
         semesterStart,
+        totalWeeks: totalWeeks,
+      );
+      await ScheduleWidgetService.updateScheduleWidgets(
+        courses: result.courses,
+        semesterStart: semesterStart,
+        selectedSemester: selectedSemester,
+        remark: result.remark,
+        totalWeeks: totalWeeks,
       );
 
       if (context.mounted) {
@@ -359,6 +386,7 @@ class _ScheduleBody extends ConsumerWidget {
     final currentWeek = _calcCurrentWeek(
       semesterStart,
       sundayFirst: sundayFirst,
+      totalWeeks: totalWeeks,
     );
 
     final semLabel = selectedSemester != null
@@ -400,6 +428,16 @@ class _ScheduleBody extends ConsumerWidget {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        icon: const Icon(Icons.add),
+        label: const Text('新增课程'),
+        onPressed: () => _showAddCustomCourseSheet(
+          context,
+          ref,
+          selectedSemester,
+          totalWeeks,
+        ),
+      ),
       body: scheduleAsync.when(
         skipError: true,
         skipLoadingOnRefresh: true,
@@ -429,6 +467,7 @@ class _ScheduleBody extends ConsumerWidget {
               selectedWeek: selectedWeek,
               currentWeek: currentWeek,
               sundayFirst: sundayFirst,
+              totalWeeks: totalWeeks,
             ),
             Expanded(
               child: _TimetableGrid(
@@ -437,6 +476,8 @@ class _ScheduleBody extends ConsumerWidget {
                 semesterStart: semesterStart,
                 selectedWeek: selectedWeek,
                 sundayFirst: sundayFirst,
+                totalWeeks: totalWeeks,
+                selectedSemester: selectedSemester,
               ),
             ),
           ],
@@ -478,7 +519,13 @@ Future<void> _pickSemesterStart(BuildContext context, WidgetRef ref) async {
   await semesterStartNotifier.set(picked);
   await selectedSemesterNotifier.set(semesterStr);
   selectedWeekNotifier.setWeek(
-    _calcCurrentWeek(picked, sundayFirst: sundayFirst),
+    _calcCurrentWeek(
+      picked,
+      sundayFirst: sundayFirst,
+      totalWeeks:
+          ref.read(semesterTotalWeeksProvider(semesterStr)).valueOrNull ??
+          defaultSemesterTotalWeeks,
+    ),
   );
 
   if (context.mounted) {
@@ -488,22 +535,351 @@ Future<void> _pickSemesterStart(BuildContext context, WidgetRef ref) async {
   }
 }
 
+Future<void> _showAddCustomCourseSheet(
+  BuildContext context,
+  WidgetRef ref,
+  String? selectedSemester,
+  int totalWeeks,
+) async {
+  final nameController = TextEditingController();
+  final classroomController = TextEditingController();
+  final teacherController = TextEditingController();
+  final formKey = GlobalKey<FormState>();
+  final safeTotalWeeks = totalWeeks
+      .clamp(minSemesterTotalWeeks, maxSemesterTotalWeeks)
+      .toInt();
+  final selectedWeek = ref.read(selectedWeekProvider);
+  final initialWeek = selectedWeek >= 1 && selectedWeek <= safeTotalWeeks
+      ? selectedWeek
+      : 1;
+
+  var weekday = DateTime.monday;
+  var startSlot = 1;
+  var endSlot = 2;
+  var startWeek = initialWeek;
+  var endWeek = initialWeek;
+
+  try {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                18,
+                20,
+                MediaQuery.of(sheetContext).viewInsets.bottom + 20,
+              ),
+              child: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.edit_calendar_outlined,
+                              color: Colors.blue,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Text(
+                              '新增自定义课程',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+                      TextFormField(
+                        controller: nameController,
+                        decoration: const InputDecoration(
+                          labelText: '课程名称',
+                          prefixIcon: Icon(Icons.menu_book_outlined),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty
+                            ? '请输入课程名称'
+                            : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: classroomController,
+                        decoration: const InputDecoration(
+                          labelText: '教室',
+                          prefixIcon: Icon(Icons.room_outlined),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty
+                            ? '请输入教室'
+                            : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: teacherController,
+                        decoration: const InputDecoration(
+                          labelText: '教师（可选）',
+                          prefixIcon: Icon(Icons.person_outline),
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<int>(
+                              initialValue: weekday,
+                              decoration: const InputDecoration(
+                                labelText: '星期',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: List.generate(7, (index) {
+                                final value = index + 1;
+                                return DropdownMenuItem(
+                                  value: value,
+                                  child: Text(_weekdayName(value)),
+                                );
+                              }),
+                              onChanged: (value) {
+                                if (value == null) return;
+                                setSheetState(() => weekday = value);
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: DropdownButtonFormField<int>(
+                              initialValue: startSlot,
+                              decoration: const InputDecoration(
+                                labelText: '开始节',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: _slotMenuItems(),
+                              onChanged: (value) {
+                                if (value == null) return;
+                                setSheetState(() {
+                                  startSlot = value;
+                                  if (endSlot < startSlot) endSlot = startSlot;
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: DropdownButtonFormField<int>(
+                              initialValue: endSlot,
+                              decoration: const InputDecoration(
+                                labelText: '结束节',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: _slotMenuItems(),
+                              onChanged: (value) {
+                                if (value == null) return;
+                                setSheetState(() {
+                                  endSlot = value < startSlot
+                                      ? startSlot
+                                      : value;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<int>(
+                              initialValue: startWeek,
+                              decoration: const InputDecoration(
+                                labelText: '开始周',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: _weekMenuItems(safeTotalWeeks),
+                              onChanged: (value) {
+                                if (value == null) return;
+                                setSheetState(() {
+                                  startWeek = value;
+                                  if (endWeek < startWeek) endWeek = startWeek;
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: DropdownButtonFormField<int>(
+                              initialValue: endWeek,
+                              decoration: const InputDecoration(
+                                labelText: '结束周',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: _weekMenuItems(safeTotalWeeks),
+                              onChanged: (value) {
+                                if (value == null) return;
+                                setSheetState(() {
+                                  endWeek = value < startWeek
+                                      ? startWeek
+                                      : value;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 46,
+                        child: FilledButton.icon(
+                          icon: const Icon(Icons.check),
+                          label: const Text('保存课程'),
+                          onPressed: () async {
+                            if (!formKey.currentState!.validate()) return;
+                            final weeks = [
+                              for (
+                                var week = startWeek;
+                                week <= endWeek;
+                                week++
+                              )
+                                week,
+                            ];
+                            final course = Course(
+                              name: nameController.text.trim(),
+                              teacher: teacherController.text.trim(),
+                              timeStr: _customCourseTimeText(
+                                weekday,
+                                startSlot,
+                                endSlot,
+                                startWeek,
+                                endWeek,
+                              ),
+                              classroom: classroomController.text.trim(),
+                              dayOfWeek: weekday,
+                              timeSlot: startSlot,
+                              endTimeSlot: endSlot,
+                              weekList: weeks,
+                              isCustom: true,
+                            );
+                            await ref
+                                .read(
+                                  customCoursesProvider(
+                                    selectedSemester,
+                                  ).notifier,
+                                )
+                                .addCourse(course);
+                            ref.invalidate(scheduleProvider(selectedSemester));
+                            if (!sheetContext.mounted) return;
+                            Navigator.pop(sheetContext);
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('已新增「${course.name}」')),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  } finally {
+    nameController.dispose();
+    classroomController.dispose();
+    teacherController.dispose();
+  }
+}
+
+List<DropdownMenuItem<int>> _slotMenuItems() {
+  return List.generate(_kTotalSlots, (index) {
+    final slot = index + 1;
+    return DropdownMenuItem(value: slot, child: Text(_slotLabel(slot)));
+  });
+}
+
+List<DropdownMenuItem<int>> _weekMenuItems(int totalWeeks) {
+  return List.generate(totalWeeks, (index) {
+    final week = index + 1;
+    return DropdownMenuItem(value: week, child: Text('第 $week 周'));
+  });
+}
+
+String _weekdayName(int weekday) {
+  return switch (weekday) {
+    DateTime.monday => '周一',
+    DateTime.tuesday => '周二',
+    DateTime.wednesday => '周三',
+    DateTime.thursday => '周四',
+    DateTime.friday => '周五',
+    DateTime.saturday => '周六',
+    _ => '周日',
+  };
+}
+
+String _slotLabel(int slot) {
+  final times = _kSlotTimes[slot];
+  if (times == null) return '第 $slot 节';
+  return '$slot (${times.$1})';
+}
+
+String _customCourseTimeText(
+  int weekday,
+  int startSlot,
+  int endSlot,
+  int startWeek,
+  int endWeek,
+) {
+  final weekText = startWeek == endWeek
+      ? '第 $startWeek 周'
+      : '第 $startWeek-$endWeek 周';
+  final slotText = startSlot == endSlot
+      ? '第 $startSlot 节'
+      : '第 $startSlot-$endSlot 节';
+  return '$weekText · ${_weekdayName(weekday)} · $slotText';
+}
+
 class _WeekNavigator extends ConsumerWidget {
   final DateTime semesterStart;
   final int selectedWeek;
   final int currentWeek;
   final bool sundayFirst;
+  final int totalWeeks;
 
   const _WeekNavigator({
     required this.semesterStart,
     required this.selectedWeek,
     required this.currentWeek,
     required this.sundayFirst,
+    required this.totalWeeks,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isVacation = selectedWeek == 0 || selectedWeek == 21;
+    final semesterDoneWeek = totalWeeks + 1;
+    final isVacation = selectedWeek == 0 || selectedWeek == semesterDoneWeek;
     final weekStart = isVacation
         ? _startOfWeek(DateTime.now(), sundayFirst: sundayFirst)
         : _weekStartOf(semesterStart, selectedWeek, sundayFirst: sundayFirst);
@@ -511,24 +887,25 @@ class _WeekNavigator extends ConsumerWidget {
     final isCur = selectedWeek == currentWeek;
 
     VoidCallback? onLeft;
-    if (selectedWeek > 1 && selectedWeek <= _kTotalWeeks) {
+    if (selectedWeek > 1 && selectedWeek <= totalWeeks) {
       onLeft = () =>
           ref.read(selectedWeekProvider.notifier).setWeek(selectedWeek - 1);
-    } else if (selectedWeek == 21) {
+    } else if (selectedWeek == semesterDoneWeek) {
       onLeft = () =>
-          ref.read(selectedWeekProvider.notifier).setWeek(_kTotalWeeks);
+          ref.read(selectedWeekProvider.notifier).setWeek(totalWeeks);
     } else if (selectedWeek == 1) {
       onLeft = () => ref.read(selectedWeekProvider.notifier).setWeek(0);
     }
 
     VoidCallback? onRight;
-    if (selectedWeek >= 1 && selectedWeek < _kTotalWeeks) {
+    if (selectedWeek >= 1 && selectedWeek < totalWeeks) {
       onRight = () =>
           ref.read(selectedWeekProvider.notifier).setWeek(selectedWeek + 1);
     } else if (selectedWeek == 0) {
       onRight = () => ref.read(selectedWeekProvider.notifier).setWeek(1);
-    } else if (selectedWeek == _kTotalWeeks) {
-      onRight = () => ref.read(selectedWeekProvider.notifier).setWeek(21);
+    } else if (selectedWeek == totalWeeks) {
+      onRight = () =>
+          ref.read(selectedWeekProvider.notifier).setWeek(semesterDoneWeek);
     }
 
     return Container(
@@ -626,7 +1003,7 @@ class _WeekNavigator extends ConsumerWidget {
                   crossAxisSpacing: 8,
                   mainAxisSpacing: 8,
                 ),
-                itemCount: _kTotalWeeks,
+                itemCount: totalWeeks,
                 itemBuilder: (_, i) {
                   final w = i + 1;
                   final isCur = w == currentWeek;
@@ -675,12 +1052,14 @@ class _WeekNavigator extends ConsumerWidget {
   }
 }
 
-class _TimetableGrid extends StatefulWidget {
+class _TimetableGrid extends ConsumerStatefulWidget {
   final List<Course> courses;
   final String remark;
   final DateTime semesterStart;
   final int selectedWeek;
   final bool sundayFirst;
+  final int totalWeeks;
+  final String? selectedSemester;
 
   const _TimetableGrid({
     required this.courses,
@@ -688,13 +1067,15 @@ class _TimetableGrid extends StatefulWidget {
     required this.semesterStart,
     required this.selectedWeek,
     required this.sundayFirst,
+    required this.totalWeeks,
+    required this.selectedSemester,
   });
 
   @override
-  State<_TimetableGrid> createState() => _TimetableGridState();
+  ConsumerState<_TimetableGrid> createState() => _TimetableGridState();
 }
 
-class _TimetableGridState extends State<_TimetableGrid> {
+class _TimetableGridState extends ConsumerState<_TimetableGrid> {
   final ScrollController _horizontalController = ScrollController();
   double _headerScrollOffset = 0;
 
@@ -731,7 +1112,9 @@ class _TimetableGridState extends State<_TimetableGrid> {
   @override
   Widget build(BuildContext context) {
     final dayMap = _buildDayMap();
-    final isVacation = widget.selectedWeek == 0 || widget.selectedWeek == 21;
+    final isVacation =
+        widget.selectedWeek == 0 ||
+        widget.selectedWeek == widget.totalWeeks + 1;
     final weekStart = isVacation
         ? _startOfWeek(DateTime.now(), sundayFirst: widget.sundayFirst)
         : _weekStartOf(
@@ -752,20 +1135,31 @@ class _TimetableGridState extends State<_TimetableGrid> {
           height: 44,
           color: Colors.blue.shade50,
           child: ClipRect(
-            child: Transform.translate(
-              offset: Offset(-_headerScrollOffset, 0),
-              child: Row(
-                children: [
-                  const SizedBox(width: _kTimeW, height: 44),
-                  for (int d = 0; d < 7; d++)
-                    _buildDayHeader(
-                      context,
-                      weekStart.add(Duration(days: d)),
-                      dayLabels[d],
-                      todayDay,
-                      isVacation,
-                    ),
-                ],
+            child: OverflowBox(
+              alignment: Alignment.topLeft,
+              minWidth: totalWidth,
+              maxWidth: totalWidth,
+              minHeight: 44,
+              maxHeight: 44,
+              child: Transform.translate(
+                offset: Offset(-_headerScrollOffset, 0),
+                child: SizedBox(
+                  width: totalWidth,
+                  height: 44,
+                  child: Row(
+                    children: [
+                      const SizedBox(width: _kTimeW, height: 44),
+                      for (int d = 0; d < 7; d++)
+                        _buildDayHeader(
+                          context,
+                          weekStart.add(Duration(days: d)),
+                          dayLabels[d],
+                          todayDay,
+                          isVacation,
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -862,6 +1256,10 @@ class _TimetableGridState extends State<_TimetableGrid> {
                                   ],
                                 ),
                               ),
+                            SizedBox(
+                              width: contentWidth,
+                              height: _kTimetableBottomInset,
+                            ),
                           ],
                         ),
                       ),
@@ -897,40 +1295,64 @@ class _TimetableGridState extends State<_TimetableGrid> {
     bool isVacation,
   ) {
     final isToday = date == todayDay && !isVacation;
+    final primaryColor = Theme.of(context).colorScheme.primary;
     return SizedBox(
       width: _kDayW,
       height: 44,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             '周$dayLabel',
+            maxLines: 1,
+            overflow: TextOverflow.clip,
+            textScaler: TextScaler.noScaling,
             style: TextStyle(
               fontSize: 12,
+              height: 1.1,
               fontWeight: FontWeight.bold,
-              color: isToday ? Theme.of(context).colorScheme.primary : null,
+              color: isToday ? primaryColor : null,
             ),
           ),
-          const SizedBox(height: 2),
-          isToday
-              ? Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 1,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '${date.month}/${date.day}',
-                    style: const TextStyle(fontSize: 11, color: Colors.white),
-                  ),
-                )
-              : Text(
-                  '${date.month}/${date.day}',
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                ),
+          const SizedBox(height: 1),
+          SizedBox(
+            height: 16,
+            child: Center(
+              child: isToday
+                  ? Container(
+                      height: 16,
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      decoration: BoxDecoration(
+                        color: primaryColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${date.month}/${date.day}',
+                        maxLines: 1,
+                        overflow: TextOverflow.clip,
+                        textScaler: TextScaler.noScaling,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          height: 1,
+                          color: Colors.white,
+                        ),
+                      ),
+                    )
+                  : Text(
+                      '${date.month}/${date.day}',
+                      maxLines: 1,
+                      overflow: TextOverflow.clip,
+                      textScaler: TextScaler.noScaling,
+                      style: TextStyle(
+                        fontSize: 11,
+                        height: 1,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+            ),
+          ),
         ],
       ),
     );
@@ -964,6 +1386,7 @@ class _TimetableGridState extends State<_TimetableGrid> {
     DateTime courseDate,
   ) {
     final gridH = _kTotalSlots * _kSlotH;
+    final placements = _buildCoursePlacements(dayCourses);
     return Container(
       width: _kDayW,
       height: gridH,
@@ -977,25 +1400,117 @@ class _TimetableGridState extends State<_TimetableGrid> {
             _hDivider(s * _kSlotH, Colors.grey.shade200),
           _hDivider(5 * _kSlotH, Colors.blue.shade100, thickness: 1.5),
           _hDivider(10 * _kSlotH, Colors.indigo.shade100, thickness: 1.5),
-          for (final course
-              in [...dayCourses]..sort(
-                (a, b) => (a.isActiveInWeek(widget.selectedWeek) ? 1 : 0)
-                    .compareTo(b.isActiveInWeek(widget.selectedWeek) ? 1 : 0),
-              ))
+          for (final placement in placements)
             Positioned(
-              key: ValueKey('${course.name}_${course.timeStr}'),
-              top: (course.timeSlot - 1) * _kSlotH + 2,
-              left: 2,
-              right: 2,
-              height: course.slotSpan * _kSlotH - 4,
-              child: CourseCell(
-                course: course,
-                isActive: course.isActiveInWeek(widget.selectedWeek),
-              ),
+              key: ValueKey(placement.key),
+              top: (placement.startSlot - 1) * _kSlotH + 2,
+              left: placement.left,
+              width: placement.width,
+              height: placement.slotSpan * _kSlotH - 4,
+              child: placement.isSummary
+                  ? _InactiveCourseSummaryCell(courses: placement.courses)
+                  : CourseCell(
+                      course: placement.course,
+                      isActive: placement.course.isActiveInWeek(
+                        widget.selectedWeek,
+                      ),
+                      onDelete: placement.course.isCustom
+                          ? () => _deleteCustomCourse(context, placement.course)
+                          : null,
+                    ),
             ),
         ],
       ),
     );
+  }
+
+  List<_CoursePlacement> _buildCoursePlacements(List<Course> dayCourses) {
+    final activeCourses = dayCourses
+        .where((course) => course.isActiveInWeek(widget.selectedWeek))
+        .toList();
+    final inactiveCourses =
+        dayCourses
+            .where(
+              (course) =>
+                  !course.isActiveInWeek(widget.selectedWeek) &&
+                  !activeCourses.any(
+                    (active) => _coursesOverlap(course, active),
+                  ),
+            )
+            .toList()
+          ..sort(_compareCoursesForLayout);
+
+    const outerPadding = 2.0;
+    final fullWidth = _kDayW - outerPadding * 2;
+    final inactivePlacements = <_CoursePlacement>[];
+    var index = 0;
+
+    while (index < inactiveCourses.length) {
+      final cluster = <Course>[];
+      var clusterEndSlot = inactiveCourses[index].endTimeSlot;
+
+      while (index < inactiveCourses.length) {
+        final course = inactiveCourses[index];
+        if (cluster.isNotEmpty && course.timeSlot > clusterEndSlot) break;
+        cluster.add(course);
+        if (course.endTimeSlot > clusterEndSlot) {
+          clusterEndSlot = course.endTimeSlot;
+        }
+        index++;
+      }
+
+      inactivePlacements.add(
+        _CoursePlacement(
+          courses: cluster,
+          left: outerPadding,
+          width: fullWidth,
+        ),
+      );
+    }
+
+    final activePlacements =
+        activeCourses
+            .toList()
+            .map(
+              (course) => _CoursePlacement(
+                courses: [course],
+                left: outerPadding,
+                width: fullWidth,
+              ),
+            )
+            .toList()
+          ..sort((a, b) => _compareCoursesForLayout(a.course, b.course));
+
+    return [...inactivePlacements, ...activePlacements];
+  }
+
+  int _compareCoursesForLayout(Course a, Course b) {
+    final startCompare = a.timeSlot.compareTo(b.timeSlot);
+    if (startCompare != 0) return startCompare;
+
+    final endCompare = a.endTimeSlot.compareTo(b.endTimeSlot);
+    if (endCompare != 0) return endCompare;
+
+    final activeCompare = (a.isActiveInWeek(widget.selectedWeek) ? 0 : 1)
+        .compareTo(b.isActiveInWeek(widget.selectedWeek) ? 0 : 1);
+    if (activeCompare != 0) return activeCompare;
+
+    if (a.isExam != b.isExam) return a.isExam ? 1 : -1;
+    return a.name.compareTo(b.name);
+  }
+
+  bool _coursesOverlap(Course a, Course b) {
+    return a.timeSlot <= b.endTimeSlot && b.timeSlot <= a.endTimeSlot;
+  }
+
+  Future<void> _deleteCustomCourse(BuildContext context, Course course) async {
+    await ref
+        .read(customCoursesProvider(widget.selectedSemester).notifier)
+        .removeCourse(course);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('已删除「${course.name}」')));
   }
 
   List<Widget> _sectionBg() => [
@@ -1029,6 +1544,161 @@ class _TimetableGridState extends State<_TimetableGrid> {
         right: 0,
         child: Container(height: thickness, color: color),
       );
+}
+
+class _CoursePlacement {
+  final List<Course> courses;
+  final double left;
+  final double width;
+
+  const _CoursePlacement({
+    required this.courses,
+    required this.left,
+    required this.width,
+  });
+
+  Course get course => courses.first;
+
+  bool get isSummary => courses.length > 1;
+
+  int get startSlot => courses
+      .map((course) => course.timeSlot)
+      .reduce((value, element) => value < element ? value : element);
+
+  int get endSlot => courses
+      .map((course) => course.endTimeSlot)
+      .reduce((value, element) => value > element ? value : element);
+
+  int get slotSpan => endSlot - startSlot + 1;
+
+  String get key => isSummary
+      ? 'inactive_summary_${courses.map((course) => '${course.name}_${course.timeStr}').join('|')}'
+      : '${course.name}_${course.timeStr}';
+}
+
+class _InactiveCourseSummaryCell extends StatelessWidget {
+  final List<Course> courses;
+
+  const _InactiveCourseSummaryCell({required this.courses});
+
+  @override
+  Widget build(BuildContext context) {
+    final title = courses.length == 1
+        ? courses.first.name
+        : '本周无课 · ${courses.length} 门';
+    final subtitle = courses.length == 1
+        ? courses.first.classroom
+        : courses.take(2).map((course) => course.name).join('、');
+
+    return GestureDetector(
+      onTap: () => _showDetails(context),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: Colors.grey.shade300, width: 0.6),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey.shade600,
+                  height: 1.15,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 9.5, color: Colors.grey.shade500),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDetails(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 22, 24, 34),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.layers_outlined, color: Colors.grey),
+                SizedBox(width: 10),
+                Text(
+                  '本周无课的重叠课程',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            for (final course in courses)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 7),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${course.timeSlot}-${course.endTimeSlot}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            course.name,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          if (course.classroom.trim().isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                course.classroom,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _SlotCell extends StatelessWidget {

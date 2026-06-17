@@ -6,6 +6,7 @@ import 'package:campus_app/config/app_config.dart';
 import 'package:campus_platform/services/credential_service.dart';
 import 'package:campus_platform/services/dorm_service.dart';
 import 'package:campus_platform/services/notification_service.dart';
+import 'package:campus_platform/services/schedule_widget_service.dart';
 import 'package:campus_platform/services/session_service.dart';
 import 'package:core/models/course.dart';
 import 'package:core/models/dorm_room.dart';
@@ -1027,6 +1028,111 @@ final activeSemesterStartProvider = Provider<AsyncValue<DateTime?>>((ref) {
   return ref.watch(semesterStartForKeyProvider(selected));
 });
 
+const int defaultSemesterTotalWeeks = 20;
+const int minSemesterTotalWeeks = 12;
+const int maxSemesterTotalWeeks = 30;
+
+const _semesterTotalWeeksPrefix = 'schedule_total_weeks_';
+const _customCoursesPrefix = 'schedule_custom_courses_';
+
+String _semesterScopedKey(String prefix, String? semester) {
+  final safeSemester = semester?.trim();
+  return '$prefix${safeSemester == null || safeSemester.isEmpty ? 'default' : safeSemester}';
+}
+
+int _normalizeTotalWeeks(int value) {
+  return value.clamp(minSemesterTotalWeeks, maxSemesterTotalWeeks).toInt();
+}
+
+class SemesterTotalWeeksNotifier extends FamilyAsyncNotifier<int, String?> {
+  @override
+  Future<int> build(String? arg) async {
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getInt(
+      _semesterScopedKey(_semesterTotalWeeksPrefix, arg),
+    );
+    return _normalizeTotalWeeks(stored ?? defaultSemesterTotalWeeks);
+  }
+
+  Future<void> setWeeks(int value) async {
+    final safeValue = _normalizeTotalWeeks(value);
+    state = AsyncValue.data(safeValue);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(
+      _semesterScopedKey(_semesterTotalWeeksPrefix, arg),
+      safeValue,
+    );
+  }
+}
+
+final semesterTotalWeeksProvider =
+    AsyncNotifierProvider.family<SemesterTotalWeeksNotifier, int, String?>(
+      SemesterTotalWeeksNotifier.new,
+    );
+
+class CustomCoursesNotifier extends FamilyAsyncNotifier<List<Course>, String?> {
+  @override
+  Future<List<Course>> build(String? arg) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_semesterScopedKey(_customCoursesPrefix, arg));
+    if (raw == null || raw.isEmpty) return const [];
+
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return const [];
+      return decoded
+          .whereType<Map>()
+          .map((item) => Course.fromJson(Map<String, dynamic>.from(item)))
+          .map((course) => course.copyWith(isCustom: true))
+          .toList();
+    } catch (error) {
+      debugPrint('[Schedule] 自定义课程读取失败: $error');
+      return const [];
+    }
+  }
+
+  Future<void> addCourse(Course course) async {
+    final current = state.valueOrNull ?? await future;
+    final next = [...current, course.copyWith(isCustom: true, isExam: false)];
+    await _save(next);
+  }
+
+  Future<void> removeCourse(Course course) async {
+    final current = state.valueOrNull ?? await future;
+    var removed = false;
+    final next = <Course>[];
+    for (final item in current) {
+      if (!removed &&
+          _courseStorageIdentity(item) == _courseStorageIdentity(course)) {
+        removed = true;
+        continue;
+      }
+      next.add(item);
+    }
+    await _save(next);
+  }
+
+  Future<void> clearCourses() => _save(const []);
+
+  Future<void> _save(List<Course> courses) async {
+    state = AsyncValue.data(courses);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _semesterScopedKey(_customCoursesPrefix, arg),
+      jsonEncode(courses.map((course) => course.toJson()).toList()),
+    );
+  }
+
+  String _courseStorageIdentity(Course course) {
+    return jsonEncode(course.copyWith(isCustom: true, isExam: false).toJson());
+  }
+}
+
+final customCoursesProvider =
+    AsyncNotifierProvider.family<CustomCoursesNotifier, List<Course>, String?>(
+      CustomCoursesNotifier.new,
+    );
+
 class SelectedWeekNotifier extends Notifier<int> {
   @override
   int build() => 1;
@@ -1071,12 +1177,188 @@ final scheduleProvider = FutureProvider.family<ScheduleResult, String?>((
   _ensureCredentialPassword(creds);
 
   final backend = ref.watch(campusBackendProvider);
-  return backend.getSchedule(
+  final selectedSemester = await ref.watch(
+    selectedScheduleSemesterProvider.future,
+  );
+  final semesterKey = semester ?? selectedSemester;
+  final customCourses = await ref.watch(
+    customCoursesProvider(semesterKey).future,
+  );
+  final totalWeeks = await ref.watch(
+    semesterTotalWeeksProvider(semesterKey).future,
+  );
+  final scheduleResult = await backend.getSchedule(
     creds.username,
     creds.password,
     semester: semester,
   );
+
+  final semesterStart = await _resolveSemesterStart(ref, semesterKey);
+  final examCourses = semesterStart == null
+      ? <Course>[]
+      : await _loadExamCourses(
+          backend: backend,
+          username: creds.username,
+          password: creds.password,
+          semester: semester,
+          semesterStart: semesterStart,
+          totalWeeks: totalWeeks,
+        );
+
+  return (
+    courses: [...scheduleResult.courses, ...customCourses, ...examCourses],
+    remark: scheduleResult.remark,
+  );
 });
+
+Future<DateTime?> _resolveSemesterStart(Ref ref, String? semesterKey) async {
+  if (semesterKey != null && semesterKey.isNotEmpty) {
+    return ref.watch(semesterStartForKeyProvider(semesterKey).future);
+  }
+  return ref.watch(semesterStartProvider.future);
+}
+
+Future<List<Course>> _loadExamCourses({
+  required CampusBackend backend,
+  required String username,
+  required String password,
+  required String? semester,
+  required DateTime semesterStart,
+  required int totalWeeks,
+}) async {
+  try {
+    final exams = await backend.getExams(
+      username,
+      password,
+      semester: semester,
+    );
+    return _examsToCourses(
+      exams: exams,
+      semesterStart: semesterStart,
+      totalWeeks: totalWeeks,
+    );
+  } catch (error) {
+    debugPrint('[Schedule] 考试安排同步到课表失败: $error');
+    return const [];
+  }
+}
+
+List<Course> _examsToCourses({
+  required List<Exam> exams,
+  required DateTime semesterStart,
+  required int totalWeeks,
+}) {
+  return exams
+      .map((exam) {
+        final parsed = _parseExamTime(exam.examTime);
+        if (parsed == null) return null;
+
+        final week = _weekOfDate(semesterStart, parsed.start);
+        if (week < 1 || week > totalWeeks) return null;
+
+        final name = exam.courseName.trim().isEmpty
+            ? '考试'
+            : '考试：${exam.courseName.trim()}';
+        final seat = exam.seatNumber.trim() == '-'
+            ? ''
+            : exam.seatNumber.trim();
+        return Course(
+          name: name,
+          teacher: '',
+          timeStr: exam.examTime.trim(),
+          classroom: exam.examRoom.trim(),
+          dayOfWeek: parsed.start.weekday,
+          timeSlot: _nearestStartSlot(parsed.start),
+          endTimeSlot: _endSlotFor(parsed.end),
+          weekList: [week],
+          isExam: true,
+          seatNumber: seat,
+        );
+      })
+      .whereType<Course>()
+      .toList();
+}
+
+({DateTime start, DateTime end})? _parseExamTime(String raw) {
+  final text = raw.replaceAll('：', ':').trim();
+  if (text.isEmpty) return null;
+
+  final dateMatch = RegExp(
+    r'(\d{4})\s*(?:年|-|/|\.)\s*(\d{1,2})\s*(?:月|-|/|\.)\s*(\d{1,2})\s*(?:日)?',
+  ).firstMatch(text);
+  final timeMatch = RegExp(
+    r'(\d{1,2}):(\d{2})\s*(?:-|~|—|–|至|到)\s*(\d{1,2}):(\d{2})',
+  ).firstMatch(text);
+  if (dateMatch == null || timeMatch == null) return null;
+
+  final year = int.tryParse(dateMatch.group(1)!);
+  final month = int.tryParse(dateMatch.group(2)!);
+  final day = int.tryParse(dateMatch.group(3)!);
+  final startHour = int.tryParse(timeMatch.group(1)!);
+  final startMinute = int.tryParse(timeMatch.group(2)!);
+  final endHour = int.tryParse(timeMatch.group(3)!);
+  final endMinute = int.tryParse(timeMatch.group(4)!);
+  if (year == null ||
+      month == null ||
+      day == null ||
+      startHour == null ||
+      startMinute == null ||
+      endHour == null ||
+      endMinute == null) {
+    return null;
+  }
+
+  final start = DateTime(year, month, day, startHour, startMinute);
+  var end = DateTime(year, month, day, endHour, endMinute);
+  if (!end.isAfter(start)) end = start.add(const Duration(hours: 2));
+  return (start: start, end: end);
+}
+
+int _weekOfDate(DateTime semesterStart, DateTime date) {
+  final semesterMonday = DateTime(
+    semesterStart.year,
+    semesterStart.month,
+    semesterStart.day,
+  ).subtract(Duration(days: semesterStart.weekday - 1));
+  final targetDay = DateTime(date.year, date.month, date.day);
+  if (targetDay.isBefore(semesterMonday)) return 0;
+  return targetDay.difference(semesterMonday).inDays ~/ 7 + 1;
+}
+
+const Map<int, ({int start, int end})> _slotMinuteRanges = {
+  1: (start: 8 * 60 + 20, end: 9 * 60),
+  2: (start: 9 * 60 + 5, end: 9 * 60 + 45),
+  3: (start: 10 * 60, end: 10 * 60 + 40),
+  4: (start: 10 * 60 + 45, end: 11 * 60 + 25),
+  5: (start: 11 * 60 + 30, end: 12 * 60 + 10),
+  6: (start: 14 * 60, end: 14 * 60 + 40),
+  7: (start: 14 * 60 + 45, end: 15 * 60 + 25),
+  8: (start: 15 * 60 + 40, end: 16 * 60 + 20),
+  9: (start: 16 * 60 + 25, end: 17 * 60 + 5),
+  10: (start: 17 * 60 + 10, end: 17 * 60 + 50),
+  11: (start: 19 * 60, end: 19 * 60 + 40),
+  12: (start: 19 * 60 + 45, end: 20 * 60 + 25),
+  13: (start: 20 * 60 + 30, end: 21 * 60 + 10),
+};
+
+int _minutesOfDay(DateTime value) => value.hour * 60 + value.minute;
+
+int _nearestStartSlot(DateTime start) {
+  final minutes = _minutesOfDay(start);
+  return _slotMinuteRanges.entries.reduce((best, next) {
+    final bestDiff = (best.value.start - minutes).abs();
+    final nextDiff = (next.value.start - minutes).abs();
+    return nextDiff < bestDiff ? next : best;
+  }).key;
+}
+
+int _endSlotFor(DateTime end) {
+  final minutes = _minutesOfDay(end);
+  for (final entry in _slotMinuteRanges.entries) {
+    if (entry.value.end >= minutes) return entry.key;
+  }
+  return _slotMinuteRanges.keys.last;
+}
 
 final electricityProvider = FutureProvider<String>((ref) async {
   ref.watch(sessionUpdateProvider);
@@ -1109,6 +1391,7 @@ final electricityProvider = FutureProvider<String>((ref) async {
   );
   debugPrint('[FG] 鐢佃垂浣欓鑾峰彇鎴愬姛: $balance');
   NotificationService.checkAndNotify(balance);
+  unawaited(ScheduleWidgetService.updateBalances(electricityBalance: balance));
   return balance;
 });
 
@@ -1130,6 +1413,7 @@ final campusCardBalanceProvider = FutureProvider<String>((ref) async {
     creds.username,
     creds.password,
   );
+  unawaited(ScheduleWidgetService.updateBalances(campusCardBalance: balance));
   return balance;
 });
 
@@ -1184,3 +1468,5 @@ class SessionUpdateNotifier extends Notifier<int> {
 final sessionUpdateProvider = NotifierProvider<SessionUpdateNotifier, int>(
   SessionUpdateNotifier.new,
 );
+
+final campusCardQrScrollSignalProvider = StateProvider<int>((ref) => 0);

@@ -5,6 +5,7 @@ import '../utils/providers.dart';
 import 'package:campus_platform/services/credential_service.dart';
 import 'package:campus_platform/services/notification_service.dart';
 import 'package:campus_platform/services/battery_optimization_service.dart';
+import 'package:campus_platform/services/schedule_widget_service.dart';
 import 'package:core/models/dorm_room.dart';
 import '../services/app_update_coordinator.dart';
 import 'login_page.dart';
@@ -25,6 +26,7 @@ class ProfilePage extends ConsumerWidget {
     await ref.read(dormRoomProvider.notifier).clear();
 
     await NotificationService.cancelAllClassReminders();
+    await ScheduleWidgetService.clearScheduleWidgets();
     debugPrint('[Profile] 账号已退出，所有本地通知调度已清空');
 
     if (context.mounted) {
@@ -262,6 +264,13 @@ class _SchedulePreferenceCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final sundayFirstAsync = ref.watch(scheduleSundayFirstProvider);
     final sundayFirst = sundayFirstAsync.valueOrNull ?? false;
+    final selectedSemester = ref
+        .watch(selectedScheduleSemesterProvider)
+        .valueOrNull;
+    final totalWeeksAsync = ref.watch(
+      semesterTotalWeeksProvider(selectedSemester),
+    );
+    final totalWeeks = totalWeeksAsync.valueOrNull ?? defaultSemesterTotalWeeks;
 
     return Container(
       decoration: BoxDecoration(
@@ -275,30 +284,85 @@ class _SchedulePreferenceCard extends ConsumerWidget {
           ),
         ],
       ),
-      child: _SettingTile(
-        icon: Icons.calendar_view_week_outlined,
-        iconColor: sundayFirst ? Colors.teal : Colors.blueGrey,
-        title: '周日作为每周起始日',
-        subtitle: sundayFirst ? '课表按周日到周六展示，并按周日起算当前周' : '课表按周一到周日展示，并按周一起算当前周',
-        trailing: sundayFirstAsync.isLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : Switch(
-                value: sundayFirst,
-                activeThumbColor: Colors.teal,
-                onChanged: (value) async {
-                  await ref
-                      .read(scheduleSundayFirstProvider.notifier)
-                      .setSundayFirst(value);
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(value ? '已切换为周日起始' : '已切换为周一起始')),
-                  );
-                },
-              ),
+      child: Column(
+        children: [
+          _SettingTile(
+            icon: Icons.calendar_view_week_outlined,
+            iconColor: sundayFirst ? Colors.teal : Colors.blueGrey,
+            title: '周日作为每周起始日',
+            subtitle: sundayFirst
+                ? '课表按周日到周六展示，并按周日起算当前周'
+                : '课表按周一到周日展示，并按周一起算当前周',
+            trailing: sundayFirstAsync.isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Switch(
+                    value: sundayFirst,
+                    activeThumbColor: Colors.teal,
+                    onChanged: (value) async {
+                      await ref
+                          .read(scheduleSundayFirstProvider.notifier)
+                          .setSundayFirst(value);
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(value ? '已切换为周日起始' : '已切换为周一起始'),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          const Divider(height: 1, indent: 56, color: Color(0xFFF0F0F0)),
+          _SettingTile(
+            icon: Icons.view_week_outlined,
+            iconColor: Colors.indigo,
+            title: '学期周数',
+            subtitle: '当前学期按 $totalWeeks 周计算课表、小组件和课前提醒',
+            trailing: totalWeeksAsync.isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : PopupMenuButton<int>(
+                    initialValue: totalWeeks,
+                    tooltip: '设置学期周数',
+                    onSelected: (value) async {
+                      await ref
+                          .read(
+                            semesterTotalWeeksProvider(
+                              selectedSemester,
+                            ).notifier,
+                          )
+                          .setWeeks(value);
+                      ref.invalidate(scheduleProvider(selectedSemester));
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('学期周数已改为 $value 周')),
+                      );
+                    },
+                    itemBuilder: (context) => [
+                      for (
+                        var week = minSemesterTotalWeeks;
+                        week <= maxSemesterTotalWeeks;
+                        week++
+                      )
+                        PopupMenuItem(value: week, child: Text('$week 周')),
+                    ],
+                    child: Text(
+                      '$totalWeeks 周',
+                      style: const TextStyle(
+                        color: Colors.blue,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+          ),
+        ],
       ),
     );
   }
@@ -1168,6 +1232,9 @@ class _BackgroundSettingsCardState
     final selectedSemester = ref
         .read(selectedScheduleSemesterProvider)
         .valueOrNull;
+    final totalWeeks =
+        ref.read(semesterTotalWeeksProvider(selectedSemester)).valueOrNull ??
+        defaultSemesterTotalWeeks;
 
     if (semesterStart == null) {
       debugPrint('[Profile] 开启失败：尚未设置开学日期');
@@ -1186,6 +1253,14 @@ class _BackgroundSettingsCardState
       await NotificationService.scheduleClassReminders(
         scheduleResult.courses,
         semesterStart,
+        totalWeeks: totalWeeks,
+      );
+      await ScheduleWidgetService.updateScheduleWidgets(
+        courses: scheduleResult.courses,
+        semesterStart: semesterStart,
+        selectedSemester: selectedSemester,
+        remark: scheduleResult.remark,
+        totalWeeks: totalWeeks,
       );
 
       if (successMessage != null && mounted) {

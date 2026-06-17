@@ -4,8 +4,14 @@ import 'package:core/models/course.dart';
 class CourseCell extends StatelessWidget {
   final Course course;
   final bool isActive;
+  final VoidCallback? onDelete;
 
-  const CourseCell({super.key, required this.course, this.isActive = true});
+  const CourseCell({
+    super.key,
+    required this.course,
+    this.isActive = true,
+    this.onDelete,
+  });
 
   static const _palette = [
     Color(0xFF5B9BD5),
@@ -18,8 +24,12 @@ class CourseCell extends StatelessWidget {
     Color(0xFFF39C12),
   ];
 
-  Color get _baseColor =>
-      _palette[course.name.hashCode.abs() % _palette.length];
+  Color get _baseColor {
+    if (course.isExam) return const Color(0xFF7C3AED);
+    if (course.isCustom) return const Color(0xFF0F766E);
+    return _palette[course.name.hashCode.abs() % _palette.length];
+  }
+
   Color get _cellColor => isActive ? _baseColor : Colors.grey.shade300;
   Color get _textColor => isActive ? Colors.white : Colors.grey.shade500;
   Color get _subColor => isActive ? Colors.white70 : Colors.grey.shade400;
@@ -53,7 +63,7 @@ class CourseCell extends StatelessWidget {
             if (course.slotSpan >= 2) ...[
               const Spacer(),
               Text(
-                course.classroom,
+                course.placeText,
                 style: TextStyle(fontSize: 10, color: _subColor),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -106,17 +116,58 @@ class CourseCell extends StatelessWidget {
                       ),
                     ),
                   ),
+                if (course.isExam || course.isCustom) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: (course.isExam ? Colors.purple : Colors.teal)
+                          .withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      course.isExam ? '考试' : '自定义',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: course.isExam ? Colors.purple : Colors.teal,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 16),
-            _InfoRow(Icons.person_outline, course.teacher),
+            if (!course.isExam && course.teacher.trim().isNotEmpty)
+              _InfoRow(Icons.person_outline, course.teacher),
             _InfoRow(Icons.access_time_outlined, course.timeStr),
             _InfoRow(Icons.room_outlined, course.classroom),
+            if (course.isExam && course.hasSeatNumber)
+              _InfoRow(Icons.event_seat_outlined, '座位号：${course.seatNumber}'),
             _InfoRow(
               Icons.calendar_month_outlined,
               // 改为展示这门课一共要上多少周，节次保持不变
               '共 ${course.weekList.length} 周 | 第 ${course.timeSlot}–${course.endTimeSlot} 节',
             ),
+            if (onDelete != null) ...[
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('删除这门自定义课程'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.redAccent,
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    onDelete?.call();
+                  },
+                ),
+              ),
+            ],
           ],
         ),
       ),

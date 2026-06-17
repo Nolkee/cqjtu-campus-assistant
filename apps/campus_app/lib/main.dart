@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,12 +9,15 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:campus_platform/services/credential_service.dart';
 import 'package:campus_platform/services/notification_service.dart';
 import 'package:campus_platform/services/battery_optimization_service.dart';
+import 'package:campus_platform/services/schedule_widget_service.dart';
+import 'package:campus_platform/services/widget_navigation_service.dart';
 import 'services/app_update_coordinator.dart';
 import 'utils/providers.dart';
 import 'package:campus_platform/services/background_task.dart';
 import 'pages/login_page.dart';
 import 'pages/schedule_page.dart';
 import 'pages/campus_card_page.dart';
+import 'pages/electricity_page.dart';
 import 'pages/profile_page.dart';
 import 'theme/app_theme.dart';
 import 'widgets/responsive_scaffold.dart';
@@ -111,7 +116,15 @@ class _MainShellState extends ConsumerState<_MainShell>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetNavigationService.setTargetHandler((target) {
+      if (!mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _handleWidgetTarget(target);
+      });
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final target = await WidgetNavigationService.consumePendingTarget();
+      if (target != null && mounted) _handleWidgetTarget(target);
       _trySchedule();
       await _showBatteryGuideIfNeeded();
       if (!mounted) return;
@@ -138,6 +151,9 @@ class _MainShellState extends ConsumerState<_MainShell>
     final selectedSemester = ref
         .read(selectedScheduleSemesterProvider)
         .valueOrNull;
+    final totalWeeks =
+        ref.read(semesterTotalWeeksProvider(selectedSemester)).valueOrNull ??
+        defaultSemesterTotalWeeks;
 
     // ✅ 核心修复 2：使用统一的 Provider 实例
     final scheduleState = ref.read(scheduleProvider(selectedSemester));
@@ -162,11 +178,53 @@ class _MainShellState extends ConsumerState<_MainShell>
 
     if (result != null && semesterStart != null) {
       debugPrint('[调度器] ✅ 两大数据已就绪，准备下发给系统注册！');
-      NotificationService.scheduleClassReminders(result.courses, semesterStart);
+      unawaited(
+        NotificationService.scheduleClassReminders(
+          result.courses,
+          semesterStart,
+          totalWeeks: totalWeeks,
+        ),
+      );
+      unawaited(
+        ScheduleWidgetService.updateScheduleWidgets(
+          courses: result.courses,
+          semesterStart: semesterStart,
+          selectedSemester: selectedSemester,
+          remark: result.remark,
+          totalWeeks: totalWeeks,
+        ),
+      );
     } else {
       debugPrint('[调度器] ❌ 拦截：数据不完整，放弃本次注册。');
     }
     debugPrint('----------------------------------------');
+  }
+
+  void _handleWidgetTarget(String target) {
+    final navigator = Navigator.of(context);
+    navigator.popUntil((route) => route.isFirst);
+
+    switch (target) {
+      case 'campus_card_qr':
+        setState(() => _index = 1);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          ref.read(campusCardQrScrollSignalProvider.notifier).state++;
+        });
+        break;
+      case 'campus_card':
+        setState(() => _index = 1);
+        break;
+      case 'electricity':
+        navigator.push(
+          MaterialPageRoute(builder: (_) => const ElectricityPage()),
+        );
+        break;
+      case 'schedule':
+      default:
+        setState(() => _index = 0);
+        break;
+    }
   }
 
   Future<void> _showBatteryGuideIfNeeded() async {
@@ -226,12 +284,17 @@ class _MainShellState extends ConsumerState<_MainShell>
     final selectedSemester = ref
         .watch(selectedScheduleSemesterProvider)
         .valueOrNull;
+    ref.watch(semesterTotalWeeksProvider(selectedSemester));
 
     ref.listen(scheduleProvider(selectedSemester), (prev, next) {
       if (next.hasValue) _trySchedule();
     });
 
     ref.listen(activeSemesterStartProvider, (prev, next) {
+      if (next.hasValue) _trySchedule();
+    });
+
+    ref.listen(semesterTotalWeeksProvider(selectedSemester), (prev, next) {
       if (next.hasValue) _trySchedule();
     });
 

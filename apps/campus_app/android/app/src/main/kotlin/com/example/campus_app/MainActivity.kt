@@ -16,6 +16,11 @@ class MainActivity : FlutterActivity() {
     private val batteryChannel = "campus_app/battery"
     private val cookieChannel = "campus_app/cookie_manager"
     private val appUpdateChannel = "campus_app/app_update"
+    private val classReminderChannel = "campus_app/class_reminder"
+    private val scheduleWidgetChannel = "campus_app/schedule_widget"
+    private val widgetNavigationChannelName = "campus_app/widget_navigation"
+    private var widgetNavigationChannel: MethodChannel? = null
+    private var pendingWidgetTarget: String? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -96,6 +101,125 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            classReminderChannel
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "scheduleClassReminders" -> {
+                    val reminders = call.argument<List<Map<String, Any?>>>("reminders")
+                    if (reminders == null) {
+                        result.error("INVALID_ARG", "reminders parameter is required", null)
+                        return@setMethodCallHandler
+                    }
+                    try {
+                        ClassReminderManager.scheduleFromFlutter(this, reminders)
+                        result.success(null)
+                    } catch (e: Exception) {
+                        result.error("SCHEDULE_FAILED", e.message, null)
+                    }
+                }
+                "cancelClassReminders" -> {
+                    try {
+                        ClassReminderManager.cancelAll(this)
+                        result.success(null)
+                    } catch (e: Exception) {
+                        result.error("CANCEL_FAILED", e.message, null)
+                    }
+                }
+                "getLiveReminderCapabilities" -> {
+                    result.success(ClassReminderManager.getCapabilities(this))
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            scheduleWidgetChannel
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "updateScheduleWidgets" -> {
+                    val courses = call.argument<List<Map<String, Any?>>>("courses")
+                    val semesterStartMillis = call.argument<Number>("semesterStartMillis")
+                    if (courses == null || semesterStartMillis == null) {
+                        result.error(
+                            "INVALID_ARG",
+                            "courses and semesterStartMillis are required",
+                            null
+                        )
+                        return@setMethodCallHandler
+                    }
+                    try {
+                        ScheduleWidgetManager.updateFromFlutter(
+                            this,
+                            courses,
+                            semesterStartMillis.toLong(),
+                            call.argument<String>("selectedSemester"),
+                            call.argument<String>("remark").orEmpty(),
+                            call.argument<Number>("totalWeeks")?.toInt() ?: 20
+                        )
+                        result.success(null)
+                    } catch (e: Exception) {
+                        result.error("WIDGET_UPDATE_FAILED", e.message, null)
+                    }
+                }
+                "clearScheduleWidgets" -> {
+                    try {
+                        ScheduleWidgetManager.clear(this)
+                        result.success(null)
+                    } catch (e: Exception) {
+                        result.error("WIDGET_CLEAR_FAILED", e.message, null)
+                    }
+                }
+                "refreshScheduleWidgets" -> {
+                    try {
+                        ScheduleWidgetManager.refreshAllWidgets(this)
+                        result.success(null)
+                    } catch (e: Exception) {
+                        result.error("WIDGET_REFRESH_FAILED", e.message, null)
+                    }
+                }
+                "updateWidgetBalances" -> {
+                    try {
+                        ScheduleWidgetManager.updateBalances(
+                            this,
+                            call.argument<String>("campusCardBalance"),
+                            call.argument<String>("electricityBalance")
+                        )
+                        result.success(null)
+                    } catch (e: Exception) {
+                        result.error("WIDGET_BALANCE_UPDATE_FAILED", e.message, null)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        widgetNavigationChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            widgetNavigationChannelName
+        ).also { channel ->
+            channel.setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "consumePendingWidgetTarget" -> {
+                        val target = pendingWidgetTarget ?: extractWidgetTarget(intent)
+                        pendingWidgetTarget = null
+                        result.success(target)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val target = extractWidgetTarget(intent) ?: return
+        pendingWidgetTarget = target
+        widgetNavigationChannel?.invokeMethod("widgetTargetChanged", target)
     }
 
     private fun installApk(path: String, result: MethodChannel.Result) {
@@ -144,5 +268,11 @@ class MainActivity : FlutterActivity() {
         }
         startActivity(intent)
         result.success(null)
+    }
+
+    private fun extractWidgetTarget(intent: Intent?): String? {
+        return intent
+            ?.getStringExtra("widget_target")
+            ?.takeIf { it.isNotBlank() }
     }
 }

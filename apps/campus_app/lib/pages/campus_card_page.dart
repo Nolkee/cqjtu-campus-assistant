@@ -6,14 +6,45 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:data/data.dart';
 import '../utils/providers.dart';
 
-class CampusCardPage extends ConsumerWidget {
-  const CampusCardPage({super.key});
+class CampusCardPage extends ConsumerStatefulWidget {
+  const CampusCardPage({super.key, this.scrollToQr = false});
+
+  final bool scrollToQr;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CampusCardPage> createState() => _CampusCardPageState();
+}
+
+class _CampusCardPageState extends ConsumerState<CampusCardPage> {
+  final _controller = ScrollController();
+  int _handledQrScrollSignal = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.scrollToQr) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToQr());
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final qrScrollSignal = ref.watch(campusCardQrScrollSignalProvider);
+    if (qrScrollSignal > _handledQrScrollSignal) {
+      _handledQrScrollSignal = qrScrollSignal;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToQr());
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('校园卡')),
       body: ListView(
+        controller: _controller,
         padding: const EdgeInsets.all(16),
         children: const [
           _BalanceCard(),
@@ -23,6 +54,15 @@ class CampusCardPage extends ConsumerWidget {
           _RechargeCard(),
         ],
       ),
+    );
+  }
+
+  void _scrollToQr() {
+    if (!_controller.hasClients) return;
+    _controller.animateTo(
+      170,
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
     );
   }
 }
