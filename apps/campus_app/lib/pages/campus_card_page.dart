@@ -74,6 +74,7 @@ class _BalanceCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final balanceAsync = ref.watch(campusCardBalanceProvider);
+    final isUpdating = balanceAsync.isLoading && balanceAsync.hasValue;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -112,7 +113,7 @@ class _BalanceCard extends ConsumerWidget {
                       if (creds != null) {
                         // 先强制刷新后端缓存
                         await ref
-                            .read(campusBackendProvider)
+                            .read(campusGatewayProvider)
                             .getCampusCardBalance(
                               creds.username,
                               creds.password,
@@ -146,6 +147,7 @@ class _BalanceCard extends ConsumerWidget {
             balanceAsync.when(
               skipError: true,
               skipLoadingOnRefresh: true,
+              skipLoadingOnReload: true,
               loading: () => const SizedBox(
                 height: 42,
                 child: Align(
@@ -188,11 +190,21 @@ class _BalanceCard extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              '每 30 分钟自动刷新',
-              style: TextStyle(color: Colors.white38, fontSize: 11),
-            ),
+            if (isUpdating)
+              const Padding(
+                padding: EdgeInsets.only(top: 6),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.sync, color: Colors.white54, size: 13),
+                    SizedBox(width: 4),
+                    Text(
+                      '静默更新中',
+                      style: TextStyle(color: Colors.white54, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
@@ -207,24 +219,30 @@ class _QrCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokenAsync = ref.watch(payCodeProvider);
+    final isUpdating = tokenAsync.isLoading && tokenAsync.hasValue;
 
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.qr_code_2, color: Colors.blue),
-                SizedBox(width: 8),
-                Text(
+                const Icon(Icons.qr_code_2, color: Colors.blue),
+                const SizedBox(width: 8),
+                const Text(
                   '消费二维码',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
+                const Spacer(),
+                if (isUpdating)
+                  const Icon(Icons.sync, color: Colors.blueGrey, size: 18),
               ],
             ),
             const SizedBox(height: 20),
             tokenAsync.when(
+              skipLoadingOnRefresh: true,
+              skipLoadingOnReload: true,
               loading: () => const SizedBox(
                 height: 200,
                 child: Center(child: CircularProgressIndicator()),
@@ -322,7 +340,7 @@ class _RechargeCardState extends ConsumerState<_RechargeCard>
                   final creds = ref.read(credentialsProvider);
                   if (creds != null) {
                     await ref
-                        .read(campusBackendProvider)
+                        .read(campusGatewayProvider)
                         .getCampusCardBalance(
                           creds.username,
                           creds.password,
@@ -372,8 +390,12 @@ class _RechargeCardState extends ConsumerState<_RechargeCard>
       final creds = ref.read(credentialsProvider);
       if (creds == null) throw Exception('未登录');
       final responseData = await ref
-          .read(campusBackendProvider)
-          .getCampusCardAlipayUrl(creds.username, amount);
+          .read(campusGatewayProvider)
+          .getCampusCardAlipayUrl(
+            creds.username,
+            amount,
+            password: creds.password,
+          );
 
       if (responseData.startsWith('alipays://') ||
           responseData.startsWith('alipay://')) {

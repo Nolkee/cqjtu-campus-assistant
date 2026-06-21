@@ -78,7 +78,10 @@ class MainActivity : FlutterActivity() {
                     val manager = CookieManager.getInstance()
                     manager.flush()
                     val cookies = manager.getCookie(url) ?: ""
-                    android.util.Log.d("CookieChannel", "getCookies($url) => $cookies")
+                    android.util.Log.d(
+                        "CookieChannel",
+                        "getCookies($url) => length=${cookies.length}"
+                    )
                     result.success(cookies)
                 }
                 else -> result.notImplemented()

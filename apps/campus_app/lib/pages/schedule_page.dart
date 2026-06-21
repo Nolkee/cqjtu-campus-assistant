@@ -116,6 +116,47 @@ String _semesterLabel(String s) {
   return '${parts[0].substring(2)}-${parts[1].substring(2)} 第${parts[2]}学期';
 }
 
+String _courseColorKey(Course course) {
+  final normalized = course.name.trim().replaceAll(RegExp(r'\s+'), ' ');
+  return normalized.isEmpty ? '未命名课程' : normalized;
+}
+
+Map<String, Color> _buildCourseColorMap(List<Course> courses) {
+  final names = courses.map(_courseColorKey).toSet().toList()..sort();
+  final used = <int>{};
+  final result = <String, Color>{};
+
+  for (final name in names) {
+    final seed = _stableCourseHash(name);
+    for (var attempt = 0; attempt < 720; attempt++) {
+      final color = _pastelCourseColor(seed, attempt);
+      final value = color.toARGB32();
+      if (!used.add(value)) continue;
+      result[name] = color;
+      break;
+    }
+  }
+
+  return result;
+}
+
+Color _pastelCourseColor(int seed, int attempt) {
+  final mixed = (seed + attempt * 0x9E3779B9) & 0xFFFFFFFF;
+  final hue = ((mixed % 3600) / 10.0 + attempt * 17.0) % 360.0;
+  final saturation = 0.30 + ((mixed >> 8) % 9) / 100.0;
+  final lightness = 0.82 + ((mixed >> 16) % 6) / 100.0;
+  return HSLColor.fromAHSL(1, hue, saturation, lightness).toColor();
+}
+
+int _stableCourseHash(String value) {
+  var hash = 0x811C9DC5;
+  for (final unit in value.codeUnits) {
+    hash ^= unit;
+    hash = (hash * 0x01000193) & 0xFFFFFFFF;
+  }
+  return hash;
+}
+
 // ─────────────────────────────────────────────────────────────
 class SchedulePage extends ConsumerWidget {
   const SchedulePage({super.key});
@@ -227,9 +268,7 @@ class _ScheduleBody extends ConsumerWidget {
   Future<void> _doRefresh(BuildContext context, WidgetRef ref) async {
     final creds = ref.read(credentialsProvider);
     if (creds == null) return;
-    final backend = ref.read(campusBackendProvider);
-    final apiService = ref.read(apiServiceProvider);
-    final sessionManager = ref.read(sessionManagerProvider);
+    final backend = ref.read(campusGatewayProvider);
 
     try {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -290,73 +329,9 @@ class _ScheduleBody extends ConsumerWidget {
           // WebView 登录成功，拿到了 Cookies
           if (result != null && context.mounted) {
             try {
-              // Explicit re-login should always bind into a fresh session for
-              // this device instead of reusing a cached sessionId.
-              var sessionId = await sessionManager.refreshSessionId(
-                creds.username,
-              );
-              final ticket = result['ticket']?.toString() ?? '';
-              final casCookies = result['casCookies']?.toString() ?? '';
-              final jwgCookies = result['jwgCookies']?.toString() ?? '';
-              final ecardCookies = result['ecardCookies']?.toString() ?? '';
-              final zoveToken = result['zoveToken']?.toString() ?? '';
-
-              Future<void> bindWithSession(String currentSessionId) async {
-                await sessionManager.saveWebLoginArtifacts(
-                  creds.username,
-                  ticket: ticket,
-                  casCookies: casCookies,
-                  jwgCookies: jwgCookies,
-                  ecardCookies: ecardCookies,
-                  zoveToken: zoveToken,
-                );
-
-                if (ticket.isNotEmpty) {
-                  await apiService.loginWithTicket(
-                    creds.username,
-                    ticket,
-                    sessionId: currentSessionId,
-                  );
-                }
-
-                if (casCookies.isNotEmpty) {
-                  await apiService.injectCookies(
-                    creds.username,
-                    'ids.cqjtu.edu.cn',
-                    casCookies,
-                    sessionId: currentSessionId,
-                  );
-                }
-                if (jwgCookies.isNotEmpty) {
-                  await apiService.injectCookies(
-                    creds.username,
-                    'jwgln.cqjtu.edu.cn',
-                    jwgCookies,
-                    sessionId: currentSessionId,
-                  );
-                }
-                if (ecardCookies.isNotEmpty) {
-                  await apiService.injectCookies(
-                    creds.username,
-                    'ecard.cqjtu.edu.cn',
-                    ecardCookies,
-                    sessionId: currentSessionId,
-                  );
-                }
-              }
-
-              try {
-                await bindWithSession(sessionId);
-              } catch (error) {
-                if (!sessionManager.isSessionExpiredError(error)) rethrow;
-                sessionId = await sessionManager.refreshSessionId(
-                  creds.username,
-                );
-                await bindWithSession(sessionId);
-              }
-
-              // 注入凭据后，再次使 Provider 失效重试
-              ref.read(sessionUpdateProvider.notifier).triggerRefresh();
+              await ref
+                  .read(webLoginBinderProvider)
+                  .bind(username: creds.username, result: result);
             } catch (injectErr) {
               if (context.mounted) {
                 ScaffoldMessenger.of(
@@ -382,6 +357,8 @@ class _ScheduleBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheduleAsync = ref.watch(scheduleProvider(selectedSemester));
+    final showInactiveCourses =
+        ref.watch(scheduleShowInactiveCoursesProvider).valueOrNull ?? true;
     final selectedWeek = ref.watch(selectedWeekProvider);
     final currentWeek = _calcCurrentWeek(
       semesterStart,
@@ -478,6 +455,7 @@ class _ScheduleBody extends ConsumerWidget {
                 sundayFirst: sundayFirst,
                 totalWeeks: totalWeeks,
                 selectedSemester: selectedSemester,
+                showInactiveCourses: showInactiveCourses,
               ),
             ),
           ],
@@ -1060,6 +1038,7 @@ class _TimetableGrid extends ConsumerStatefulWidget {
   final bool sundayFirst;
   final int totalWeeks;
   final String? selectedSemester;
+  final bool showInactiveCourses;
 
   const _TimetableGrid({
     required this.courses,
@@ -1069,6 +1048,7 @@ class _TimetableGrid extends ConsumerStatefulWidget {
     required this.sundayFirst,
     required this.totalWeeks,
     required this.selectedSemester,
+    required this.showInactiveCourses,
   });
 
   @override
@@ -1112,6 +1092,7 @@ class _TimetableGridState extends ConsumerState<_TimetableGrid> {
   @override
   Widget build(BuildContext context) {
     final dayMap = _buildDayMap();
+    final courseColorMap = _buildCourseColorMap(widget.courses);
     final isVacation =
         widget.selectedWeek == 0 ||
         widget.selectedWeek == widget.totalWeeks + 1;
@@ -1194,6 +1175,7 @@ class _TimetableGridState extends ConsumerState<_TimetableGrid> {
                                       context,
                                       dayMap[orderedWeekdays[day]] ?? [],
                                       weekStart.add(Duration(days: day)),
+                                      courseColorMap,
                                     ),
                                 ],
                               ),
@@ -1384,6 +1366,7 @@ class _TimetableGridState extends ConsumerState<_TimetableGrid> {
     BuildContext context,
     List<Course> dayCourses,
     DateTime courseDate,
+    Map<String, Color> courseColorMap,
   ) {
     final gridH = _kTotalSlots * _kSlotH;
     final placements = _buildCoursePlacements(dayCourses);
@@ -1414,6 +1397,7 @@ class _TimetableGridState extends ConsumerState<_TimetableGrid> {
                       isActive: placement.course.isActiveInWeek(
                         widget.selectedWeek,
                       ),
+                      color: courseColorMap[_courseColorKey(placement.course)],
                       onDelete: placement.course.isCustom
                           ? () => _deleteCustomCourse(context, placement.course)
                           : null,
@@ -1428,17 +1412,18 @@ class _TimetableGridState extends ConsumerState<_TimetableGrid> {
     final activeCourses = dayCourses
         .where((course) => course.isActiveInWeek(widget.selectedWeek))
         .toList();
-    final inactiveCourses =
-        dayCourses
-            .where(
-              (course) =>
-                  !course.isActiveInWeek(widget.selectedWeek) &&
-                  !activeCourses.any(
-                    (active) => _coursesOverlap(course, active),
-                  ),
-            )
-            .toList()
-          ..sort(_compareCoursesForLayout);
+    final inactiveCourses = widget.showInactiveCourses
+        ? (dayCourses
+              .where(
+                (course) =>
+                    !course.isActiveInWeek(widget.selectedWeek) &&
+                    !activeCourses.any(
+                      (active) => _coursesOverlap(course, active),
+                    ),
+              )
+              .toList()
+            ..sort(_compareCoursesForLayout))
+        : <Course>[];
 
     const outerPadding = 2.0;
     final fullWidth = _kDayW - outerPadding * 2;

@@ -82,8 +82,7 @@ class _LeaveApplyPageState extends ConsumerState<LeaveApplyPage> {
       final creds = ref.read(credentialsProvider);
       if (creds == null) throw Exception('Please login first.');
 
-      final api = ref.read(apiServiceProvider);
-      final sessionManager = ref.read(sessionManagerProvider);
+      final runtimeMode = ref.read(campusRuntimeModeProvider);
       final sessionService = ref.read(sessionServiceProvider);
       final username = creds.username;
 
@@ -109,6 +108,14 @@ class _LeaveApplyPageState extends ConsumerState<LeaveApplyPage> {
         }
       }
       if (opened) return;
+
+      if (runtimeMode != CampusRuntimeMode.selfHosted) {
+        await _loadAndWait(_studentIndexUrl);
+        return;
+      }
+
+      final api = ref.read(apiServiceProvider);
+      final sessionManager = ref.read(sessionManagerProvider);
 
       // Fallback: keep backend entry flow as a compatibility path.
       var result = await sessionManager.runWithRecovery(

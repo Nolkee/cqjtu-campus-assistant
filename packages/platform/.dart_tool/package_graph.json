@@ -8,6 +8,7 @@
       "version": "0.0.1+4",
       "dependencies": [
         "core",
+        "data",
         "dio",
         "flutter",
         "flutter_local_notifications",
@@ -43,6 +44,18 @@
         "stream_channel",
         "test_api",
         "vector_math"
+      ]
+    },
+    {
+      "name": "data",
+      "version": "0.0.1",
+      "dependencies": [
+        "core",
+        "dio",
+        "flutter",
+        "html",
+        "http",
+        "pointycastle"
       ]
     },
     {
@@ -227,6 +240,25 @@
         "stream_channel",
         "string_scanner",
         "term_glyph"
+      ]
+    },
+    {
+      "name": "http",
+      "version": "1.6.0",
+      "dependencies": [
+        "async",
+        "http_parser",
+        "meta",
+        "web"
+      ]
+    },
+    {
+      "name": "pointycastle",
+      "version": "3.9.1",
+      "dependencies": [
+        "collection",
+        "convert",
+        "js"
       ]
     },
     {
@@ -510,16 +542,30 @@
       ]
     },
     {
-      "name": "plugin_platform_interface",
-      "version": "2.1.8",
+      "name": "web",
+      "version": "1.1.1",
+      "dependencies": []
+    },
+    {
+      "name": "js",
+      "version": "0.6.7",
       "dependencies": [
         "meta"
       ]
     },
     {
-      "name": "web",
-      "version": "1.1.1",
-      "dependencies": []
+      "name": "convert",
+      "version": "3.1.2",
+      "dependencies": [
+        "typed_data"
+      ]
+    },
+    {
+      "name": "plugin_platform_interface",
+      "version": "2.1.8",
+      "dependencies": [
+        "meta"
+      ]
     },
     {
       "name": "typed_data",
@@ -568,13 +614,6 @@
         "path_provider_linux",
         "path_provider_platform_interface",
         "path_provider_windows"
-      ]
-    },
-    {
-      "name": "js",
-      "version": "0.6.7",
-      "dependencies": [
-        "meta"
       ]
     },
     {
@@ -747,6 +786,21 @@
       "version": "3.0.7",
       "dependencies": [
         "typed_data"
+      ]
+    },
+    {
+      "name": "html",
+      "version": "0.15.6",
+      "dependencies": [
+        "csslib",
+        "source_span"
+      ]
+    },
+    {
+      "name": "csslib",
+      "version": "1.0.2",
+      "dependencies": [
+        "source_span"
       ]
     }
   ],

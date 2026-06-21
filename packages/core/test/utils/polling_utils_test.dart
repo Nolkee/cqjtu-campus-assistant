@@ -19,16 +19,58 @@ void main() {
       expect(interval(5), const Duration(hours: 3));
     });
 
-    test('早上 6 点 → 30 分钟（正常频率）', () {
-      expect(interval(6), const Duration(minutes: 30));
+    test('早上 6 点 → 15 分钟（白天高频）', () {
+      expect(interval(6), const Duration(minutes: 15));
     });
 
-    test('正午 12 点 → 30 分钟', () {
-      expect(interval(12), const Duration(minutes: 30));
+    test('正午 12 点 → 15 分钟', () {
+      expect(interval(12), const Duration(minutes: 15));
     });
 
-    test('深夜 23 点 → 30 分钟', () {
-      expect(interval(23), const Duration(minutes: 30));
+    test('深夜 23 点 → 3 小时（夜间降频）', () {
+      expect(interval(23), const Duration(hours: 3));
+    });
+
+    test('shouldRunPolling skips until the current window interval has elapsed',
+        () {
+      final now = DateTime(2025, 9, 1, 12, 0);
+      expect(shouldRunPolling(now: now, lastRunAtMs: null), isTrue);
+      expect(
+        shouldRunPolling(
+          now: now,
+          lastRunAtMs:
+              now.subtract(const Duration(minutes: 14)).millisecondsSinceEpoch,
+        ),
+        isFalse,
+      );
+      expect(
+        shouldRunPolling(
+          now: now,
+          lastRunAtMs:
+              now.subtract(const Duration(minutes: 15)).millisecondsSinceEpoch,
+        ),
+        isTrue,
+      );
+    });
+
+    test('shouldRunPolling uses the longer night interval', () {
+      final now = DateTime(2025, 9, 1, 23, 30);
+      expect(
+        shouldRunPolling(
+          now: now,
+          lastRunAtMs:
+              now.subtract(const Duration(hours: 2)).millisecondsSinceEpoch,
+        ),
+        isFalse,
+      );
+      expect(
+        shouldRunPolling(
+          now: now,
+          lastRunAtMs:
+              now.subtract(const Duration(hours: 3)).millisecondsSinceEpoch,
+        ),
+        isTrue,
+      );
     });
   });
 

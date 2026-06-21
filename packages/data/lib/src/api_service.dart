@@ -5,6 +5,13 @@ import 'package:core/models/exam.dart';
 import 'package:core/models/grade.dart';
 import 'package:dio/dio.dart';
 
+String _redactIdentifier(String value) {
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) return '<empty>';
+  if (trimmed.length <= 4) return 'user_****';
+  return 'user_${trimmed.substring(0, 2)}****${trimmed.substring(trimmed.length - 2)}';
+}
+
 class ApiService {
   ApiService({
     required String baseUrl,
@@ -109,7 +116,7 @@ class ApiService {
     Map<String, String>? dormParams,
   }) async {
     dev.log(
-      '[ApiService] getElecBalance username=$username passwordLen=${password.length} forceRefresh=$forceRefresh',
+      '[ApiService] getElecBalance username=${_redactIdentifier(username)} passwordLen=${password.length} forceRefresh=$forceRefresh',
       name: 'ApiService',
     );
     final res = await _dio.get('/api/elec/balance', queryParameters: {
@@ -134,7 +141,7 @@ class ApiService {
     bool forceRefresh = false,
   }) async {
     dev.log(
-      '[ApiService] getCampusCardBalance username=$username passwordLen=${password.length} forceRefresh=$forceRefresh',
+      '[ApiService] getCampusCardBalance username=${_redactIdentifier(username)} passwordLen=${password.length} forceRefresh=$forceRefresh',
       name: 'ApiService',
     );
     final res = await _dio.get('/api/elec/cardBalance', queryParameters: {
@@ -235,7 +242,10 @@ class ApiService {
     String ticket, {
     required String sessionId,
   }) async {
-    dev.log('发送 SSO ticket，用户：$username', name: 'ApiService');
+    dev.log(
+      '发送 SSO ticket，用户：${_redactIdentifier(username)}',
+      name: 'ApiService',
+    );
     final res = await _dio.post(
       '/api/auth/loginWithTicket',
       queryParameters: {
@@ -252,7 +262,10 @@ class ApiService {
     String jsessionid, {
     required String sessionId,
   }) async {
-    dev.log('注入 JSESSIONID，用户：$username', name: 'ApiService');
+    dev.log(
+      '注入 JSESSIONID，用户：${_redactIdentifier(username)}',
+      name: 'ApiService',
+    );
     final res = await _dio.post(
       '/api/auth/injectJsessionid',
       queryParameters: {

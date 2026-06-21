@@ -1,12 +1,20 @@
-/// 根据当前小时数返回轮询间隔。
-///
-/// - 凌晨 0–5 点（夜间）→ 3 小时（降频省电）
-/// - 其他时间 → 30 分钟
-///
-/// 将此函数放在 [packages/core/lib/utils/polling_utils.dart]，
-/// 方便 providers.dart 和单测共同引用。
-Duration pollingInterval([DateTime? now]) {
+const daytimePollingInterval = Duration(minutes: 15);
+const nighttimePollingInterval = Duration(hours: 3);
+
+bool isNightPollingWindow([DateTime? now]) {
   final hour = (now ?? DateTime.now()).hour;
-  if (hour >= 0 && hour < 6) return const Duration(hours: 3);
-  return const Duration(minutes: 30);
+  return hour >= 23 || hour < 6;
+}
+
+Duration pollingInterval([DateTime? now]) {
+  return isNightPollingWindow(now)
+      ? nighttimePollingInterval
+      : daytimePollingInterval;
+}
+
+bool shouldRunPolling({DateTime? now, int? lastRunAtMs}) {
+  if (lastRunAtMs == null || lastRunAtMs <= 0) return true;
+  final current = now ?? DateTime.now();
+  final elapsed = current.millisecondsSinceEpoch - lastRunAtMs;
+  return elapsed >= pollingInterval(current).inMilliseconds;
 }

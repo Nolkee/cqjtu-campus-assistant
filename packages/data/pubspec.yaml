@@ -12,3 +12,10 @@ dependencies:
 
   dio: ^5.4.0
   core: ^0.0.1
+  pointycastle: ^3.9.1
+  http: ^1.2.0
+  html: ^0.15.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

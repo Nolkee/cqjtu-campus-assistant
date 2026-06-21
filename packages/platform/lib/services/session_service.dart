@@ -1,10 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:data/data.dart';
 
 final sessionServiceProvider =
     Provider<SessionService>((ref) => SessionService());
 
-class SessionService {
+class SessionService implements SelfHostedSessionStore {
   static const _storage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
@@ -92,6 +93,31 @@ class SessionService {
 
   Future<int?> loadZoveTokenUpdatedAt(String username) =>
       _readTimestamp(_zoveTokenUpdatedAtKey(username));
+
+  Future<void> saveWebLoginArtifacts(
+    String username, {
+    String? ticket,
+    String? casCookies,
+    String? jwgCookies,
+    String? ecardCookies,
+    String? zoveToken,
+  }) async {
+    if (ticket != null && ticket.isNotEmpty) {
+      await saveTicket(username, ticket);
+    }
+    if (casCookies != null && casCookies.isNotEmpty) {
+      await saveCasCookies(username, casCookies);
+    }
+    if (jwgCookies != null && jwgCookies.isNotEmpty) {
+      await saveJwgCookies(username, jwgCookies);
+    }
+    if (ecardCookies != null && ecardCookies.isNotEmpty) {
+      await saveEcardCookies(username, ecardCookies);
+    }
+    if (zoveToken != null && zoveToken.isNotEmpty) {
+      await saveZoveToken(username, zoveToken);
+    }
+  }
 
   Future<void> clearForUsername(String username) async {
     await _storage.delete(key: _sessionKey(username));

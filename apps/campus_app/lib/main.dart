@@ -111,6 +111,9 @@ class _MainShell extends ConsumerStatefulWidget {
 class _MainShellState extends ConsumerState<_MainShell>
     with WidgetsBindingObserver {
   int _index = 0;
+  int _lastForegroundRefreshAtMs = 0;
+
+  static const _foregroundRefreshCooldown = Duration(seconds: 10);
 
   @override
   void initState() {
@@ -142,8 +145,24 @@ class _MainShellState extends ConsumerState<_MainShell>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     debugPrint('[生命周期] 状态改变: $state');
     if (state == AppLifecycleState.resumed) {
+      _triggerForegroundRefresh();
       _trySchedule();
     }
+  }
+
+  void _triggerForegroundRefresh() {
+    final creds = ref.read(credentialsProvider);
+    if (creds == null) return;
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now - _lastForegroundRefreshAtMs <
+        _foregroundRefreshCooldown.inMilliseconds) {
+      return;
+    }
+
+    _lastForegroundRefreshAtMs = now;
+    debugPrint('[Lifecycle] foreground refresh requested');
+    ref.read(sessionUpdateProvider.notifier).triggerRefresh();
   }
 
   void _trySchedule() {

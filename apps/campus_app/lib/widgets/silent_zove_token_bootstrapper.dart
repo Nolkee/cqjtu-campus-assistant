@@ -189,9 +189,10 @@ class _SilentZoveTokenBootstrapperState
     String username,
     SessionService sessionService,
   ) async {
+    var updated = false;
     try {
       _latestTicket = null;
-      await _refreshCookieArtifacts(username, sessionService);
+      updated = await _refreshCookieArtifacts(username, sessionService);
 
       _capturedZoveToken = null;
       _tokenCompleter = Completer<String>();
@@ -202,14 +203,15 @@ class _SilentZoveTokenBootstrapperState
       final token = await _waitForToken(timeout: const Duration(seconds: 8));
       if (token != null && token.isNotEmpty) {
         await sessionService.saveZoveToken(username, token);
+        updated = true;
       }
     } catch (_) {
       // Silent mode: ignore errors and let leave page handle fallback.
     } finally {
       _running = false;
-      // Background credential warm-up should not interrupt visible pages by
-      // forcing all providers to refetch. The fresh artifacts stay in storage
-      // and will be used on the next real request/recovery.
+      if (updated) {
+        ref.read(sessionUpdateProvider.notifier).triggerRefresh();
+      }
     }
   }
 

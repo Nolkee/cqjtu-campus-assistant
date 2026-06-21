@@ -4,35 +4,31 @@ import 'package:core/models/course.dart';
 class CourseCell extends StatelessWidget {
   final Course course;
   final bool isActive;
+  final Color? color;
   final VoidCallback? onDelete;
 
   const CourseCell({
     super.key,
     required this.course,
     this.isActive = true,
+    this.color,
     this.onDelete,
   });
 
-  static const _palette = [
-    Color(0xFF5B9BD5),
-    Color(0xFF70AD47),
-    Color(0xFFED7D31),
-    Color(0xFF9B59B6),
-    Color(0xFF1ABC9C),
-    Color(0xFFE74C3C),
-    Color(0xFF3498DB),
-    Color(0xFFF39C12),
-  ];
-
-  Color get _baseColor {
-    if (course.isExam) return const Color(0xFF7C3AED);
-    if (course.isCustom) return const Color(0xFF0F766E);
-    return _palette[course.name.hashCode.abs() % _palette.length];
-  }
+  Color get _baseColor => color ?? const Color(0xFFE1ECF7);
 
   Color get _cellColor => isActive ? _baseColor : Colors.grey.shade300;
-  Color get _textColor => isActive ? Colors.white : Colors.grey.shade500;
-  Color get _subColor => isActive ? Colors.white70 : Colors.grey.shade400;
+  Color get _textColor =>
+      isActive ? const Color(0xFF25313D) : Colors.grey.shade500;
+  Color get _subColor =>
+      isActive ? const Color(0xFF5F6B76) : Colors.grey.shade400;
+  Color get _borderColor => isActive
+      ? HSLColor.fromColor(_baseColor)
+            .withLightness(
+              (HSLColor.fromColor(_baseColor).lightness - 0.12).clamp(0.0, 1.0),
+            )
+            .toColor()
+      : Colors.grey.shade300;
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +41,7 @@ class CourseCell extends StatelessWidget {
         decoration: BoxDecoration(
           color: _cellColor,
           borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: _borderColor, width: 0.8),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

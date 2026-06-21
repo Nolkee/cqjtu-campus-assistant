@@ -1,0 +1,1002 @@
+Launching lib\main.dart on 24031PN0DC in debug mode...
+Running Gradle task 'assembleDebug'...                          
+Running Gradle task 'assembleDebug'...                             13.8s
+√ Built build\app\outputs\flutter-apk\app-debug.apk
+Installing build\app\outputs\flutter-apk\app-debug.apk...           5.8s
+D/FlutterJNI(25319): Beginning load of flutter...
+D/FlutterJNI(25319): flutter (null) was loaded normally!
+I/flutter (25319): [IMPORTANT:flutter/shell/platform/android/android_context_vk_impeller.cc(62)] Using the Impeller rendering backend (Vulkan).
+D/FlutterRenderer(25319): Width is zero. 0,0
+I/flutter (25319): [NOTIF] init() start
+D/FlutterRenderer(25319): Width is zero. 0,0
+D/FlutterJNI(25319): Sending viewport metrics to the engine.
+I/flutter (25319): [NOTIF] timezone initialized: Asia/Shanghai
+D/FlutterJNI(25319): Sending viewport metrics to the engine.
+I/flutter (25319): [NOTIF] notification permission: true
+I/flutter (25319): [NOTIF] exact alarm permission: true
+D/FlutterJNI(25319): Sending viewport metrics to the engine.
+I/flutter (25319): [CredentialService] load username=user_63****29 passwordLen=10
+Syncing files to device 24031PN0DC...                           
+I/flutter (25319): [FG] getCampusCardBalance request username=user_63****29 passwordLen=10
+I/flutter (25319): [FG] getPayCodeToken request username=user_63****29 passwordLen=10
+I/flutter (25319): ----------------------------------------
+I/flutter (25319): [调度器] 准备检查课表提醒注册条件...
+I/flutter (25319): [调度器] 课表状态(默认): AsyncLoading<({List<Course> courses, String remark})> -> 无数据
+I/flutter (25319): [调度器] 开学时间: AsyncLoading<DateTime?> -> 无数据
+I/flutter (25319): [调度器] ❌ 拦截：数据不完整，放弃本次注册。
+I/flutter (25319): ----------------------------------------
+I/flutter (25319): [FG] 查询电费: 德园8舍 306室
+I/mple.campus_app(25319): AssetManager2(0xb400007066625918) locale list changing from [] to [zh-CN]
+I/WebViewFactory(25319): Loading com.google.android.webview version 145.0.7632.120 (code 763212003)
+I/MiResource(25319): Start adding sharedLibAssets
+I/mple.campus_app(25319): AssetManager2(0xb400007066627b78) locale list changing from [] to [zh-CN]
+I/MiResource(25319): Updating cached ResourcesImpl for resources : android.content.res.MiuiResources@df91b09, old impl = android.content.res.MiuiResourcesImpl@beebf94, new impl = android.content.res.MiuiResourcesImpl@383dd39 , new paths = [/system/framework/framework-res.apk, /odm/overlay/FrameworksResTarget_Vendor.apk, /product/overlay/GmsCnConfigOverlay.apk, /product/overlay/MiuiServiceOverlay/MiuiServiceOverlay.apk, /product/overlay/framework-res__nosdcard__auto_generated_characteristics_rro.apk, /product/overlay/FrameworksResCommon_Sys.apk, /product/overlay/MiuiHomeLauncherResOverlay.apk, /product/overlay/AospFrameworkResOverlay.apk, /product/overlay/DevicesAndroidOverlay.apk, /product/overlay/VoiceAssistAndroidOverlay/VoiceAssistAndroidOverlay.apk, /product/overlay/AospFrameworkTelephonyResOverlay.apk, /system_ext/framework/framework-ext-res/framework-ext-res.apk, /product/overlay/MiuiFrameworkResOverlay.apk, /product/overlay/MiuiFrameworkTelephonyResOverlay.apk, /data/app/~~ov4zus9FCh2FrYj-P2jtmw==/com.example.campus_app-fsU4EMcNhnEo1mHohha97A==/base.apk, /data/app/~~FaikyB3v3mI7gmnwZFMfPg==/com.google.android.webview-x6DEMDRsdGBtuBIAVSUoxg==/base.apk, /product/overlay/GestureLineOverlay.apk, /data/resource-cache/com.android.systemui-neutral-Tpky.frro, /data/resource-cache/com.android.systemui-accent-mhbC.frro, /data/resource-cache/com.android.systemui-dynamic-zfX8.frro]
+I/mple.campus_app(25319): AssetManager2(0xb400007066629ab8) locale list changing from [] to [zh-CN]
+I/MiResource(25319): Updating cached ResourcesImpl for resources : android.content.res.MiuiResources@36cd1e9, old impl = android.content.res.MiuiResourcesImpl@57a17e7, new impl = android.content.res.MiuiResourcesImpl@fa2bf7e , new paths = [/system/framework/framework-res.apk, /odm/overlay/FrameworksResTarget_Vendor.apk, /product/overlay/GmsCnConfigOverlay.apk, /product/overlay/MiuiServiceOverlay/MiuiServiceOverlay.apk, /product/overlay/framework-res__nosdcard__auto_generated_characteristics_rro.apk, /product/overlay/FrameworksResCommon_Sys.apk, /product/overlay/MiuiHomeLauncherResOverlay.apk, /product/overlay/AospFrameworkResOverlay.apk, /product/overlay/DevicesAndroidOverlay.apk, /product/overlay/VoiceAssistAndroidOverlay/VoiceAssistAndroidOverlay.apk, /product/overlay/AospFrameworkTelephonyResOverlay.apk, /system_ext/framework/framework-ext-res/framework-ext-res.apk, /product/overlay/MiuiFrameworkResOverlay.apk, /product/overlay/MiuiFrameworkTelephonyResOverlay.apk, /data/app/~~ov4zus9FCh2FrYj-P2jtmw==/com.example.campus_app-fsU4EMcNhnEo1mHohha97A==/base.apk, /data/app/~~FaikyB3v3mI7gmnwZFMfPg==/com.google.android.webview-x6DEMDRsdGBtuBIAVSUoxg==/base.apk, /product/overlay/GestureLineOverlay.apk, /data/resource-cache/com.android.systemui-neutral-Tpky.frro, /data/resource-cache/com.android.systemui-accent-mhbC.frro, /data/resource-cache/com.android.systemui-dynamic-zfX8.frro]
+I/mple.campus_app(25319): AssetManager2(0xb40000706661dc18) locale list changing from [] to [zh-CN]
+I/MiResource(25319): Updating cached ResourcesImpl for resources : android.content.res.MiuiResources@ff8b5cc, old impl = android.content.res.MiuiResourcesImpl@bafb232, new impl = android.content.res.MiuiResourcesImpl@8181cdf , new paths = [/system/framework/framework-res.apk, /odm/overlay/FrameworksResTarget_Vendor.apk, /product/overlay/GmsCnConfigOverlay.apk, /product/overlay/MiuiServiceOverlay/MiuiServiceOverlay.apk, /product/overlay/framework-res__nosdcard__auto_generated_characteristics_rro.apk, /product/overlay/FrameworksResCommon_Sys.apk, /product/overlay/MiuiHomeLauncherResOverlay.apk, /product/overlay/AospFrameworkResOverlay.apk, /product/overlay/DevicesAndroidOverlay.apk, /product/overlay/VoiceAssistAndroidOverlay/VoiceAssistAndroidOverlay.apk, /product/overlay/AospFrameworkTelephonyResOverlay.apk, /system_ext/framework/framework-ext-res/framework-ext-res.apk, /product/overlay/MiuiFrameworkResOverlay.apk, /product/overlay/MiuiFrameworkTelephonyResOverlay.apk, /product/app/ContentCatcherOS3_1/ContentCatcherOS3_1.apk, /data/app/~~FaikyB3v3mI7gmnwZFMfPg==/com.google.android.webview-x6DEMDRsdGBtuBIAVSUoxg==/base.apk, /product/overlay/GestureLineOverlay.apk, /data/resource-cache/com.android.systemui-neutral-Tpky.frro, /data/resource-cache/com.android.systemui-accent-mhbC.frro, /data/resource-cache/com.android.systemui-dynamic-zfX8.frro]
+I/MiResource(25319): Updating cached ResourcesImpl for resources : android.content.res.MiuiResources@2043f6, old impl = android.content.res.MiuiResourcesImpl@bafb232, new impl = android.content.res.MiuiResourcesImpl@8181cdf , new paths = [/system/framework/framework-res.apk, /odm/overlay/FrameworksResTarget_Vendor.apk, /product/overlay/GmsCnConfigOverlay.apk, /product/overlay/MiuiServiceOverlay/MiuiServiceOverlay.apk, /product/overlay/framework-res__nosdcard__auto_generated_characteristics_rro.apk, /product/overlay/FrameworksResCommon_Sys.apk, /product/overlay/MiuiHomeLauncherResOverlay.apk, /product/overlay/AospFrameworkResOverlay.apk, /product/overlay/DevicesAndroidOverlay.apk, /product/overlay/VoiceAssistAndroidOverlay/VoiceAssistAndroidOverlay.apk, /product/overlay/AospFrameworkTelephonyResOverlay.apk, /system_ext/framework/framework-ext-res/framework-ext-res.apk, /product/overlay/MiuiFrameworkResOverlay.apk, /product/overlay/MiuiFrameworkTelephonyResOverlay.apk, /product/app/ContentCatcherOS3_1/ContentCatcherOS3_1.apk, /data/app/~~FaikyB3v3mI7gmnwZFMfPg==/com.google.android.webview-x6DEMDRsdGBtuBIAVSUoxg==/base.apk, /product/overlay/GestureLineOverlay.apk, /data/resource-cache/com.android.systemui-neutral-Tpky.frro, /data/resource-cache/com.android.systemui-accent-mhbC.frro, /data/resource-cache/com.android.systemui-dynamic-zfX8.frro]
+I/MiResource(25319): Updating cached ResourcesImpl for resources : android.content.res.MiuiResources@7cee9e8, old impl = android.content.res.MiuiResourcesImpl@37eda3d, new impl = android.content.res.MiuiResourcesImpl@fa2bf7e , new paths = [/system/framework/framework-res.apk, /odm/overlay/FrameworksResTarget_Vendor.apk, /product/overlay/GmsCnConfigOverlay.apk, /product/overlay/MiuiServiceOverlay/MiuiServiceOverlay.apk, /product/overlay/framework-res__nosdcard__auto_generated_characteristics_rro.apk, /product/overlay/FrameworksResCommon_Sys.apk, /product/overlay/MiuiHomeLauncherResOverlay.apk, /product/overlay/AospFrameworkResOverlay.apk, /product/overlay/DevicesAndroidOverlay.apk, /product/overlay/VoiceAssistAndroidOverlay/VoiceAssistAndroidOverlay.apk, /product/overlay/AospFrameworkTelephonyResOverlay.apk, /system_ext/framework/framework-ext-res/framework-ext-res.apk, /product/overlay/MiuiFrameworkResOverlay.apk, /product/overlay/MiuiFrameworkTelephonyResOverlay.apk, /data/app/~~ov4zus9FCh2FrYj-P2jtmw==/com.example.campus_app-fsU4EMcNhnEo1mHohha97A==/base.apk, /data/app/~~FaikyB3v3mI7gmnwZFMfPg==/com.google.android.webview-x6DEMDRsdGBtuBIAVSUoxg==/base.apk, /product/overlay/GestureLineOverlay.apk, /data/resource-cache/com.android.systemui-neutral-Tpky.frro, /data/resource-cache/com.android.systemui-accent-mhbC.frro, /data/resource-cache/com.android.systemui-dynamic-zfX8.frro]
+I/MiResource(25319): Updating cached ResourcesImpl for resources : android.content.res.MiuiResources@89145ea, old impl = android.content.res.MiuiResourcesImpl@beebf94, new impl = android.content.res.MiuiResourcesImpl@383dd39 , new paths = [/system/framework/framework-res.apk, /odm/overlay/FrameworksResTarget_Vendor.apk, /product/overlay/GmsCnConfigOverlay.apk, /product/overlay/MiuiServiceOverlay/MiuiServiceOverlay.apk, /product/overlay/framework-res__nosdcard__auto_generated_characteristics_rro.apk, /product/overlay/FrameworksResCommon_Sys.apk, /product/overlay/MiuiHomeLauncherResOverlay.apk, /product/overlay/AospFrameworkResOverlay.apk, /product/overlay/DevicesAndroidOverlay.apk, /product/overlay/VoiceAssistAndroidOverlay/VoiceAssistAndroidOverlay.apk, /product/overlay/AospFrameworkTelephonyResOverlay.apk, /system_ext/framework/framework-ext-res/framework-ext-res.apk, /product/overlay/MiuiFrameworkResOverlay.apk, /product/overlay/MiuiFrameworkTelephonyResOverlay.apk, /data/app/~~ov4zus9FCh2FrYj-P2jtmw==/com.example.campus_app-fsU4EMcNhnEo1mHohha97A==/base.apk, /data/app/~~FaikyB3v3mI7gmnwZFMfPg==/com.google.android.webview-x6DEMDRsdGBtuBIAVSUoxg==/base.apk, /product/overlay/GestureLineOverlay.apk, /data/resource-cache/com.android.systemui-neutral-Tpky.frro, /data/resource-cache/com.android.systemui-accent-mhbC.frro, /data/resource-cache/com.android.systemui-dynamic-zfX8.frro]
+I/mple.campus_app(25319): AssetManager2(0xb400007066610ab8) locale list changing from [] to [zh-CN]
+I/MiResource(25319): Updating cached ResourcesImpl for resources : android.content.res.MiuiResources@18321a6, old impl = android.content.res.MiuiResourcesImpl@6c64b83, new impl = android.content.res.MiuiResourcesImpl@e8a6d2c , new paths = [/system/framework/framework-res.apk, /odm/overlay/FrameworksResTarget_Vendor.apk, /product/overlay/GmsCnConfigOverlay.apk, /product/overlay/MiuiServiceOverlay/MiuiServiceOverlay.apk, /product/overlay/framework-res__nosdcard__auto_generated_characteristics_rro.apk, /product/overlay/FrameworksResCommon_Sys.apk, /product/overlay/MiuiHomeLauncherResOverlay.apk, /product/overlay/AospFrameworkResOverlay.apk, /product/overlay/DevicesAndroidOverlay.apk, /product/overlay/VoiceAssistAndroidOverlay/VoiceAssistAndroidOverlay.apk, /product/overlay/AospFrameworkTelephonyResOverlay.apk, /system_ext/framework/framework-ext-res/framework-ext-res.apk, /product/overlay/MiuiFrameworkResOverlay.apk, /product/overlay/MiuiFrameworkTelephonyResOverlay.apk, /data/app/~~FaikyB3v3mI7gmnwZFMfPg==/com.google.android.webview-x6DEMDRsdGBtuBIAVSUoxg==/base.apk, /data/app/~~FaikyB3v3mI7gmnwZFMfPg==/com.google.android.webview-x6DEMDRsdGBtuBIAVSUoxg==/base.apk, /product/overlay/GestureLineOverlay.apk, /data/resource-cache/com.android.systemui-neutral-Tpky.frro, /data/resource-cache/com.android.systemui-accent-mhbC.frro, /data/resource-cache/com.android.systemui-dynamic-zfX8.frro]
+V/ResourcesManager(25319): The following library key has been added: ResourcesKey{ mHash=25911b10 mResDir=null mSplitDirs=[] mOverlayDirs=[] mLibDirs=[/data/app/~~FaikyB3v3mI7gmnwZFMfPg==/com.google.android.webview-x6DEMDRsdGBtuBIAVSUoxg==/base.apk,/system/framework/android.test.base.jar] mDisplayId=0 mOverrideConfig=v36 mCompatInfo={560dpi always-compat} mLoaders=[]}
+D/ApplicationLoaders(25319): Returning zygote-cached class loader: /system/framework/android.test.base.jar
+D/ApplicationLoaders(25319): Returning zygote-cached class loader: /system_ext/framework/androidx.window.extensions.jar
+W/mple.campus_app(25319): Loading /data/app/~~FaikyB3v3mI7gmnwZFMfPg==/com.google.android.webview-x6DEMDRsdGBtuBIAVSUoxg==/oat/arm64/base.odex non-executable as it requires an image which we failed to load
+D/nativeloader(25319): Configuring clns-12 for other apk /data/app/~~FaikyB3v3mI7gmnwZFMfPg==/com.google.android.webview-x6DEMDRsdGBtuBIAVSUoxg==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~FaikyB3v3mI7gmnwZFMfPg==/com.google.android.webview-x6DEMDRsdGBtuBIAVSUoxg==/lib/arm64:/data/app/~~FaikyB3v3mI7gmnwZFMfPg==/com.google.android.webview-x6DEMDRsdGBtuBIAVSUoxg==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand
+E/TurboSchedMonitor(25319): failed to find setSchedAffinity method com.example.campus_app
+E/TurboSchedMonitor(25319): failed to find setSchedAffinity method com.example.campus_app
+I/cr_WVCFactoryProvider(25319): version=145.0.7632.120 (763212003) minSdkVersion=29 multiprocess=true packageId=2 splits=<none>
+D/nativeloader(25319): Load /data/app/~~FaikyB3v3mI7gmnwZFMfPg==/com.google.android.webview-x6DEMDRsdGBtuBIAVSUoxg==/base.apk!/lib/arm64-v8a/libwebviewchromium.so using class loader ns clns-12 (caller=/data/app/~~FaikyB3v3mI7gmnwZFMfPg==/com.google.android.webview-x6DEMDRsdGBtuBIAVSUoxg==/base.apk): ok
+D/nativeloader(25319): Load /system/lib64/libwebviewchromium_plat_support.so using class loader ns clns-12 (caller=/data/app/~~FaikyB3v3mI7gmnwZFMfPg==/com.google.android.webview-x6DEMDRsdGBtuBIAVSUoxg==/base.apk): ok
+I/chromium(25319): [0621/001342.259391:INFO:android_webview/browser/variations/variations_seed_loader.cc:67] Failed to open file for reading.: No such file or directory (2)
+I/cr_LibraryLoader(25319): Successfully loaded native library
+I/cr_CachingUmaRecorder(25319): Flushed 20 samples from 20 histograms, 0 samples were dropped.
+I/cr_ChildProcLH(25319): ScopedServiceBindingBatch.tryActivate: false
+I/cr_CombinedPProvider(25319): #registerProvider() provider:WV.qk@7e7fbcf isPolicyCacheEnabled:false policyProvidersSize:0
+I/cr_PolicyProvider(25319): #setManagerAndSource() 0
+E/TurboSchedMonitor(25319): failed to find setSchedAffinity method com.example.campus_app
+E/TurboSchedMonitor(25319): failed to find setSchedAffinity method com.example.campus_app
+I/cr_DisplayManager(25319): Is Display Topology available: false
+I/mple.campus_app(25319): AssetManager2(0xb4000070665a7018) locale list changing from [] to [zh-CN]
+I/mple.campus_app(25319): AssetManager2(0xb4000070665ab1b8) locale list changing from [] to [zh-CN]
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+Syncing files to device 24031PN0DC...                              510ms
+I/cr_CombinedPProvider(25319): #linkNativeInternal() 1
+I/cr_AppResProvider(25319): #getApplicationRestrictionsFromUserManager() Bundle[EMPTY_PARCEL]
+I/cr_PolicyProvider(25319): #notifySettingsAvailable() 0
+I/cr_CombinedPProvider(25319): #onSettingsAvailable() 0
+I/cr_CombinedPProvider(25319): #flushPolicies()
+
+Flutter run key commands.
+r Hot reload. 
+R Hot restart.
+h List all available interactive commands.
+d Detach (terminate "flutter run" but leave application running).
+c Clear the screen
+q Quit (terminate the application on the device).
+
+A Dart VM Service on 24031PN0DC is available at: http://127.0.0.1:56395/ixvm6DnTVvk=/
+The Flutter DevTools debugger and profiler on 24031PN0DC is available at: http://127.0.0.1:56395/ixvm6DnTVvk=/devtools/?uri=ws://127.0.0.1:56395/ixvm6DnTVvk=/ws
+W/chromium(25319): [WARNING:android_webview/browser/network_service/net_helpers.cc:137] HTTP Cache size is: 23091794
+E/TurboSchedMonitor(25319): failed to find setSchedAffinity method com.example.campus_app
+E/TurboSchedMonitor(25319): failed to find setSchedAffinity method com.example.campus_app
+I/CameraManagerGlobal(25319): Connecting to camera service
+D/HWUI    (25319): ImageDecoder_nDecodeBitmap: width = 37, height = 13, encodedFormat = 4
+W/HWUI    (25319): Image decoding logging dropped!
+D/HWUI    (25319): ImageDecoder_nDecodeBitmap: width = 13, height = 37, encodedFormat = 4
+W/HWUI    (25319): Image decoding logging dropped!
+D/CameraExtStub(25319): init android.hardware.camera2.impl.CameraExtImplXiaoMi
+D/CameraInjector(25319): waitForResult: 
+D/CameraInjector(25319): updateCloudCameraControllerInfoAsync: E
+D/CameraInjector(25319): isMiviInfo4: use MiviInfo V4.0
+D/CameraInjector(25319): parseMiviInfo4 cameraExposedRoleIdList: 20#21#23#60#61#0
+D/CameraInjector(25319): updateCloudCameraControllerInfoAsync: X
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelist"
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelistext"
+W/CameraExtImplXiaoMi(25319): ignore the status update of camera: 2
+D/CameraInjector(25319): updateCloudCameraControllerInfoAsync: has aleardy start update task.
+D/CameraInjector(25319): waitForResult: 
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelist"
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelistext"
+W/CameraExtImplXiaoMi(25319): ignore the status update of camera: 3
+D/CameraInjector(25319): updateCloudCameraControllerInfoAsync: has aleardy start update task.
+D/CameraInjector(25319): waitForResult: 
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelist"
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelistext"
+W/CameraExtImplXiaoMi(25319): ignore the status update of camera: 4
+D/CameraInjector(25319): updateCloudCameraControllerInfoAsync: has aleardy start update task.
+D/CameraInjector(25319): waitForResult: 
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelist"
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelistext"
+W/CameraExtImplXiaoMi(25319): ignore the status update of camera: 5
+D/CameraInjector(25319): updateCloudCameraControllerInfoAsync: has aleardy start update task.
+D/CameraInjector(25319): waitForResult: 
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelist"
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelistext"
+W/CameraExtImplXiaoMi(25319): ignore the status update of camera: 6
+D/CameraInjector(25319): updateCloudCameraControllerInfoAsync: has aleardy start update task.
+D/CameraInjector(25319): waitForResult: 
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelist"
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelistext"
+W/CameraExtImplXiaoMi(25319): ignore the status update of camera: 9
+D/CameraInjector(25319): updateCloudCameraControllerInfoAsync: has aleardy start update task.
+D/CameraInjector(25319): waitForResult: 
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelist"
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelistext"
+W/CameraManagerGlobal(25319): ignore the torch status update of camera: 2
+D/CameraInjector(25319): updateCloudCameraControllerInfoAsync: has aleardy start update task.
+D/CameraInjector(25319): waitForResult: 
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelist"
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelistext"
+W/CameraManagerGlobal(25319): ignore the torch status update of camera: 3
+D/CameraInjector(25319): updateCloudCameraControllerInfoAsync: has aleardy start update task.
+D/CameraInjector(25319): waitForResult: 
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelist"
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelistext"
+W/CameraManagerGlobal(25319): ignore the torch status update of camera: 4
+D/CameraInjector(25319): updateCloudCameraControllerInfoAsync: has aleardy start update task.
+D/CameraInjector(25319): waitForResult: 
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelist"
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelistext"
+W/CameraManagerGlobal(25319): ignore the torch status update of camera: 5
+D/CameraInjector(25319): updateCloudCameraControllerInfoAsync: has aleardy start update task.
+D/CameraInjector(25319): waitForResult: 
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelist"
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelistext"
+W/CameraManagerGlobal(25319): ignore the torch status update of camera: 6
+D/CameraInjector(25319): updateCloudCameraControllerInfoAsync: has aleardy start update task.
+D/CameraInjector(25319): waitForResult: 
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelist"
+W/libc    (25319): Access denied finding property "vendor.camera.aux.packagelistext"
+W/CameraManagerGlobal(25319): ignore the torch status update of camera: 9
+I/flutter (25319): [FG] 查询电费: 德园8舍 306室
+I/flutter (25319): ----------------------------------------
+I/flutter (25319): [调度器] 准备检查课表提醒注册条件...
+I/flutter (25319): [调度器] 课表状态(2025-2026-2): AsyncLoading<({List<Course> courses, String remark})> -> 无数据
+I/flutter (25319): [调度器] 开学时间: AsyncData<DateTime?> -> 有数据
+I/flutter (25319): [调度器] ❌ 拦截：数据不完整，放弃本次注册。
+I/flutter (25319): ----------------------------------------
+I/mple.campus_app(25319): AssetManager2(0xb400007066633d38) locale list changing from [] to [zh-CN]
+I/mple.campus_app(25319): AssetManager2(0xb4000070666397d8) locale list changing from [] to [zh-CN]
+I/flutter (25319): ----------------------------------------
+I/flutter (25319): [调度器] 准备检查课表提醒注册条件...
+I/flutter (25319): [调度器] 课表状态(2025-2026-2): AsyncLoading<({List<Course> courses, String remark})> -> 无数据
+I/flutter (25319): [调度器] 开学时间: AsyncData<DateTime?> -> 有数据
+I/flutter (25319): [调度器] ❌ 拦截：数据不完整，放弃本次注册。
+I/flutter (25319): ----------------------------------------
+W/cr_media(25319): BLUETOOTH_CONNECT permission is missing.
+W/cr_media(25319): getBluetoothAdapter() requires BLUETOOTH permission
+W/cr_media(25319): registerBluetoothIntentsIfNeeded: Requires BLUETOOTH permission
+D/AudioSystem(25319): onNewService: media.audio_policy service obtained 0xb400006f865da2e0
+D/AudioSystem(25319): getService: checking for service media.audio_policy: 0xb400006f865da2e0
+I/AdrenoVK-0(25319): QUALCOMM build          : a0053eb399, I31b05c049d
+I/AdrenoVK-0(25319): Build Date              : 12/22/25
+I/AdrenoVK-0(25319): Shader Compiler Version : E031.45.02.25
+I/AdrenoVK-0(25319): Local Branch            : 
+I/AdrenoVK-0(25319): Remote Branch           : refs/tags/AU_LINUX_ANDROID_LA.VENDOR.14.3.0.11.00.00.974.116
+I/AdrenoVK-0(25319): Remote Branch           : NONE
+I/AdrenoVK-0(25319): Reconstruct Branch      : NOTHING
+I/AdrenoVK-0(25319): Build Config            : S P 16.1.2 AArch64
+I/AdrenoVK-0(25319): Driver Path             : /vendor/lib64/hw/vulkan.adreno.so
+I/AdrenoVK-0(25319): Driver Version          : 0762.36.1
+I/AdrenoVK-0(25319): PFP                     : 0x01520180
+I/AdrenoVK-0(25319): ME                      : 0x01520023
+I/AdrenoVK-0(25319): Application Name    : 
+I/AdrenoVK-0(25319): Application Version : 0x00000001
+I/AdrenoVK-0(25319): Engine Name         : 
+I/AdrenoVK-0(25319): Engine Version      : 0x00000001
+I/AdrenoVK-0(25319): Api Version         : 0x00403000
+I/PlatformViewsController(25319): Hosting view in view hierarchy for platform view: 0
+I/PlatformViewsController(25319): PlatformView is using SurfaceProducer backend
+I/ContentCatcher(25319): Interceptor_Catcher : notifyWebView view: io.flutter.plugins.webviewflutter.WebViewProxyApi$WebViewPlatformView{fb0db03 VFEDHVC.. ......I. 0,0-0,0}, size:1, isLoad:true
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+D/FlutterJNI(25319): Sending viewport metrics to the engine.
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+D/FlutterJNI(25319): Sending viewport metrics to the engine.
+W/AudioCapabilities(25319): Unsupported mediaType audio/alac
+W/AudioCapabilities(25319): Unsupported mediaType audio/x-ape
+W/AudioCapabilities(25319): Unsupported mediaType audio/dsd
+W/AudioCapabilities(25319): Unsupported mediaType audio/amr-wb-plus
+W/AudioCapabilities(25319): Unsupported mediaType audio/amr-wb+
+W/AudioCapabilities(25319): Unsupported mediaType audio/x-ms-wma
+W/AudioCapabilities(25319): Unsupported mediaType audio/alac
+W/AudioCapabilities(25319): Unsupported mediaType audio/x-ape
+W/AudioCapabilities(25319): Unsupported mediaType audio/aihc
+W/AudioCapabilities(25319): Unsupported mediaType audio/aihc
+W/AudioCapabilities(25319): Unsupported mediaType audio/mihc
+W/AudioCapabilities(25319): Unsupported mediaType audio/mihc
+W/VideoCapabilities(25319): Unrecognized profile 8 for video/hevc
+W/VideoCapabilities(25319): Unrecognized profile 8 for video/hevc
+W/VideoCapabilities(25319): Unrecognized profile 8 for video/hevc
+W/VideoCapabilities(25319): Unrecognized profile 8 for video/hevc
+W/VideoCapabilities(25319): Unrecognized profile 8 for video/hevc
+W/VideoCapabilities(25319): Unrecognized profile 8 for video/hevc
+W/VideoCapabilities(25319): Unsupported mime image/vnd.android.heic
+W/VideoCapabilities(25319): Unsupported mime video/dolby-vision
+W/VideoCapabilities(25319): Unsupported mime video/dolby-vision
+W/VideoCapabilities(25319): Unsupported mime video/dolby-vision
+W/AudioCapabilities(25319): Unsupported mime audio/alac
+W/AudioCapabilities(25319): Unsupported mime audio/x-ape
+W/AudioCapabilities(25319): Unsupported mime audio/dsd
+W/AudioCapabilities(25319): Unsupported mime audio/amr-wb-plus
+W/AudioCapabilities(25319): Unsupported mime audio/amr-wb+
+W/AudioCapabilities(25319): Unsupported mime audio/x-ms-wma
+W/AudioCapabilities(25319): Unsupported mime audio/alac
+W/AudioCapabilities(25319): Unsupported mime audio/x-ape
+W/AudioCapabilities(25319): Unsupported mime audio/aihc
+W/AudioCapabilities(25319): Unsupported mime audio/aihc
+W/AudioCapabilities(25319): Unsupported mime audio/aihc
+W/AudioCapabilities(25319): Unsupported mime audio/aihc
+W/AudioCapabilities(25319): Unsupported mime audio/mihc
+W/AudioCapabilities(25319): Unsupported mime audio/mihc
+W/AudioCapabilities(25319): Unsupported mime audio/mihc
+W/AudioCapabilities(25319): Unsupported mime audio/mihc
+W/VideoCapabilities(25319): Unrecognized profile 8 for video/hevc
+W/VideoCapabilities(25319): Unrecognized profile 8 for video/hevc
+W/VideoCapabilities(25319): Unrecognized profile 8 for video/hevc
+W/VideoCapabilities(25319): Unrecognized profile 8 for video/hevc
+W/VideoCapabilities(25319): Unrecognized profile 8 for video/hevc
+W/VideoCapabilities(25319): Unrecognized profile 8 for video/hevc
+W/VideoCapabilities(25319): Unrecognized profile 8 for video/hevc
+W/VideoCapabilities(25319): Unrecognized profile 8 for video/hevc
+W/VideoCapabilities(25319): Unrecognized profile 8 for video/hevc
+W/VideoCapabilities(25319): Unrecognized profile 8 for video/hevc
+W/VideoCapabilities(25319): Unrecognized profile 8 for video/hevc
+W/VideoCapabilities(25319): Unsupported mime image/vnd.android.heic
+W/VideoCapabilities(25319): Unsupported mime image/vnd.android.heic
+W/VideoCapabilities(25319): Unsupported mime video/dolby-vision
+W/VideoCapabilities(25319): Unsupported mime video/dolby-vision
+W/VideoCapabilities(25319): Unsupported mime video/dolby-vision
+W/cr_VAUtil(25319): Unknown profile: 8 for codec video/hevc
+W/cr_VAUtil(25319): Unknown profile: 8 for codec video/hevc
+W/cr_VAUtil(25319): Unknown profile: 8 for codec video/hevc
+W/cr_VAUtil(25319): Unknown level: 2048 for profile 32 of codec video/dolby-vision
+W/cr_VAUtil(25319): Unknown level: 2048 for profile 256 of codec video/dolby-vision
+W/cr_VAUtil(25319): Unknown level: 2048 for profile 32 of codec video/dolby-vision
+W/cr_VAUtil(25319): Unknown level: 2048 for profile 256 of codec video/dolby-vision
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+D/FlutterJNI(25319): Sending viewport metrics to the engine.
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755776762, downTime=755776762, phoneEventTime=1781972023273 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755776771, downTime=755776762, phoneEventTime=1781972023282 } moveCount:0
+W/WindowOnBackDispatcher(25319): sendCancelIfRunning: isInProgress=false callback=io.flutter.embedding.android.FlutterActivity$1@99371a5
+I/mple.campus_app(25319): DynamicFPS DF top: com.example.campus_app : 0.000000
+I/mple.campus_app(25319): DF com.example.campus_app Support DynamicFPS.
+W/RenderThread(25319): type=1400 audit(0.0:935489): avc:  denied  { getattr } for  path="/sys/module/metis/parameters/minor_window_app" dev="sysfs" ino=76286 scontext=u:r:untrusted_app:s0:c237,c257,c512,c768 tcontext=u:object_r:sysfs_migt:s0 tclass=file permissive=0 app=com.example.campus_app
+D/LB      (25319): CustomizeAffinityThread startThread
+I/mple.campus_app(25319): This is non sticky GC, maxfree is 33554432 minfree is 8388608
+I/libEGL  (25319): shader cache num entries: 115
+I/chromium(25319): [INFO:CONSOLE:29201] "There is a chart instance already initialized on the dom.", source: https://jwgln.cqjtu.edu.cn/jsxsd/framework/student/js/cqjtdx/echarts.common.js (29201)
+D/CookieChannel(25319): getCookies(https://ids.cqjtu.edu.cn/authserver/) => length=503
+D/ProfileInstaller(25319): Installing profile for com.example.campus_app
+D/CookieChannel(25319): getCookies(https://jwgln.cqjtu.edu.cn/jsxsd/) => length=98
+I/mple.campus_app(25319): This is sticky GC, maxfree is 33554432 minfree is 8388608
+D/CookieChannel(25319): getCookies(https://ecard.cqjtu.edu.cn/epay/h5/) => length=43
+I/mple.campus_app(25319): ProcessProfilingInfo new_methods=12 is saved saved_to_disk=1
+I/mple.campus_app(25319): This is non sticky GC, maxfree is 33554432 minfree is 8388608
+I/chromium(25319): [INFO:CONSOLE:15] "[Vue warn]: inject() can only be used inside setup() or functional components.", source: https://zhxg.cqjtu.edu.cn/mobile/static/index.035228d5.js (15)
+I/chromium(25319): [INFO:CONSOLE:17] "Feature flag __VUE_PROD_HYDRATION_MISMATCH_DETAILS__ is not explicitly defined. You are running the esm-bundler build of Vue, which expects these compile-time feature flags to be globally injected via the bundler config in order to get better tree-shaking in the production bundle.
+I/chromium(25319): 
+I/chromium(25319): For more details, see https://link.vuejs.org/feature-flags.", source: https://zhxg.cqjtu.edu.cn/mobile/static/index.035228d5.js (17)
+I/chromium(25319): [INFO:CONSOLE:15] "[Vue warn]: Plugin has already been applied to target app.", source: https://zhxg.cqjtu.edu.cn/mobile/static/index.035228d5.js (15)
+I/chromium(25319): [INFO:CONSOLE:1] "VITE_BASE_URL /gateway", source: https://zhxg.cqjtu.edu.cn/mobile/static/request.edc0ec78.js (1)
+I/chromium(25319): [INFO:CONSOLE:15] "[Vue warn]: inject() can only be used inside setup() or functional components.", source: https://zhxg.cqjtu.edu.cn/mobile/static/index.035228d5.js (15)
+I/chromium(25319): [INFO:CONSOLE:17] "Feature flag __VUE_PROD_HYDRATION_MISMATCH_DETAILS__ is not explicitly defined. You are running the esm-bundler build of Vue, which expects these compile-time feature flags to be globally injected via the bundler config in order to get better tree-shaking in the production bundle.
+I/chromium(25319): 
+I/chromium(25319): For more details, see https://link.vuejs.org/feature-flags.", source: https://zhxg.cqjtu.edu.cn/mobile/static/index.035228d5.js (17)
+I/chromium(25319): [INFO:CONSOLE:15] "[Vue warn]: Plugin has already been applied to target app.", source: https://zhxg.cqjtu.edu.cn/mobile/static/index.035228d5.js (15)
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755783815, downTime=755783815, phoneEventTime=1781972030326 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/chromium(25319): [INFO:CONSOLE:1] "VITE_BASE_URL /gateway", source: https://zhxg.cqjtu.edu.cn/mobile/static/request.edc0ec78.js (1)
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755783907, downTime=755783815, phoneEventTime=1781972030419 } moveCount:0
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755784643, downTime=755784643, phoneEventTime=1781972031154 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755784727, downTime=755784643, phoneEventTime=1781972031238 } moveCount:0
+I/flutter (25319): [FG] getCampusCardBalance request username=user_63****29 passwordLen=10
+I/flutter (25319): [FG] getPayCodeToken request username=user_63****29 passwordLen=10
+I/flutter (25319): [FG] 查询电费: 德园8舍 306室
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755785400, downTime=755785400, phoneEventTime=1781972031911 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755785476, downTime=755785400, phoneEventTime=1781972031987 } moveCount:0
+I/mple.campus_app(25319): This is sticky GC, maxfree is 33554432 minfree is 8388608
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755785721, downTime=755785721, phoneEventTime=1781972032232 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755785788, downTime=755785721, phoneEventTime=1781972032299 } moveCount:0
+I/flutter (25319): ----------------------------------------
+I/flutter (25319): [调度器] 准备检查课表提醒注册条件...
+I/flutter (25319): [调度器] 课表状态(2025-2026-2): AsyncData<({List<Course> courses, String remark})> -> 有数据
+I/flutter (25319): [调度器] 开学时间: AsyncData<DateTime?> -> 有数据
+I/flutter (25319): [调度器] ✅ 两大数据已就绪，准备下发给系统注册！
+I/flutter (25319): ----------------------------------------
+I/flutter (25319): [NOTIF] scheduleClassReminders enabled=true minutes=15 reminders=2
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755787634, downTime=755787634, phoneEventTime=1781972034146 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/flutter (25319): [FG] 电费余额获取成功: 39.06
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755787786, downTime=755787634, phoneEventTime=1781972034298 } moveCount:5
+I/flutter (25319): [FG] 电费余额获取成功: 39.06
+D/CompatChangeReporter(25319): Compat change id reported: 351566728; UID 10493; state: ENABLED
+I/mple.campus_app(25319): This is non sticky GC, maxfree is 33554432 minfree is 8388608
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755788903, downTime=755788903, phoneEventTime=1781972035414 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755789004, downTime=755788903, phoneEventTime=1781972035516 } moveCount:8
+I/flutter (25319): [FG] 电费余额获取成功: 39.06
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755789326, downTime=755789326, phoneEventTime=1781972035838 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755789393, downTime=755789326, phoneEventTime=1781972035904 } moveCount:0
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755790049, downTime=755790049, phoneEventTime=1781972036560 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755790125, downTime=755790049, phoneEventTime=1781972036636 } moveCount:0
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755791996, downTime=755791996, phoneEventTime=1781972038508 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755792097, downTime=755791996, phoneEventTime=1781972038608 } moveCount:8
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755792376, downTime=755792376, phoneEventTime=1781972038887 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755792477, downTime=755792376, phoneEventTime=1781972038988 } moveCount:8
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755792965, downTime=755792965, phoneEventTime=1781972039477 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755793041, downTime=755792965, phoneEventTime=1781972039552 } moveCount:6
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755793739, downTime=755793739, phoneEventTime=1781972040250 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755793865, downTime=755793739, phoneEventTime=1781972040376 } moveCount:12
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755794354, downTime=755794354, phoneEventTime=1781972040865 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755794446, downTime=755794354, phoneEventTime=1781972040957 } moveCount:6
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755795936, downTime=755795936, phoneEventTime=1781972042447 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755796003, downTime=755795936, phoneEventTime=1781972042514 } moveCount:0
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755796765, downTime=755796765, phoneEventTime=1781972043276 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755796959, downTime=755796765, phoneEventTime=1781972043471 } moveCount:9
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755799361, downTime=755799361, phoneEventTime=1781972045873 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755799436, downTime=755799361, phoneEventTime=1781972045948 } moveCount:0
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755799800, downTime=755799800, phoneEventTime=1781972046312 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755799884, downTime=755799800, phoneEventTime=1781972046396 } moveCount:7
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755800231, downTime=755800231, phoneEventTime=1781972046742 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755800957, downTime=755800231, phoneEventTime=1781972047469 } moveCount:35
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755801584, downTime=755801584, phoneEventTime=1781972048095 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755801861, downTime=755801584, phoneEventTime=1781972048372 } moveCount:24
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755802040, downTime=755802040, phoneEventTime=1781972048552 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755803289, downTime=755802040, phoneEventTime=1781972049800 } moveCount:37
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755803619, downTime=755803619, phoneEventTime=1781972050131 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755803703, downTime=755803619, phoneEventTime=1781972050215 } moveCount:0
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755804309, downTime=755804309, phoneEventTime=1781972050820 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755804367, downTime=755804309, phoneEventTime=1781972050878 } moveCount:0
+W/WindowOnBackDispatcher(25319): sendCancelIfRunning: isInProgress=false callback=io.flutter.embedding.android.FlutterActivity$1@99371a5
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755805247, downTime=755805247, phoneEventTime=1781972051759 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755805339, downTime=755805247, phoneEventTime=1781972051851 } moveCount:4
+I/ContentCatcher(25319): SettingTrigger : unregister status observer com.example.campus_app.MainActivity
+I/ContentCatcher(25319): SettingTrigger : unregisterUIAgentListener com.example.campus_app.MainActivity, uid:10493
+I/flutter (25319): [生命周期] 状态改变: AppLifecycleState.inactive
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+D/VRI[MainActivity](25319): visibilityChanged oldVisibility=true newVisibility=false
+D/BufferQueueProducer(25319): [1b01725 SurfaceView[com.example.campus_app/com.example.campus_app.MainActivity]#1(BLAST Consumer)1](id:62e700000001,api:1,p:25319,c:25319) disconnect: api 1 (caller=25319)
+D/BufferQueueProducer(25319): [1b01725 SurfaceView[com.example.campus_app/com.example.campus_app.MainActivity]#1(BLAST Consumer)1](id:62e700000001,api:0,p:-1,c:25319) disconnect: api -1 (caller=25319)
+D/BufferQueueConsumer(25319): [1b01725 SurfaceView[com.example.campus_app/com.example.campus_app.MainActivity]#1(BLAST Consumer)1](id:62e700000001,api:0,p:-1,c:25319) disconnect: caller 25319
+D/ViewRootImplStubImpl(25319): onSurfaceViewDetached:
+D/ViewRootImplStubImpl(25319): , vri:android.view.ViewRootImpl@10f3287, com.example.campus_app/com.example.campus_app.MainActivity
+D/ViewRootImplStubImpl(25319): , vri size:1440x3200
+D/ViewRootImplStubImpl(25319): , surfaceView:io.flutter.embedding.android.FlutterSurfaceView{1b01725 V.E...... ........ 0,0-1440,3200}, SurfaceView[com.example.campus_app/com.example.campus_app.MainActivity]
+D/ViewRootImplStubImpl(25319): , surfaceView size:1440x3200
+D/ViewRootImplStubImpl(25319): , surfaceControl:Surface(name=1b01725 SurfaceView[com.example.campus_app/com.example.campus_app.MainActivity](BLAST)#316600)/@0x47d5b4
+D/BufferQueueProducer(25319): [VRI[MainActivity]#0(BLAST Consumer)0](id:62e700000000,api:1,p:25319,c:25319) disconnect: api 1 (caller=25319)
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/mple.campus_app(25319): Binder 0xb400006f765bacc0 destroyed after setInheritRt before being parceled.
+D/BufferQueueConsumer(25319): [VRI[MainActivity]#0(BLAST Consumer)0](id:62e700000000,api:0,p:-1,c:25319) disconnect: caller 25319
+I/flutter (25319): [生命周期] 状态改变: AppLifecycleState.hidden
+I/flutter (25319): [生命周期] 状态改变: AppLifecycleState.paused
+W/WindowOnBackDispatcher(25319): sendCancelIfRunning: isInProgress=false callback=android.app.Activity$$ExternalSyntheticLambda0@e3c8dc1
+E/ContentCatcherManager(25319): failed to get ContentCatcherService.
+I/flutter (25319): [生命周期] 状态改变: AppLifecycleState.detached
+D/BufferQueueProducer(25319): [ImageReader-1x1f22m7-25319-0](id:62e700000002,api:1,p:25319,c:25319) disconnect: api 1 (caller=25319)
+W/mple.campus_app(25319): Binder 0xb400006f765d6aa0 destroyed after setInheritRt before being parceled.
+D/BufferQueueConsumer(25319): [ImageReader-1x1f22m7-25319-0](id:62e700000002,api:0,p:-1,c:25319) disconnect: caller 25319
+D/BufferQueueProducer(25319): [ImageReader-4x4f22m7-25319-1](id:62e700000003,api:1,p:25319,c:25319) disconnect: api 1 (caller=25319)
+W/mple.campus_app(25319): Binder 0xb400006f765c9fc0 destroyed after setInheritRt before being parceled.
+D/BufferQueueConsumer(25319): [ImageReader-4x4f22m7-25319-1](id:62e700000003,api:0,p:-1,c:25319) disconnect: caller 25319
+W/mple.campus_app(25319): Binder 0xb400006f765b45a0 destroyed after setInheritRt before being parceled.
+D/DecorViewImmersiveImpl(25319): onDetachedFromWindow
+D/ViewRootImpl(25319): Skipping stats log for color mode
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+I/ActivityThread(25319): HardwareRenderer preload  done
+I/mple.campus_app(25319): AssetManager2(0xb4000070665b1bf8) locale list changing from [] to [zh-CN]
+I/mple.campus_app(25319): AssetManager2(0xb4000070665ec578) locale list changing from [] to [zh-CN]
+D/ViewContentFactory(25319): initViewContentFetcherClass
+I/ContentCatcher(25319): ViewContentFetcher : ViewContentFetcher
+D/ViewContentFactory(25319): createInterceptor took 1ms
+E/ContentCatcherManager(25319): failed to get ContentCatcherService.
+E/ContentCatcherManager(25319): failed to get ContentCatcherService.
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+I/AdrenoVK-0(25319): QUALCOMM build          : a0053eb399, I31b05c049d
+I/AdrenoVK-0(25319): Build Date              : 12/22/25
+I/AdrenoVK-0(25319): Shader Compiler Version : E031.45.02.25
+I/AdrenoVK-0(25319): Local Branch            : 
+I/AdrenoVK-0(25319): Remote Branch           : refs/tags/AU_LINUX_ANDROID_LA.VENDOR.14.3.0.11.00.00.974.116
+I/AdrenoVK-0(25319): Remote Branch           : NONE
+I/AdrenoVK-0(25319): Reconstruct Branch      : NOTHING
+I/AdrenoVK-0(25319): Build Config            : S P 16.1.2 AArch64
+I/AdrenoVK-0(25319): Driver Path             : /vendor/lib64/hw/vulkan.adreno.so
+I/AdrenoVK-0(25319): Driver Version          : 0762.36.1
+I/AdrenoVK-0(25319): PFP                     : 0x01520180
+I/AdrenoVK-0(25319): ME                      : 0x01520023
+I/AdrenoVK-0(25319): Application Name    : Impeller
+I/AdrenoVK-0(25319): Application Version : 0x00800000
+I/AdrenoVK-0(25319): Engine Name         : Impeller
+I/AdrenoVK-0(25319): Engine Version      : 0x00400000
+I/AdrenoVK-0(25319): Api Version         : 0x00401000
+I/flutter (25319): [IMPORTANT:flutter/shell/platform/android/android_context_vk_impeller.cc(62)] Using the Impeller rendering backend (Vulkan).
+D/FlutterRenderer(25319): Width is zero. 0,0
+I/mple.campus_app(25319): AssetManager2(0xb4000070665fafd8) locale list changing from [] to [zh-CN]
+D/DecorView(25319): updateFreeformOutlineFromActivity, inFreeform=false,inFreeformWindowMode=false
+D/Activity(25319): Activity = ActivityInfo{5c75576 com.example.campus_app.MainActivity}, Resume onConfigurationChanged = {0.9 460mcc2mnc [zh_CN] ldltr sw411dp w411dp h914dp 560dpi nrml long hdr widecg port uimode=12 finger -keyb/v/h -nav/h winConfig={ mBounds=Rect(0, 0 - 1440, 3200) mAppBounds=Rect(0, 0 - 1440, 3200) mMaxBounds=Rect(0, 0 - 1440, 3200) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mActivityType=standard mAlwaysOnTop=undefined mRotation=ROTATION_0 mInSplitScreen=false letterBoxed=false foScaled=false isSpecificEmbedded=false embeddingScale=1.0} as.6 s.2 fontWeightAdjustment=0/d/o themeChanged=0 themeChangedFlags=0 display=0 extraData = Bundle[{}] screenType=0/o}
+D/HWUI    (25319): TAG_DDRE, CanvasContext::setDdreActivities: 
+I/ViewRootImpl(25319): com.example.campus_app/com.example.campus_app.MainActivity use first frame acceleration
+I/ContentCatcher(25319): SettingTrigger : register screen QA status observer com.example.campus_app.MainActivity
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+I/ContentCatcher(25319): SettingTrigger : register global collect status observer com.example.campus_app.MainActivity
+I/ContentCatcher(25319): SettingTrigger : registerUIAgentListener com.example.campus_app.MainActivity, uid:10493
+I/flutter (25319): [NOTIF] init() start
+D/DecorViewImmersiveImpl(25319): onAttachedToWindow. pkg: com.example.campus_app
+I/ComputilityLevel(25319): getComputilityLevel(): 6
+D/DecorViewImmersiveImpl(25319): com.example.campus_app.MainActivity@b91c531 already set forced E2E by app
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+D/FlutterRenderer(25319): Width is zero. 0,0
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+D/BLASTBufferQueue(25319): onGameOptimizeParameter: new GameOptimizeInfo game: no valid app, VsyncBuffergame: no valid app, mOptimizeEnable: 0, mSuperTouchEnable: 0,mVsyncBufferEnable: 0,mPendingBufferEnable 0,mNeedDynamicDropBuffer: 0, mNeedFirstFrameDropBuffer: 0
+D/BLASTBufferQueue(25319): 
+D/FlutterJNI(25319): Sending viewport metrics to the engine.
+D/SurfaceView(25319): UPDATE null, mIsCastMode = false
+D/ViewRootImplStubImpl(25319): onSurfaceViewAttached:
+D/ViewRootImplStubImpl(25319): , vri:android.view.ViewRootImpl@cd0877c, com.example.campus_app/com.example.campus_app.MainActivity
+D/ViewRootImplStubImpl(25319): , vri size:1440x3200
+D/ViewRootImplStubImpl(25319): , surfaceView:io.flutter.embedding.android.FlutterSurfaceView{f692413 V.E...... ......ID 0,0-1440,3200}, SurfaceView[com.example.campus_app/com.example.campus_app.MainActivity]
+D/ViewRootImplStubImpl(25319): , surfaceView size:1440x3200
+D/ViewRootImplStubImpl(25319): , surfaceControl:Surface(name=f692413 SurfaceView[com.example.campus_app/com.example.campus_app.MainActivity](BLAST)#316651)/@0x3f9a805
+D/BLASTBufferQueue(25319): onGameOptimizeParameter: new GameOptimizeInfo game: no valid app, VsyncBuffergame: no valid app, mOptimizeEnable: 0, mSuperTouchEnable: 0,mVsyncBufferEnable: 0,mPendingBufferEnable 0,mNeedDynamicDropBuffer: 0, mNeedFirstFrameDropBuffer: 0
+D/BLASTBufferQueue(25319): 
+W/qdgralloc(25319): GetSize: Pixel format: 0x3b is not supported by gralloc
+W/qdgralloc(25319): gralloc failed to allocate buffer for size 0 format 59 AWxAH 1x1 usage 2816
+E/Gralloc4(25319): isSupported(1, 1, 59, 1, ...) failed with 7
+E/GraphicBufferAllocator(25319): Failed to allocate (4 x 4) layerCount 1 format 59 usage b00: 2
+E/AHardwareBuffer(25319): GraphicBuffer(w=4, h=4, lc=1) failed (Unknown error -2), handle=0x0
+W/qdgralloc(25319): GetSize: Pixel format: 0x3b is not supported by gralloc
+W/qdgralloc(25319): gralloc failed to allocate buffer for size 0 format 59 AWxAH 1x1 usage 2816
+E/Gralloc4(25319): isSupported(1, 1, 59, 1, ...) failed with 7
+E/GraphicBufferAllocator(25319): Failed to allocate (4 x 4) layerCount 1 format 59 usage b00: 2
+E/AHardwareBuffer(25319): GraphicBuffer(w=4, h=4, lc=1) failed (Unknown error -2), handle=0x0
+W/qdgralloc(25319): getInterlacedFlag: getMetaData returned 3, defaulting to interlaced_flag = 0
+W/qdgralloc(25319): getInterlacedFlag: getMetaData returned 3, defaulting to interlaced_flag = 0
+W/qdgralloc(25319): getInterlacedFlag: getMetaData returned 3, defaulting to interlaced_flag = 0
+W/qdgralloc(25319): getInterlacedFlag: getMetaData returned 3, defaulting to interlaced_flag = 0
+W/qdgralloc(25319): getInterlacedFlag: getMetaData returned 3, defaulting to interlaced_flag = 0
+I/Choreographer(25319): first vsync insert message into MessageQueue Head
+D/SurfaceView(25319): UPDATE Surface(name=f692413 SurfaceView[com.example.campus_app/com.example.campus_app.MainActivity]#316650)/@0x17f028b, mIsProjectionMode = false
+D/HWUI    (25319): [HWUI] Flag vulkan_enhance_pipeline_cache enabled
+D/HWUI    (25319): [HWUI] EnhanceVkPipelineCache is disabled
+D/HWUI    (25319): [HWUI] Flag ddre enabled
+I/flutter (25319): [NOTIF] timezone initialized: Asia/Shanghai
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+D/WindowLayoutComponentImpl(25319): Register WindowLayoutInfoListener on Context=com.example.campus_app.MainActivity@b91c531, of which baseContext=android.app.ContextImpl@4104a14
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+D/FlutterJNI(25319): Sending viewport metrics to the engine.
+I/flutter (25319): [NOTIF] notification permission: true
+I/flutter (25319): [NOTIF] exact alarm permission: true
+I/mple.campus_app(25319): DynamicFPS DF top: com.example.campus_app : 0.000000
+I/Choreographer(25319): Skipped 55 frames!  The application may be doing too much work on its main thread.
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+D/WmSystemUiDebug(25319): set navigation bar color,Alpha=1.0, RGB:0,0,0 caller:io.flutter.plugin.platform.PlatformPlugin.setSystemChromeSystemUIOverlayStyle:514 io.flutter.plugin.platform.PlatformPlugin.access$700:36 io.flutter.plugin.platform.PlatformPlugin$1.setSystemUiOverlayStyle:123 io.flutter.embedding.engine.systemchannels.PlatformChannel$1.onMethodCall:130 io.flutter.plugin.common.MethodChannel$IncomingMethodCallHandler.onMessage:267 io.flutter.embedding.engine.dart.DartMessenger.invokeHandler:286 io.flutter.embedding.engine.dart.DartMessenger.lambda$dispatchMessageToQueue$0$io-flutter-embedding-engine-dart-DartMessenger:313 io.flutter.embedding.engine.dart.DartMessenger$$ExternalSyntheticLambda0.run:0 android.os.Handler.handleCallback:1029 android.os.Handler.dispatchMessage:107 
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+D/FlutterJNI(25319): Sending viewport metrics to the engine.
+D/VRI[MainActivity](25319): vri.Setup new sync=wmsSync-VRI[MainActivity]#4
+D/VRI[MainActivity](25319): vri.reportDrawFinished 0 0 Rect(0, 0 - 1440, 3200)
+I/HandWritingStubImpl(25319): refreshLastKeyboardType: 1
+I/HandWritingStubImpl(25319): getCurrentKeyboardType: 1
+D/InsetsController(25319): hide(ime(), fromIme=false)
+I/ImeTracker(25319): com.example.campus_app:5ad8bfe3: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+I/flutter (25319): [CredentialService] load username=user_63****29 passwordLen=10
+I/flutter (25319): [FG] getCampusCardBalance request username=user_63****29 passwordLen=10
+I/flutter (25319): [FG] getPayCodeToken request username=user_63****29 passwordLen=10
+I/flutter (25319): ----------------------------------------
+I/flutter (25319): [调度器] 准备检查课表提醒注册条件...
+I/flutter (25319): [调度器] 课表状态(默认): AsyncLoading<({List<Course> courses, String remark})> -> 无数据
+I/flutter (25319): [调度器] 开学时间: AsyncLoading<DateTime?> -> 无数据
+I/flutter (25319): [调度器] ❌ 拦截：数据不完整，放弃本次注册。
+I/flutter (25319): ----------------------------------------
+I/flutter (25319): [FG] 查询电费: 德园8舍 306室
+I/flutter (25319): [FG] 查询电费: 德园8舍 306室
+D/HWUI    (25319): ImageDecoder_nDecodeBitmap: width = 37, height = 13, encodedFormat = 4
+W/HWUI    (25319): Image decoding logging dropped!
+D/HWUI    (25319): ImageDecoder_nDecodeBitmap: width = 13, height = 37, encodedFormat = 4
+W/HWUI    (25319): Image decoding logging dropped!
+I/flutter (25319): ----------------------------------------
+I/flutter (25319): [调度器] 准备检查课表提醒注册条件...
+I/flutter (25319): [调度器] 课表状态(2025-2026-2): AsyncLoading<({List<Course> courses, String remark})> -> 无数据
+I/flutter (25319): [调度器] 开学时间: AsyncData<DateTime?> -> 有数据
+I/flutter (25319): [调度器] ❌ 拦截：数据不完整，放弃本次注册。
+I/flutter (25319): ----------------------------------------
+I/mple.campus_app(25319): AssetManager2(0xb40000706668d158) locale list changing from [] to [zh-CN]
+I/mple.campus_app(25319): AssetManager2(0xb4000070666928d8) locale list changing from [] to [zh-CN]
+I/flutter (25319): ----------------------------------------
+I/flutter (25319): [调度器] 准备检查课表提醒注册条件...
+I/flutter (25319): [调度器] 课表状态(2025-2026-2): AsyncLoading<({List<Course> courses, String remark})> -> 无数据
+I/flutter (25319): [调度器] 开学时间: AsyncData<DateTime?> -> 有数据
+I/flutter (25319): [调度器] ❌ 拦截：数据不完整，放弃本次注册。
+I/flutter (25319): ----------------------------------------
+I/PlatformViewsController(25319): Hosting view in view hierarchy for platform view: 0
+I/PlatformViewsController(25319): PlatformView is using SurfaceProducer backend
+I/ContentCatcher(25319): Interceptor_Catcher : notifyWebView view: io.flutter.plugins.webviewflutter.WebViewProxyApi$WebViewPlatformView{1c26274 VFEDHVC.. ......I. 0,0-0,0}, size:1, isLoad:true
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+D/FlutterJNI(25319): Sending viewport metrics to the engine.
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+D/FlutterJNI(25319): Sending viewport metrics to the engine.
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+D/FlutterJNI(25319): Sending viewport metrics to the engine.
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755810898, downTime=755810898, phoneEventTime=1781972057410 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755810931, downTime=755810898, phoneEventTime=1781972057443 } moveCount:0
+W/WindowOnBackDispatcher(25319): sendCancelIfRunning: isInProgress=false callback=io.flutter.embedding.android.FlutterActivity$1@bc26917
+I/mple.campus_app(25319): This is sticky GC, maxfree is 33554432 minfree is 8388608
+I/chromium(25319): [INFO:CONSOLE:29201] "There is a chart instance already initialized on the dom.", source: https://jwgln.cqjtu.edu.cn/jsxsd/framework/student/js/cqjtdx/echarts.common.js (29201)
+D/CookieChannel(25319): getCookies(https://ids.cqjtu.edu.cn/authserver/) => length=503
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755812829, downTime=755812829, phoneEventTime=1781972059341 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755812896, downTime=755812829, phoneEventTime=1781972059407 } moveCount:0
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755813831, downTime=755813831, phoneEventTime=1781972060342 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755813881, downTime=755813831, phoneEventTime=1781972060392 } moveCount:0
+D/CookieChannel(25319): getCookies(https://jwgln.cqjtu.edu.cn/jsxsd/) => length=98
+W/mple.campus_app(25319): Cleared Reference was only reachable from finalizer (only reported once)
+I/mple.campus_app(25319): This is non sticky GC, maxfree is 33554432 minfree is 8388608
+D/CookieChannel(25319): getCookies(https://ecard.cqjtu.edu.cn/epay/h5/) => length=43
+I/mple.campus_app(25319): This is sticky GC, maxfree is 33554432 minfree is 8388608
+I/chromium(25319): [INFO:CONSOLE:15] "[Vue warn]: inject() can only be used inside setup() or functional components.", source: https://zhxg.cqjtu.edu.cn/mobile/static/index.035228d5.js (15)
+I/chromium(25319): [INFO:CONSOLE:17] "Feature flag __VUE_PROD_HYDRATION_MISMATCH_DETAILS__ is not explicitly defined. You are running the esm-bundler build of Vue, which expects these compile-time feature flags to be globally injected via the bundler config in order to get better tree-shaking in the production bundle.
+I/chromium(25319): 
+I/chromium(25319): For more details, see https://link.vuejs.org/feature-flags.", source: https://zhxg.cqjtu.edu.cn/mobile/static/index.035228d5.js (17)
+I/chromium(25319): [INFO:CONSOLE:15] "[Vue warn]: Plugin has already been applied to target app.", source: https://zhxg.cqjtu.edu.cn/mobile/static/index.035228d5.js (15)
+I/chromium(25319): [INFO:CONSOLE:1] "VITE_BASE_URL /gateway", source: https://zhxg.cqjtu.edu.cn/mobile/static/request.edc0ec78.js (1)
+W/chromium(25319): [WARNING:net/spdy/spdy_session.cc:3026] Received WINDOW_UPDATE for invalid stream 15
+W/chromium(25319): [WARNING:net/spdy/spdy_session.cc:3026] Received WINDOW_UPDATE for invalid stream 17
+W/chromium(25319): [WARNING:net/spdy/spdy_session.cc:3026] Received WINDOW_UPDATE for invalid stream 19
+W/chromium(25319): [WARNING:net/spdy/spdy_session.cc:3071] Received HEADERS for invalid stream 15
+I/chromium(25319): [INFO:CONSOLE:15] "[Vue warn]: inject() can only be used inside setup() or functional components.", source: https://zhxg.cqjtu.edu.cn/mobile/static/index.035228d5.js (15)
+I/chromium(25319): [INFO:CONSOLE:17] "Feature flag __VUE_PROD_HYDRATION_MISMATCH_DETAILS__ is not explicitly defined. You are running the esm-bundler build of Vue, which expects these compile-time feature flags to be globally injected via the bundler config in order to get better tree-shaking in the production bundle.
+I/chromium(25319): 
+I/chromium(25319): For more details, see https://link.vuejs.org/feature-flags.", source: https://zhxg.cqjtu.edu.cn/mobile/static/index.035228d5.js (17)
+I/chromium(25319): [INFO:CONSOLE:15] "[Vue warn]: Plugin has already been applied to target app.", source: https://zhxg.cqjtu.edu.cn/mobile/static/index.035228d5.js (15)
+I/chromium(25319): [INFO:CONSOLE:1] "VITE_BASE_URL /gateway", source: https://zhxg.cqjtu.edu.cn/mobile/static/request.edc0ec78.js (1)
+I/flutter (25319): [FG] getCampusCardBalance request username=user_63****29 passwordLen=10
+I/flutter (25319): [FG] getPayCodeToken request username=user_63****29 passwordLen=10
+I/flutter (25319): [FG] 查询电费: 德园8舍 306室
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755819778, downTime=755819778, phoneEventTime=1781972066289 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755819853, downTime=755819778, phoneEventTime=1781972066364 } moveCount:0
+I/mple.campus_app(25319): This is non sticky GC, maxfree is 33554432 minfree is 8388608
+I/flutter (25319): ----------------------------------------
+I/flutter (25319): [调度器] 准备检查课表提醒注册条件...
+I/flutter (25319): [调度器] 课表状态(2025-2026-2): AsyncData<({List<Course> courses, String remark})> -> 有数据
+I/flutter (25319): [调度器] 开学时间: AsyncData<DateTime?> -> 有数据
+I/flutter (25319): [调度器] ✅ 两大数据已就绪，准备下发给系统注册！
+I/flutter (25319): ----------------------------------------
+I/flutter (25319): [NOTIF] scheduleClassReminders enabled=true minutes=15 reminders=2
+I/flutter (25319): [FG] 电费余额获取成功: 39.06
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+I/flutter (25319): [生命周期] 状态改变: AppLifecycleState.inactive
+I/ContentCatcher(25319): SettingTrigger : unregister status observer com.example.campus_app.MainActivity
+D/VRI[MainActivity](25319): visibilityChanged oldVisibility=true newVisibility=false
+I/ContentCatcher(25319): SettingTrigger : unregisterUIAgentListener com.example.campus_app.MainActivity, uid:10493
+D/BufferQueueProducer(25319): [f692413 SurfaceView[com.example.campus_app/com.example.campus_app.MainActivity]#3(BLAST Consumer)3](id:62e700000005,api:1,p:25319,c:25319) disconnect: api 1 (caller=25319)
+D/BufferQueueProducer(25319): [f692413 SurfaceView[com.example.campus_app/com.example.campus_app.MainActivity]#3(BLAST Consumer)3](id:62e700000005,api:0,p:-1,c:25319) disconnect: api -1 (caller=25319)
+D/BufferQueueConsumer(25319): [f692413 SurfaceView[com.example.campus_app/com.example.campus_app.MainActivity]#3(BLAST Consumer)3](id:62e700000005,api:0,p:-1,c:25319) disconnect: caller 25319
+D/ViewRootImplStubImpl(25319): onSurfaceViewDetached:
+D/ViewRootImplStubImpl(25319): , vri:android.view.ViewRootImpl@cd0877c, com.example.campus_app/com.example.campus_app.MainActivity
+D/ViewRootImplStubImpl(25319): , vri size:1440x3200
+D/ViewRootImplStubImpl(25319): , surfaceView:io.flutter.embedding.android.FlutterSurfaceView{f692413 V.E...... ........ 0,0-1440,3200}, SurfaceView[com.example.campus_app/com.example.campus_app.MainActivity]
+D/ViewRootImplStubImpl(25319): , surfaceView size:1440x3200
+D/ViewRootImplStubImpl(25319): , surfaceControl:Surface(name=f692413 SurfaceView[com.example.campus_app/com.example.campus_app.MainActivity](BLAST)#316651)/@0x3f9a805
+D/BufferQueueProducer(25319): [VRI[MainActivity]#2(BLAST Consumer)2](id:62e700000004,api:1,p:25319,c:25319) disconnect: api 1 (caller=25319)
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/mple.campus_app(25319): Binder 0xb400006f765b36a0 destroyed after setInheritRt before being parceled.
+D/BufferQueueConsumer(25319): [VRI[MainActivity]#2(BLAST Consumer)2](id:62e700000004,api:0,p:-1,c:25319) disconnect: caller 25319
+I/flutter (25319): [生命周期] 状态改变: AppLifecycleState.hidden
+I/flutter (25319): [生命周期] 状态改变: AppLifecycleState.paused
+D/ViewRootImpl(25319): Skipping stats log for color mode
+D/Activity(25319): Activity = ActivityInfo{5c75576 com.example.campus_app.MainActivity}, Resume onConfigurationChanged = {0.9 460mcc2mnc [zh_CN] ldltr sw411dp w411dp h914dp 560dpi nrml long hdr widecg port uimode=12 finger -keyb/v/h -nav/h winConfig={ mBounds=Rect(0, 0 - 1440, 3200) mAppBounds=Rect(0, 0 - 1440, 3200) mMaxBounds=Rect(0, 0 - 1440, 3200) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mActivityType=standard mAlwaysOnTop=undefined mRotation=ROTATION_0 mInSplitScreen=false letterBoxed=false foScaled=false isSpecificEmbedded=false embeddingScale=1.0} as.6 s.2 fontWeightAdjustment=0/d/o themeChanged=0 themeChangedFlags=0 display=0 extraData = Bundle[{}] screenType=0/o}
+I/flutter (25319): [生命周期] 状态改变: AppLifecycleState.hidden
+I/flutter (25319): [生命周期] 状态改变: AppLifecycleState.inactive
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+D/BLASTBufferQueue(25319): onGameOptimizeParameter: new GameOptimizeInfo game: no valid app, VsyncBuffergame: no valid app, mOptimizeEnable: 0, mSuperTouchEnable: 0,mVsyncBufferEnable: 0,mPendingBufferEnable 0,mNeedDynamicDropBuffer: 0, mNeedFirstFrameDropBuffer: 0
+D/BLASTBufferQueue(25319): 
+D/ViewRootImplStubImpl(25319): onSurfaceViewAttached:
+D/ViewRootImplStubImpl(25319): , vri:android.view.ViewRootImpl@cd0877c, com.example.campus_app/com.example.campus_app.MainActivity
+D/ViewRootImplStubImpl(25319): , vri size:1440x3200
+D/ViewRootImplStubImpl(25319): , surfaceView:io.flutter.embedding.android.FlutterSurfaceView{f692413 V.E...... ......ID 0,0-1440,3200}, SurfaceView[com.example.campus_app/com.example.campus_app.MainActivity]
+D/ViewRootImplStubImpl(25319): , surfaceView size:1440x3200
+D/ViewRootImplStubImpl(25319): , surfaceControl:Surface(name=f692413 SurfaceView[com.example.campus_app/com.example.campus_app.MainActivity](BLAST)#316684)/@0x4a9d5ca
+D/BLASTBufferQueue(25319): onGameOptimizeParameter: new GameOptimizeInfo game: no valid app, VsyncBuffergame: no valid app, mOptimizeEnable: 0, mSuperTouchEnable: 0,mVsyncBufferEnable: 0,mPendingBufferEnable 0,mNeedDynamicDropBuffer: 0, mNeedFirstFrameDropBuffer: 0
+D/BLASTBufferQueue(25319): 
+W/mple.campus_app(25319): Binder 0xb400006f765d1be0 destroyed after setInheritRt before being parceled.
+W/qdgralloc(25319): GetSize: Pixel format: 0x3b is not supported by gralloc
+W/qdgralloc(25319): gralloc failed to allocate buffer for size 0 format 59 AWxAH 1x1 usage 2816
+E/Gralloc4(25319): isSupported(1, 1, 59, 1, ...) failed with 7
+E/GraphicBufferAllocator(25319): Failed to allocate (4 x 4) layerCount 1 format 59 usage b00: 2
+E/AHardwareBuffer(25319): GraphicBuffer(w=4, h=4, lc=1) failed (Unknown error -2), handle=0x0
+W/qdgralloc(25319): GetSize: Pixel format: 0x3b is not supported by gralloc
+W/qdgralloc(25319): gralloc failed to allocate buffer for size 0 format 59 AWxAH 1x1 usage 2816
+E/Gralloc4(25319): isSupported(1, 1, 59, 1, ...) failed with 7
+E/GraphicBufferAllocator(25319): Failed to allocate (4 x 4) layerCount 1 format 59 usage b00: 2
+E/AHardwareBuffer(25319): GraphicBuffer(w=4, h=4, lc=1) failed (Unknown error -2), handle=0x0
+W/qdgralloc(25319): getInterlacedFlag: getMetaData returned 3, defaulting to interlaced_flag = 0
+W/qdgralloc(25319): getInterlacedFlag: getMetaData returned 3, defaulting to interlaced_flag = 0
+W/qdgralloc(25319): getInterlacedFlag: getMetaData returned 3, defaulting to interlaced_flag = 0
+I/ContentCatcher(25319): SettingTrigger : register screen QA status observer com.example.campus_app.MainActivity
+I/ContentCatcher(25319): SettingTrigger : register global collect status observer com.example.campus_app.MainActivity
+W/qdgralloc(25319): getInterlacedFlag: getMetaData returned 3, defaulting to interlaced_flag = 0
+W/qdgralloc(25319): getInterlacedFlag: getMetaData returned 3, defaulting to interlaced_flag = 0
+I/ContentCatcher(25319): SettingTrigger : registerUIAgentListener com.example.campus_app.MainActivity, uid:10493
+D/SurfaceView(25319): UPDATE Surface(name=f692413 SurfaceView[com.example.campus_app/com.example.campus_app.MainActivity]#316683)/@0x5f44a58, mIsProjectionMode = false
+D/VRI[MainActivity](25319): vri.Setup new sync=wmsSync-VRI[MainActivity]#7
+I/mple.campus_app(25319): This is non sticky GC, maxfree is 33554432 minfree is 8388608
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+D/VRI[MainActivity](25319): vri.reportDrawFinished 0 0 Rect(0, 0 - 1440, 3200)
+E/FrameEvents(25319): addRelease: Did not find frame.
+I/mple.campus_app(25319): DynamicFPS DF top: com.example.campus_app : 0.000000
+I/flutter (25319): [生命周期] 状态改变: AppLifecycleState.resumed
+I/flutter (25319): [Lifecycle] foreground refresh requested
+I/flutter (25319): ----------------------------------------
+I/flutter (25319): [调度器] 准备检查课表提醒注册条件...
+I/flutter (25319): [调度器] 课表状态(2025-2026-2): AsyncLoading<({List<Course> courses, String remark})> -> 有数据
+I/flutter (25319): [调度器] 开学时间: AsyncData<DateTime?> -> 有数据
+I/flutter (25319): [调度器] ✅ 两大数据已就绪，准备下发给系统注册！
+I/flutter (25319): ----------------------------------------
+I/flutter (25319): ----------------------------------------
+I/flutter (25319): [调度器] 准备检查课表提醒注册条件...
+I/flutter (25319): [调度器] 课表状态(2025-2026-2): AsyncLoading<({List<Course> courses, String remark})> -> 有数据
+I/flutter (25319): [调度器] 开学时间: AsyncData<DateTime?> -> 有数据
+I/flutter (25319): [调度器] ✅ 两大数据已就绪，准备下发给系统注册！
+I/flutter (25319): ----------------------------------------
+I/HandWritingStubImpl(25319): refreshLastKeyboardType: 1
+I/HandWritingStubImpl(25319): getCurrentKeyboardType: 1
+I/flutter (25319): [NOTIF] scheduleClassReminders enabled=true minutes=15 reminders=2
+I/flutter (25319): [NOTIF] scheduleClassReminders enabled=true minutes=15 reminders=2
+I/flutter (25319): [FG] getCampusCardBalance request username=user_63****29 passwordLen=10
+I/flutter (25319): [FG] getPayCodeToken request username=user_63****29 passwordLen=10
+I/flutter (25319): [FG] 查询电费: 德园8舍 306室
+D/InsetsController(25319): hide(ime(), fromIme=false)
+I/ImeTracker(25319): com.example.campus_app:765008fd: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+I/flutter (25319): [FG] 电费余额获取成功: 39.06
+I/flutter (25319): [FG] 电费余额获取成功: 39.06
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+I/flutter (25319): ----------------------------------------
+I/flutter (25319): [调度器] 准备检查课表提醒注册条件...
+I/flutter (25319): [调度器] 课表状态(2025-2026-2): AsyncData<({List<Course> courses, String remark})> -> 有数据
+I/flutter (25319): [调度器] 开学时间: AsyncData<DateTime?> -> 有数据
+I/flutter (25319): [调度器] ✅ 两大数据已就绪，准备下发给系统注册！
+I/flutter (25319): ----------------------------------------
+I/flutter (25319): [NOTIF] scheduleClassReminders enabled=true minutes=15 reminders=2
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+I/flutter (25319): [生命周期] 状态改变: AppLifecycleState.inactive
+I/mple.campus_app(25319): This is sticky GC, maxfree is 33554432 minfree is 8388608
+I/flutter (25319): [生命周期] 状态改变: AppLifecycleState.resumed
+I/flutter (25319): ----------------------------------------
+I/flutter (25319): [调度器] 准备检查课表提醒注册条件...
+I/flutter (25319): [调度器] 课表状态(2025-2026-2): AsyncData<({List<Course> courses, String remark})> -> 有数据
+I/flutter (25319): [调度器] 开学时间: AsyncData<DateTime?> -> 有数据
+I/flutter (25319): [调度器] ✅ 两大数据已就绪，准备下发给系统注册！
+I/flutter (25319): ----------------------------------------
+I/HandWritingStubImpl(25319): refreshLastKeyboardType: 1
+I/HandWritingStubImpl(25319): getCurrentKeyboardType: 1
+I/flutter (25319): [NOTIF] scheduleClassReminders enabled=true minutes=15 reminders=2
+I/mple.campus_app(25319): DynamicFPS DF top: com.example.campus_app : 0.000000
+D/InsetsController(25319): hide(ime(), fromIme=false)
+I/ImeTracker(25319): com.example.campus_app:9a8ac36a: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755825771, downTime=755825771, phoneEventTime=1781972072283 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755825830, downTime=755825771, phoneEventTime=1781972072341 } moveCount:3
+I/flutter (25319): [FG] 电费余额获取成功: 39.06
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755826210, downTime=755826210, phoneEventTime=1781972072722 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755826235, downTime=755826210, phoneEventTime=1781972072746 } moveCount:0
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755827017, downTime=755827017, phoneEventTime=1781972073529 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755827025, downTime=755827017, phoneEventTime=1781972073537 } moveCount:0
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755827596, downTime=755827596, phoneEventTime=1781972074107 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755827672, downTime=755827596, phoneEventTime=1781972074184 } moveCount:0
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755828087, downTime=755828087, phoneEventTime=1781972074598 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755828162, downTime=755828087, phoneEventTime=1781972074673 } moveCount:0
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+I/flutter (25319): [生命周期] 状态改变: AppLifecycleState.inactive
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+I/flutter (25319): [生命周期] 状态改变: AppLifecycleState.resumed
+I/flutter (25319): ----------------------------------------
+I/flutter (25319): [调度器] 准备检查课表提醒注册条件...
+I/flutter (25319): [调度器] 课表状态(2025-2026-2): AsyncData<({List<Course> courses, String remark})> -> 有数据
+I/flutter (25319): [调度器] 开学时间: AsyncData<DateTime?> -> 有数据
+I/flutter (25319): [调度器] ✅ 两大数据已就绪，准备下发给系统注册！
+I/flutter (25319): ----------------------------------------
+I/HandWritingStubImpl(25319): refreshLastKeyboardType: 1
+I/HandWritingStubImpl(25319): getCurrentKeyboardType: 1
+I/flutter (25319): [NOTIF] scheduleClassReminders enabled=true minutes=15 reminders=2
+I/mple.campus_app(25319): DynamicFPS DF top: com.example.campus_app : 0.000000
+D/InsetsController(25319): hide(ime(), fromIme=false)
+I/ImeTracker(25319): com.example.campus_app:ec503f89: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+I/mple.campus_app(25319): This is non sticky GC, maxfree is 33554432 minfree is 8388608
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755829917, downTime=755829917, phoneEventTime=1781972076428 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755830018, downTime=755829917, phoneEventTime=1781972076530 } moveCount:8
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755830456, downTime=755830456, phoneEventTime=1781972076967 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755830540, downTime=755830456, phoneEventTime=1781972077052 } moveCount:0
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+I/flutter (25319): [生命周期] 状态改变: AppLifecycleState.inactive
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+I/flutter (25319): [生命周期] 状态改变: AppLifecycleState.resumed
+I/flutter (25319): ----------------------------------------
+I/flutter (25319): [调度器] 准备检查课表提醒注册条件...
+I/flutter (25319): [调度器] 课表状态(2025-2026-2): AsyncData<({List<Course> courses, String remark})> -> 有数据
+I/flutter (25319): [调度器] 开学时间: AsyncData<DateTime?> -> 有数据
+I/flutter (25319): [调度器] ✅ 两大数据已就绪，准备下发给系统注册！
+I/flutter (25319): ----------------------------------------
+I/HandWritingStubImpl(25319): refreshLastKeyboardType: 1
+I/HandWritingStubImpl(25319): getCurrentKeyboardType: 1
+I/flutter (25319): [NOTIF] scheduleClassReminders enabled=true minutes=15 reminders=2
+I/mple.campus_app(25319): DynamicFPS DF top: com.example.campus_app : 0.000000
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+D/InsetsController(25319): hide(ime(), fromIme=false)
+I/ImeTracker(25319): com.example.campus_app:8c304c2e: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+I/mple.campus_app(25319): This is sticky GC, maxfree is 33554432 minfree is 8388608
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755835210, downTime=755835210, phoneEventTime=1781972081721 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755835276, downTime=755835210, phoneEventTime=1781972081788 } moveCount:0
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=755837581, downTime=755837581, phoneEventTime=1781972084093 } moveCount:0
+D/VRI[MainActivity](25319): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput(25319): [MotionEvent] ViewRootImpl windowName 'com.example.campus_app/com.example.campus_app.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=755837647, downTime=755837581, phoneEventTime=1781972084159 } moveCount:0
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+I/ContentCatcher(25319): SettingTrigger : unregister status observer com.example.campus_app.MainActivity
+I/flutter (25319): [生命周期] 状态改变: AppLifecycleState.inactive
+I/ContentCatcher(25319): SettingTrigger : unregisterUIAgentListener com.example.campus_app.MainActivity, uid:10493
+D/VRI[MainActivity](25319): visibilityChanged oldVisibility=true newVisibility=false
+D/BufferQueueProducer(25319): [f692413 SurfaceView[com.example.campus_app/com.example.campus_app.MainActivity]#5(BLAST Consumer)5](id:62e700000009,api:1,p:25319,c:25319) disconnect: api 1 (caller=25319)
+D/BufferQueueProducer(25319): [f692413 SurfaceView[com.example.campus_app/com.example.campus_app.MainActivity]#5(BLAST Consumer)5](id:62e700000009,api:0,p:-1,c:25319) disconnect: api -1 (caller=25319)
+D/BufferQueueConsumer(25319): [f692413 SurfaceView[com.example.campus_app/com.example.campus_app.MainActivity]#5(BLAST Consumer)5](id:62e700000009,api:0,p:-1,c:25319) disconnect: caller 25319
+D/ViewRootImplStubImpl(25319): onSurfaceViewDetached:
+D/ViewRootImplStubImpl(25319): , vri:android.view.ViewRootImpl@cd0877c, com.example.campus_app/com.example.campus_app.MainActivity
+D/ViewRootImplStubImpl(25319): , vri size:1440x3200
+D/ViewRootImplStubImpl(25319): , surfaceView:io.flutter.embedding.android.FlutterSurfaceView{f692413 V.E...... ........ 0,0-1440,3200}, SurfaceView[com.example.campus_app/com.example.campus_app.MainActivity]
+D/ViewRootImplStubImpl(25319): , surfaceView size:1440x3200
+D/ViewRootImplStubImpl(25319): , surfaceControl:Surface(name=f692413 SurfaceView[com.example.campus_app/com.example.campus_app.MainActivity](BLAST)#316684)/@0x4a9d5ca
+D/BufferQueueProducer(25319): [VRI[MainActivity]#4(BLAST Consumer)4](id:62e700000008,api:1,p:25319,c:25319) disconnect: api 1 (caller=25319)
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/mple.campus_app(25319): Binder 0xb400006f765b4ae0 destroyed after setInheritRt before being parceled.
+D/BufferQueueConsumer(25319): [VRI[MainActivity]#4(BLAST Consumer)4](id:62e700000008,api:0,p:-1,c:25319) disconnect: caller 25319
+I/flutter (25319): [生命周期] 状态改变: AppLifecycleState.hidden
+I/flutter (25319): [生命周期] 状态改变: AppLifecycleState.paused
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+I/VRI[MainActivity](25319): DisplayState - old: 2, new: 1
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+I/VRI[MainActivity](25319): DisplayState - old: 1, new: 3
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+I/VRI[MainActivity](25319): DisplayState - old: 3, new: 4
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+I/VRI[MainActivity](25319): DisplayState - old: 4, new: 3
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+W/InsetsSource(25319): Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+I/VRI[MainActivity](25319): DisplayState - old: 3, new: 1

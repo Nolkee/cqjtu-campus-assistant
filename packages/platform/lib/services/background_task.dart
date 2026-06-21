@@ -1,4 +1,6 @@
 import 'package:core/models/dorm_room.dart';
+import 'package:core/utils/polling_utils.dart';
+import 'package:data/data.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -24,6 +26,24 @@ const _ecardDomain = 'ecard.cqjtu.edu.cn';
 
 class _BgSessionExpiredException implements Exception {}
 
+CampusRuntimeMode resolveBackgroundRuntimeMode(String env) {
+  final normalized = env.trim().toLowerCase().replaceAll(RegExp(r'[-_]'), '');
+  return switch (normalized) {
+    'selfhosted' ||
+    'remotebackend' ||
+    'backend' =>
+      CampusRuntimeMode.selfHosted,
+    _ => CampusRuntimeMode.localAndroid,
+  };
+}
+
+String _redactIdentifier(String value) {
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) return '<empty>';
+  if (trimmed.length <= 4) return 'user_****';
+  return 'user_${trimmed.substring(0, 2)}****${trimmed.substring(trimmed.length - 2)}';
+}
+
 @pragma('vm:entry-point')
 void backgroundCallbackDispatcher() {
   Workmanager().executeTask((taskName, inputData) async {
@@ -31,16 +51,12 @@ void backgroundCallbackDispatcher() {
 
     try {
       final now = DateTime.now();
-      final isNight = now.hour >= 0 && now.hour < 6;
-      if (isNight) {
-        final prefs0 = await SharedPreferences.getInstance();
-        final lastRun = prefs0.getInt('bg_last_run') ?? 0;
-        final elapsed = now.millisecondsSinceEpoch - lastRun;
-        const nightInterval = Duration(hours: 3);
-        if (elapsed < nightInterval.inMilliseconds) {
-          debugPrint('[BG] night throttle, skip this run');
-          return true;
-        }
+      final prefs0 = await SharedPreferences.getInstance();
+      final interval = pollingInterval(now);
+      final lastRun = prefs0.getInt('bg_last_run');
+      if (!shouldRunPolling(now: now, lastRunAtMs: lastRun)) {
+        debugPrint('[BG] throttle skip, interval=$interval');
+        return true;
       }
 
       final plugin = FlutterLocalNotificationsPlugin();
@@ -104,84 +120,155 @@ void backgroundCallbackDispatcher() {
         return true;
       }
       debugPrint(
-        '[BG] credentials loaded username=$username passwordLen=${password.length}',
+        '[BG] credentials loaded username=${_redactIdentifier(username)} passwordLen=${password.length}',
       );
 
       final elecThreshold = prefs.getDouble('elec_threshold') ?? 10.0;
       final cardThreshold = prefs.getDouble('card_threshold') ?? 20.0;
       final dormParams = _readDormParams(prefs);
-
-      final dio = Dio(
-        BaseOptions(
-          baseUrl: const String.fromEnvironment(
-            'BASE_URL',
-            defaultValue: 'http://127.0.0.1:8080',
-          ),
-          connectTimeout: const Duration(seconds: 15),
-          receiveTimeout: const Duration(seconds: 30),
-        ),
+      final runtimeMode = resolveBackgroundRuntimeMode(
+        const String.fromEnvironment('ENV', defaultValue: 'localAndroid'),
       );
 
-      var sessionId = await _ensureSessionId(storage, dio, username);
-      await _restoreLoginState(storage, dio, username, sessionId);
-
-      try {
-        await _checkElec(
-          dio,
-          plugin,
-          prefs,
-          username,
-          password,
-          sessionId,
-          elecThreshold,
-          dormParams,
+      if (runtimeMode == CampusRuntimeMode.selfHosted) {
+        await _runSelfHostedBalanceChecks(
+          storage: storage,
+          prefs: prefs,
+          plugin: plugin,
+          username: username,
+          password: password,
+          elecThreshold: elecThreshold,
+          cardThreshold: cardThreshold,
+          dormParams: dormParams,
         );
-      } on _BgSessionExpiredException {
-        sessionId = await _refreshSessionId(storage, dio, username);
-        await _restoreLoginState(storage, dio, username, sessionId);
-        await _checkElec(
-          dio,
-          plugin,
-          prefs,
-          username,
-          password,
-          sessionId,
-          elecThreshold,
-          dormParams,
-        );
-      }
-
-      try {
-        await _checkCard(
-          dio,
-          plugin,
-          prefs,
-          username,
-          password,
-          sessionId,
-          cardThreshold,
-        );
-      } on _BgSessionExpiredException {
-        sessionId = await _refreshSessionId(storage, dio, username);
-        await _restoreLoginState(storage, dio, username, sessionId);
-        await _checkCard(
-          dio,
-          plugin,
-          prefs,
-          username,
-          password,
-          sessionId,
-          cardThreshold,
+      } else if (runtimeMode == CampusRuntimeMode.localAndroid) {
+        await _runLocalAndroidBalanceChecks(
+          prefs: prefs,
+          plugin: plugin,
+          username: username,
+          password: password,
+          elecThreshold: elecThreshold,
+          cardThreshold: cardThreshold,
+          dormParams: dormParams,
         );
       }
 
       await prefs.setInt('bg_last_run', DateTime.now().millisecondsSinceEpoch);
       return true;
     } catch (e) {
-      debugPrint('[BG] task failed: $e');
+      debugPrint('[BG] task failed: ${e.runtimeType}');
       return true;
     }
   });
+}
+
+Future<void> _runSelfHostedBalanceChecks({
+  required FlutterSecureStorage storage,
+  required SharedPreferences prefs,
+  required FlutterLocalNotificationsPlugin plugin,
+  required String username,
+  required String password,
+  required double elecThreshold,
+  required double cardThreshold,
+  required Map<String, String>? dormParams,
+}) async {
+  final dio = Dio(
+    BaseOptions(
+      baseUrl: const String.fromEnvironment(
+        'BASE_URL',
+        defaultValue: 'http://127.0.0.1:8080',
+      ),
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 30),
+    ),
+  );
+
+  var sessionId = await _ensureSessionId(storage, dio, username);
+  await _restoreLoginState(storage, dio, username, sessionId);
+
+  try {
+    await _checkSelfHostedElec(
+      dio,
+      plugin,
+      prefs,
+      username,
+      password,
+      sessionId,
+      elecThreshold,
+      dormParams,
+    );
+  } on _BgSessionExpiredException {
+    sessionId = await _refreshSessionId(storage, dio, username);
+    await _restoreLoginState(storage, dio, username, sessionId);
+    await _checkSelfHostedElec(
+      dio,
+      plugin,
+      prefs,
+      username,
+      password,
+      sessionId,
+      elecThreshold,
+      dormParams,
+    );
+  }
+
+  try {
+    await _checkSelfHostedCard(
+      dio,
+      plugin,
+      prefs,
+      username,
+      password,
+      sessionId,
+      cardThreshold,
+    );
+  } on _BgSessionExpiredException {
+    sessionId = await _refreshSessionId(storage, dio, username);
+    await _restoreLoginState(storage, dio, username, sessionId);
+    await _checkSelfHostedCard(
+      dio,
+      plugin,
+      prefs,
+      username,
+      password,
+      sessionId,
+      cardThreshold,
+    );
+  }
+}
+
+Future<void> _runLocalAndroidBalanceChecks({
+  required SharedPreferences prefs,
+  required FlutterLocalNotificationsPlugin plugin,
+  required String username,
+  required String password,
+  required double elecThreshold,
+  required double cardThreshold,
+  required Map<String, String>? dormParams,
+}) async {
+  final gateway = DirectSchoolCampusGateway();
+
+  if (dormParams != null) {
+    try {
+      final balance = await gateway.getElecBalance(
+        username,
+        password,
+        dormParams: dormParams,
+      );
+      await _notifyElecIfNeeded(plugin, prefs, balance, elecThreshold);
+    } catch (error) {
+      debugPrint('[BG] local elec check failed: ${error.runtimeType}');
+    }
+  } else {
+    debugPrint('[BG] local elec check skipped: dorm not configured');
+  }
+
+  try {
+    final balance = await gateway.getCampusCardBalance(username, password);
+    await _notifyCardIfNeeded(plugin, prefs, balance, cardThreshold);
+  } catch (error) {
+    debugPrint('[BG] local card check failed: ${error.runtimeType}');
+  }
 }
 
 Map<String, String>? _readDormParams(SharedPreferences prefs) {
@@ -194,7 +281,7 @@ Map<String, String>? _readDormParams(SharedPreferences prefs) {
   return DormRoom.fromPrefsMap(map)?.toQueryParams();
 }
 
-Future<void> _checkElec(
+Future<void> _checkSelfHostedElec(
   Dio dio,
   FlutterLocalNotificationsPlugin plugin,
   SharedPreferences prefs,
@@ -235,30 +322,10 @@ Future<void> _checkElec(
   }
 
   final balStr = res.data['data'] as String? ?? '';
-  final bal = _parseBalance(balStr);
-  if (bal.isNaN || threshold <= 0 || bal >= threshold) return;
-  if (!_canNotify(prefs, 'elec_last_notif')) return;
-
-  await plugin.show(
-    101,
-    '电费不足提醒',
-    '宿舍剩余电费 ¥$balStr，已低于 ¥${threshold.toStringAsFixed(0)}，请及时充值。',
-    const NotificationDetails(
-      android: AndroidNotificationDetails(
-        _elecChannelId,
-        '电费预警',
-        channelDescription: '电费余额低于阈值时通知',
-        importance: Importance.high,
-        priority: Priority.high,
-        playSound: true,
-        enableVibration: true,
-      ),
-    ),
-  );
-  await prefs.setInt('elec_last_notif', _nowMs());
+  await _notifyElecIfNeeded(plugin, prefs, balStr, threshold);
 }
 
-Future<void> _checkCard(
+Future<void> _checkSelfHostedCard(
   Dio dio,
   FlutterLocalNotificationsPlugin plugin,
   SharedPreferences prefs,
@@ -297,14 +364,52 @@ Future<void> _checkCard(
   }
 
   final balStr = res.data['data'] as String? ?? '';
-  final bal = _parseBalance(balStr);
+  await _notifyCardIfNeeded(plugin, prefs, balStr, threshold);
+}
+
+Future<void> _notifyElecIfNeeded(
+  FlutterLocalNotificationsPlugin plugin,
+  SharedPreferences prefs,
+  String balanceText,
+  double threshold,
+) async {
+  final bal = _parseBalance(balanceText);
+  if (bal.isNaN || threshold <= 0 || bal >= threshold) return;
+  if (!_canNotify(prefs, 'elec_last_notif')) return;
+
+  await plugin.show(
+    101,
+    '电费不足提醒',
+    '宿舍剩余电费 ¥$balanceText，已低于 ¥${threshold.toStringAsFixed(0)}，请及时充值。',
+    const NotificationDetails(
+      android: AndroidNotificationDetails(
+        _elecChannelId,
+        '电费预警',
+        channelDescription: '电费余额低于阈值时通知',
+        importance: Importance.high,
+        priority: Priority.high,
+        playSound: true,
+        enableVibration: true,
+      ),
+    ),
+  );
+  await prefs.setInt('elec_last_notif', _nowMs());
+}
+
+Future<void> _notifyCardIfNeeded(
+  FlutterLocalNotificationsPlugin plugin,
+  SharedPreferences prefs,
+  String balanceText,
+  double threshold,
+) async {
+  final bal = _parseBalance(balanceText);
   if (bal.isNaN || threshold <= 0 || bal >= threshold) return;
   if (!_canNotify(prefs, 'card_last_notif')) return;
 
   await plugin.show(
     102,
     '校园卡余额不足',
-    '校园卡余额 ¥$balStr，已低于 ¥${threshold.toStringAsFixed(0)}，请及时充值。',
+    '校园卡余额 ¥$balanceText，已低于 ¥${threshold.toStringAsFixed(0)}，请及时充值。',
     const NotificationDetails(
       android: AndroidNotificationDetails(
         _cardChannelId,
@@ -365,7 +470,9 @@ Future<void> _restoreLoginState(
     try {
       await _loginWithTicket(dio, username, ticket, sessionId);
     } catch (error) {
-      debugPrint('[BG] ticket restore failed username=$username reason=$error');
+      debugPrint(
+        '[BG] ticket restore failed username=${_redactIdentifier(username)} reason=${error.runtimeType}',
+      );
     }
   }
 
@@ -413,7 +520,7 @@ Future<void> _injectCookiesFromStorage({
     await _injectCookies(dio, username, sessionId, domain, cookies);
   } catch (error) {
     debugPrint(
-      '[BG] $tag cookie restore failed username=$username reason=$error',
+      '[BG] $tag cookie restore failed username=${_redactIdentifier(username)} reason=${error.runtimeType}',
     );
   }
 }

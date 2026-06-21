@@ -22,6 +22,8 @@ dependencies:
   timezone: ^0.9.4
   dio: ^5.4.0
   workmanager: 0.9.0+3
+  data:
+    path: ../data
 
 dev_dependencies:
   flutter_test:

@@ -5,6 +5,13 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 final credentialServiceProvider =
     Provider<CredentialService>((ref) => CredentialService());
 
+String _redactIdentifier(String value) {
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) return '<empty>';
+  if (trimmed.length <= 4) return 'user_****';
+  return 'user_${trimmed.substring(0, 2)}****${trimmed.substring(trimmed.length - 2)}';
+}
+
 /// 使用系统级加密存储账号密码。
 /// Android 底层走 Android Keystore，绝不明文存储。
 class CredentialService {
@@ -20,7 +27,7 @@ class CredentialService {
     await _storage.write(key: _keyPassword, value: password);
     if (kDebugMode) {
       debugPrint(
-        '[CredentialService] save username=$username passwordLen=${password.length}',
+        '[CredentialService] save username=${_redactIdentifier(username)} passwordLen=${password.length}',
       );
     }
   }
@@ -38,7 +45,7 @@ class CredentialService {
     }
     if (kDebugMode) {
       debugPrint(
-        '[CredentialService] load username=$username passwordLen=${password.length}',
+        '[CredentialService] load username=${_redactIdentifier(username)} passwordLen=${password.length}',
       );
     }
     return (username: username, password: password);

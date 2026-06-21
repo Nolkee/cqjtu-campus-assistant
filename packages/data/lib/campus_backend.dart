@@ -40,10 +40,15 @@ abstract class CampusBackend {
   Future<String> rechargeElec(
     String username,
     double amount, {
+    String? password,
     Map<String, String>? dormParams,
   });
 
-  Future<String> getPayCodeToken(String username);
+  Future<String> getPayCodeToken(String username, {String? password});
 
-  Future<String> getCampusCardAlipayUrl(String username, double amount);
+  Future<String> getCampusCardAlipayUrl(
+    String username,
+    double amount, {
+    String? password,
+  });
 }

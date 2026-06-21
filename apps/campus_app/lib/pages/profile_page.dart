@@ -18,7 +18,7 @@ class ProfilePage extends ConsumerWidget {
 
   void _logout(BuildContext context, WidgetRef ref) async {
     ref.invalidate(sessionManagerProvider);
-    ref.invalidate(campusBackendProvider);
+    ref.invalidate(campusGatewayProvider);
     await ref.read(credentialServiceProvider).clear();
     ref.invalidate(credentialsProvider);
     ref.invalidate(scheduleProvider);
@@ -70,9 +70,6 @@ class ProfilePage extends ConsumerWidget {
           const SizedBox(height: 20),
           _sectionLabel('版本更新'),
           const _AppUpdateCard(),
-          const SizedBox(height: 20),
-          _sectionLabel('安全与隐私'),
-          const _SecurityNoticeCard(),
           const SizedBox(height: 30),
           _buildLogoutButton(context, ref),
           const SizedBox(height: 40),
@@ -264,6 +261,8 @@ class _SchedulePreferenceCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final sundayFirstAsync = ref.watch(scheduleSundayFirstProvider);
     final sundayFirst = sundayFirstAsync.valueOrNull ?? false;
+    final showInactiveAsync = ref.watch(scheduleShowInactiveCoursesProvider);
+    final showInactive = showInactiveAsync.valueOrNull ?? true;
     final selectedSemester = ref
         .watch(selectedScheduleSemesterProvider)
         .valueOrNull;
@@ -310,6 +309,34 @@ class _SchedulePreferenceCard extends ConsumerWidget {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(value ? '已切换为周日起始' : '已切换为周一起始'),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          const Divider(height: 1, indent: 56, color: Color(0xFFF0F0F0)),
+          _SettingTile(
+            icon: Icons.layers_outlined,
+            iconColor: showInactive ? Colors.deepPurple : Colors.blueGrey,
+            title: '显示本周无课课程',
+            subtitle: showInactive ? '课表中显示本周无课但与当前周相关的课程提示' : '课表只显示当周实际有课的课程',
+            trailing: showInactiveAsync.isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Switch(
+                    value: showInactive,
+                    activeThumbColor: Colors.deepPurple,
+                    onChanged: (value) async {
+                      await ref
+                          .read(scheduleShowInactiveCoursesProvider.notifier)
+                          .setShowInactiveCourses(value);
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(value ? '已显示本周无课课程' : '已隐藏本周无课课程'),
                         ),
                       );
                     },
@@ -831,7 +858,6 @@ class _DormPickerSheetState extends State<_DormPickerSheet> {
 }
 
 // ══════════════════════════════════════════════════════════════
-// 安全与隐私声明卡片
 // ══════════════════════════════════════════════════════════════
 class _AppUpdateCard extends StatefulWidget {
   const _AppUpdateCard();
@@ -929,179 +955,6 @@ class _AppUpdateCardState extends State<_AppUpdateCard> {
               ),
         onTap: _checkUpdate,
       ),
-    );
-  }
-}
-
-class _SecurityNoticeCard extends StatelessWidget {
-  const _SecurityNoticeCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.green.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Icon(Icons.verified_user_outlined, color: Colors.green),
-        ),
-        title: const Text(
-          '数据安全声明',
-          style: TextStyle(fontSize: 15, color: Colors.black87),
-        ),
-        subtitle: const Text(
-          '点击查看隐私保护说明',
-          style: TextStyle(fontSize: 12, color: Colors.grey),
-        ),
-        trailing: const Icon(Icons.chevron_right, color: Colors.black26),
-        onTap: () => _showSecurityDialog(context),
-      ),
-    );
-  }
-
-  void _showSecurityDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.verified_user_outlined, color: Colors.green),
-            SizedBox(width: 8),
-            Text('数据安全声明'),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _NoticeSection(
-                icon: Icons.storage_outlined,
-                iconColor: Colors.blue,
-                title: '服务端零持久化',
-                body:
-                    '后端服务器不存储任何用户数据。账号密码仅在每次请求时实时传输，用于完成一次性登录并抓取数据，完成后立即丢弃，不写入任何数据库或日志。',
-              ),
-              const SizedBox(height: 16),
-              _NoticeSection(
-                icon: Icons.phone_android_outlined,
-                iconColor: Colors.orange,
-                title: '本机加密存储',
-                body:
-                    '账号密码保存在本机的系统级加密存储区（Android Keystore），其他应用无法读取。宿舍信息仅保存在本机，重装 App 后需重新设置。',
-              ),
-              const SizedBox(height: 16),
-              _NoticeSection(
-                icon: Icons.wifi_outlined,
-                iconColor: Colors.purple,
-                title: '仅与指定后端通信',
-                body: 'App 只向本项目的私有后端发起网络请求，不接入任何第三方数据收集或统计服务，不植入广告 SDK。',
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.check_circle_outline,
-                      size: 16,
-                      color: Colors.green,
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '本应用为个人开发的校园工具，账号信息不会以任何形式被记录或转移，无泄露风险。',
-                        style: TextStyle(fontSize: 12, color: Colors.green),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('知道了'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NoticeSection extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String body;
-  const _NoticeSection({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.body,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: iconColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, size: 18, color: iconColor),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                body,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.black54,
-                  height: 1.5,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }
@@ -1755,6 +1608,9 @@ class _ElectricityCardWidget extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             balanceAsync.when(
+              skipError: true,
+              skipLoadingOnRefresh: true,
+              skipLoadingOnReload: true,
               loading: () => const SizedBox(
                 height: 80,
                 child: Align(

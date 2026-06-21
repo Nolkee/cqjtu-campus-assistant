@@ -11,6 +11,7 @@ class ElectricityPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final balanceAsync = ref.watch(electricityProvider);
+    final isUpdating = balanceAsync.isLoading && balanceAsync.hasValue;
 
     return Scaffold(
       appBar: AppBar(
@@ -25,7 +26,7 @@ class ElectricityPage extends ConsumerWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(isUpdating ? Icons.sync : Icons.refresh),
             onPressed: () async {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -39,7 +40,7 @@ class ElectricityPage extends ConsumerWidget {
                 if (creds != null) {
                   final dorm = ref.read(dormRoomProvider).valueOrNull;
                   await ref
-                      .read(campusBackendProvider)
+                      .read(campusGatewayProvider)
                       .getElecBalance(
                         creds.username,
                         creds.password,
@@ -70,12 +71,16 @@ class ElectricityPage extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: [
           balanceAsync.when(
+            skipError: true,
+            skipLoadingOnRefresh: true,
+            skipLoadingOnReload: true,
             loading: () => const _BalanceSkeleton(),
             error: (e, _) => ErrorView(
               message: e.toString(),
               onRetry: () => ref.invalidate(electricityProvider),
             ),
-            data: (balance) => _BalanceCard(balance: balance),
+            data: (balance) =>
+                _BalanceCard(balance: balance, isUpdating: isUpdating),
           ),
           const SizedBox(height: 16),
           const _RechargeCard(),
@@ -87,7 +92,8 @@ class ElectricityPage extends ConsumerWidget {
 
 class _BalanceCard extends StatelessWidget {
   final String balance;
-  const _BalanceCard({required this.balance});
+  final bool isUpdating;
+  const _BalanceCard({required this.balance, required this.isUpdating});
 
   @override
   Widget build(BuildContext context) {
@@ -109,11 +115,21 @@ class _BalanceCard extends StatelessWidget {
                 context,
               ).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              '每 30 分钟自动刷新',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
-            ),
+            if (isUpdating)
+              const Padding(
+                padding: EdgeInsets.only(top: 6),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.sync, color: Colors.grey, size: 14),
+                    SizedBox(width: 4),
+                    Text(
+                      '静默更新中',
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
@@ -189,10 +205,11 @@ class _RechargeCardState extends ConsumerState<_RechargeCard> {
 
       // 👈 【核心修复】：把寝室参数传给充值接口
       final msg = await ref
-          .read(campusBackendProvider)
+          .read(campusGatewayProvider)
           .rechargeElec(
             creds.username,
             amount,
+            password: creds.password,
             dormParams: dorm?.toQueryParams(),
           );
 

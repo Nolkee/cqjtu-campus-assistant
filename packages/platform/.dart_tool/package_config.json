@@ -44,6 +44,12 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "convert",
+      "rootUri": "file:///G:/PubCache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/convert-3.1.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
       "name": "core",
       "rootUri": "../../core",
       "packageUri": "lib/",
@@ -54,6 +60,18 @@
       "rootUri": "file:///G:/PubCache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/crypto-3.0.7",
       "packageUri": "lib/",
       "languageVersion": "3.4"
+    },
+    {
+      "name": "csslib",
+      "rootUri": "file:///G:/PubCache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/csslib-1.0.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
+    },
+    {
+      "name": "data",
+      "rootUri": "../../data",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
     },
     {
       "name": "dbus",
@@ -194,6 +212,18 @@
       "languageVersion": "3.9"
     },
     {
+      "name": "html",
+      "rootUri": "file:///G:/PubCache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/html-0.15.6",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "http",
+      "rootUri": "file:///G:/PubCache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/http-1.6.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
       "name": "http_parser",
       "rootUri": "file:///G:/PubCache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/http_parser-4.1.2",
       "packageUri": "lib/",
@@ -324,6 +354,12 @@
       "rootUri": "file:///G:/PubCache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/plugin_platform_interface-2.1.8",
       "packageUri": "lib/",
       "languageVersion": "3.0"
+    },
+    {
+      "name": "pointycastle",
+      "rootUri": "file:///G:/PubCache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/pointycastle-3.9.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
     },
     {
       "name": "pub_semver",
