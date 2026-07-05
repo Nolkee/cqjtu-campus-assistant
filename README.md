@@ -1,78 +1,136 @@
-# CQJTU Campus Assistant
+# CQJTU Hub
 
-重庆交通大学（CQJTU）校园生活助手，基于 **Flutter + Riverpod** 开发（当前以 Android 为主）。
+重庆交通大学校园助手，当前主打 Android 端使用体验。  
+仓库采用 Flutter monorepo 结构，默认运行模式为学校系统直连，兼容可选的 self-hosted 后端接入方式。
+
 ![CI](https://github.com/AAAAxuuuuu/cqjtu-campus-assistant/actions/workflows/ci.yml/badge.svg)
-## Features
 
-### 课程表
-- 教务账号登录后拉取课表
-- 周历可视化展示：多学期切换、按周导航
-- 课前 15 分钟提醒（本地通知）
+## Current Release
 
-### 电费监控
-- 寝室电量查询与充值
-- 自定义余额预警阈值，余额不足推送通知
-- 后台轮询：白天高频 / 夜间降频（WorkManager）
+- App version: `1.0.0`
+- Flutter package version: `1.0.0+16`
+- Current branch baseline: `main`
 
-### 校园卡
+## What It Does
+
+### 教务与学业
+
+- 课表查询与多学期切换
+- 周次导航、学期周数设置、周日起始日切换
+- 成绩查询、成绩明细、GPA / 均分 / 排名汇总
+- 考试安排查询，支持考试时间、考场、座位和准考证展示
+- 培养计划查询
+- 学业情况卡片与学业情况页，联动培养计划数据展示学分进度
+
+### 校园生活
+
+- 宿舍电费余额查询与充值
 - 校园卡余额查询
-- 消费二维码（动态 Token）
-- 跳转支付宝充值
+- 动态付款码与支付宝充值跳转
+- 请假申请 WebView 入口
 
-### 成绩与考试
-- 历史学期成绩查询：GPA / 均分 / 排名汇总
-- 当前与历史考试安排：时间 / 考场 / 座位号 / 准考证号
+### 在线系统
 
-## Highlights
-- Riverpod 分层状态管理，统一异步状态（AsyncValue）与错误处理
-- WorkManager 后台任务：定时轮询 + 夜间降频 + 通知冷却，降低打扰与耗电
-- 本地通知封装：课前提醒、阈值提醒，适配 Android 权限与通知渠道配置
-- 学期推算与周次计算结果持久化：重启 App 不丢失
+- 邮箱服务入口
+- 课程评价入口
+- 通用校园服务 WebView，支持统一认证页面自动填充
 
-## Getting Started
+### Android 后台能力
 
-### 环境
-- Flutter stable
-- Android Studio / VS Code
+- 课前提醒
+- Android 桌面小组件
+- 电费 / 校园卡余额阈值提醒
+- WorkManager 后台检查与通知冷却
 
-### 运行（开发）
+## Runtime Modes
+
+### `localAndroid`（默认）
+
+App 直接访问学校系统完成课表、成绩、考试、电费、校园卡等数据获取。  
+这是普通用户的默认路径，不依赖公共后端。
+
+### `selfHosted`
+
+App 可切换到自部署后端模式：
+
 ```bash
-flutter pub get
+flutter run --dart-define=ENV=selfHosted --dart-define=BASE_URL=http://127.0.0.1:8080
+```
+
+说明：
+当前仓库只包含 Flutter App 和共享 packages。  
+self-hosted 后端服务不在这个仓库里。
+
+## Repository Layout
+
+```text
+apps/
+  campus_app/      Flutter Android app
+
+packages/
+  core/            纯模型、时间计算、业务工具
+  data/            数据网关、直连学校系统、自部署接入
+  platform/        凭据存储、后台任务、通知、小组件支持
+```
+
+## Development
+
+### Prerequisites
+
+- Flutter stable
+- Dart SDK matching Flutter
+- Android Studio or VS Code
+
+### Bootstrap
+
+在仓库根目录执行：
+
+```bash
+dart pub get
+dart run melos bootstrap
+```
+
+### Run
+
+```bash
+cd apps/campus_app
 flutter run
 ```
 
-## Backend Configuration (Optional)
+### Build Release APK
 
-本项目支持通过 `--dart-define` 配置后端地址：
-
-```
-flutter run --dart-define=ENV=prod --dart-define=BASE_URL=http://127.0.0.1:8080
-```
-
-打包 release：
-
-```
-flutter build apk --release --dart-define=ENV=prod --dart-define=BASE_URL=http://127.0.0.1:8080
+```bash
+cd apps/campus_app
+flutter build apk --release
 ```
 
-## Compliance & Security
+### Analyze
 
-- 不收集、不上传用户账号密码
-- Token 等敏感信息仅本地存储
-- 如学校提供官方 API，优先使用官方接口
-- 本项目仅供学习交流，使用者需自行遵守学校相关规定
+```bash
+dart format --set-exit-if-changed .
+cd apps/campus_app && flutter analyze --no-fatal-infos
+cd ../../packages/core && dart analyze
+cd ../data && dart analyze
+cd ../platform && dart analyze
+```
 
-## Roadmap
+## Project Notes
 
--  monorepo + melos：core/data/platform/adapters 分层
--  Mock 模式一键体验（无账号可运行）
--  单元测试：学期推算 / 提醒时间 / 轮询策略
--  CI：analyze + test + format
+- 当前 UI 和数据结构已经从早期集中式 provider 迁移到按功能拆分的 feature providers
+- 数据层已抽象为统一 `CampusGateway`
+- 服务页已整合学业情况、培养计划、成绩、考试、电费、请假、邮箱和课程评价入口
+- 会话恢复、缓存复用和后台刷新逻辑已经独立到 `session` / shared cache 体系
 
-## AI Usage
+## Security
 
-本项目在开发过程中使用了 AI 辅助工具（Claude by Anthropic）协助完成代码设计、架构规划与文档编写。
-所有代码均经过人工审阅、测试与验证。
+- 账号密码使用本地安全存储
+- 不依赖公共服务器即可运行默认能力
+- 敏感会话信息仅保存在本地设备
+
+## Compliance
+
+本项目仅供学习与个人使用。  
+使用者需要自行遵守学校系统使用规范与相关规定。
 
 ## License
 
