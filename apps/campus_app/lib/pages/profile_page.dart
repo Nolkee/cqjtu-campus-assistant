@@ -10,8 +10,6 @@ import 'package:core/models/dorm_room.dart';
 import '../services/app_update_coordinator.dart';
 import 'login_page.dart';
 import 'electricity_page.dart';
-import 'leave_apply_page.dart';
-import 'tools_page.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -20,9 +18,8 @@ class ProfilePage extends ConsumerWidget {
     ref.invalidate(sessionManagerProvider);
     ref.invalidate(campusGatewayProvider);
     await ref.read(credentialServiceProvider).clear();
-    ref.invalidate(credentialsProvider);
-    ref.invalidate(scheduleProvider);
-    ref.invalidate(payCodeProvider);
+    ref.read(credentialsProvider.notifier).clear();
+    ref.read(payCodeProvider.notifier).clear();
     await ref.read(dormRoomProvider.notifier).clear();
 
     await NotificationService.cancelAllClassReminders();
@@ -58,9 +55,6 @@ class ProfilePage extends ConsumerWidget {
           const SizedBox(height: 20),
           _sectionLabel('宿舍设置'),
           const _DormSettingsCard(),
-          const SizedBox(height: 20),
-          _sectionLabel('教务服务'),
-          _buildServiceMenu(context),
           const SizedBox(height: 20),
           _sectionLabel('课表偏好'),
           const _SchedulePreferenceCard(),
@@ -125,80 +119,6 @@ class ProfilePage extends ConsumerWidget {
           ],
         ),
       ],
-    );
-  }
-
-  Widget _buildServiceMenu(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _buildMenuTile(
-            icon: Icons.assignment_outlined,
-            color: Colors.orange,
-            title: '成绩查询',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const GradesPage()),
-            ),
-          ),
-          const Divider(height: 1, indent: 56, color: Color(0xFFF0F0F0)),
-          _buildMenuTile(
-            icon: Icons.event_note_outlined,
-            color: Colors.purpleAccent,
-            title: '考试安排',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ExamsPage()),
-            ),
-          ),
-          const Divider(height: 1, indent: 56, color: Color(0xFFF0F0F0)),
-          _buildMenuTile(
-            icon: Icons.exit_to_app_outlined,
-            color: Colors.teal,
-            title: '请假申请',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const LeaveApplyPage()),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMenuTile({
-    required IconData icon,
-    required Color color,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, color: color),
-      ),
-      title: Text(
-        title,
-        style: const TextStyle(fontSize: 16, color: Colors.black87),
-      ),
-      trailing: const Icon(Icons.chevron_right, color: Colors.black26),
-      onTap: onTap,
     );
   }
 
@@ -365,7 +285,6 @@ class _SchedulePreferenceCard extends ConsumerWidget {
                             ).notifier,
                           )
                           .setWeeks(value);
-                      ref.invalidate(scheduleProvider(selectedSemester));
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('学期周数已改为 $value 周')),
@@ -1100,9 +1019,11 @@ class _BackgroundSettingsCardState
     }
 
     try {
-      final scheduleResult = await ref.read(
-        scheduleProvider(selectedSemester).future,
-      );
+      final scheduleResult =
+          (await ref
+                  .read(scheduleProvider(selectedSemester).notifier)
+                  .refresh(forceRefresh: true, throwOnError: true))
+              .data;
       await NotificationService.scheduleClassReminders(
         scheduleResult.courses,
         semesterStart,

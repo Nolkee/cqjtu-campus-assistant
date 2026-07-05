@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:data/data.dart';
 import '../utils/providers.dart';
 import 'package:campus_platform/services/notification_service.dart';
+import '../widgets/background_refresh_banner.dart';
 import '../widgets/error_view.dart';
 
 class ElectricityPage extends ConsumerWidget {
@@ -11,7 +12,7 @@ class ElectricityPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final balanceAsync = ref.watch(electricityProvider);
-    final isUpdating = balanceAsync.isLoading && balanceAsync.hasValue;
+    final isUpdating = balanceAsync.isRefreshing && balanceAsync.hasValue;
 
     return Scaffold(
       appBar: AppBar(
@@ -36,20 +37,9 @@ class ElectricityPage extends ConsumerWidget {
               );
 
               try {
-                final creds = ref.read(credentialsProvider);
-                if (creds != null) {
-                  final dorm = ref.read(dormRoomProvider).valueOrNull;
-                  await ref
-                      .read(campusGatewayProvider)
-                      .getElecBalance(
-                        creds.username,
-                        creds.password,
-                        forceRefresh: true,
-                        dormParams: dorm?.toQueryParams(),
-                      );
-                }
-                ref.invalidate(electricityProvider);
-                await ref.read(electricityProvider.future);
+                await ref
+                    .read(electricityProvider.notifier)
+                    .refresh(forceRefresh: true, throwOnError: true);
 
                 if (context.mounted) {
                   ScaffoldMessenger.of(
@@ -70,6 +60,12 @@ class ElectricityPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          if (balanceAsync.shouldOfferManualRefresh)
+            BackgroundRefreshBanner(
+              onRefresh: () => ref
+                  .read(electricityProvider.notifier)
+                  .refresh(forceRefresh: true),
+            ),
           balanceAsync.when(
             skipError: true,
             skipLoadingOnRefresh: true,
@@ -77,7 +73,9 @@ class ElectricityPage extends ConsumerWidget {
             loading: () => const _BalanceSkeleton(),
             error: (e, _) => ErrorView(
               message: e.toString(),
-              onRetry: () => ref.invalidate(electricityProvider),
+              onRetry: () => ref
+                  .read(electricityProvider.notifier)
+                  .refresh(forceRefresh: true),
             ),
             data: (balance) =>
                 _BalanceCard(balance: balance, isUpdating: isUpdating),
@@ -217,7 +215,7 @@ class _RechargeCardState extends ConsumerState<_RechargeCard> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(msg)));
-        ref.invalidate(electricityProvider);
+        ref.read(electricityProvider.notifier).refresh(forceRefresh: true);
       }
     } on ApiException catch (e) {
       if (mounted) {

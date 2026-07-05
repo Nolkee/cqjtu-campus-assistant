@@ -26,4 +26,14 @@ class Exam {
         campus: json['campus'] as String? ?? '',
         ticketNumber: json['ticketNumber'] as String? ?? '-',
       );
+
+  Map<String, dynamic> toJson() => {
+        'courseName': courseName,
+        'teacher': teacher,
+        'examTime': examTime,
+        'examRoom': examRoom,
+        'seatNumber': seatNumber,
+        'campus': campus,
+        'ticketNumber': ticketNumber,
+      };
 }

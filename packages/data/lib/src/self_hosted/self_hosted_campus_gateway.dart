@@ -4,6 +4,7 @@ import 'dart:developer' as dev;
 import 'package:core/models/course.dart';
 import 'package:core/models/exam.dart';
 import 'package:core/models/grade.dart';
+import 'package:core/models/study_progress.dart';
 
 import '../api_service.dart';
 import '../campus_gateway.dart';
@@ -118,6 +119,42 @@ class SelfHostedCampusGateway implements CampusGateway {
         password,
         sessionId: sessionId,
         semester: semester,
+        forceRefresh: forceRefresh,
+      ),
+    );
+  }
+
+  @override
+  Future<GradeDetail> getGradeDetail(
+    String username,
+    String password, {
+    required Grade grade,
+    bool forceRefresh = false,
+  }) {
+    return _withRecovery(
+      username: username,
+      request: (sessionId) => _api.getGradeDetail(
+        username,
+        password,
+        sessionId: sessionId,
+        grade: grade,
+        forceRefresh: forceRefresh,
+      ),
+    );
+  }
+
+  @override
+  Future<StudyProgressData> getStudyProgress(
+    String username,
+    String password, {
+    bool forceRefresh = false,
+  }) {
+    return _withRecovery(
+      username: username,
+      request: (sessionId) => _api.getStudyProgress(
+        username,
+        password,
+        sessionId: sessionId,
         forceRefresh: forceRefresh,
       ),
     );

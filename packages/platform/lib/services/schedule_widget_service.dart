@@ -80,5 +80,7 @@ class ScheduleWidgetService {
         'isExam': course.isExam,
         'isCustom': course.isCustom,
         'seatNumber': course.seatNumber,
+        'exactStartMinutes': course.exactStartMinutes,
+        'exactEndMinutes': course.exactEndMinutes,
       };
 }

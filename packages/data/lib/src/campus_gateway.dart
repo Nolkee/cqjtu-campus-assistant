@@ -1,6 +1,7 @@
 import 'package:core/models/course.dart';
 import 'package:core/models/exam.dart';
 import 'package:core/models/grade.dart';
+import 'package:core/models/study_progress.dart';
 
 /// Unified campus data gateway.
 ///
@@ -20,6 +21,19 @@ abstract class CampusGateway {
     String username,
     String password, {
     String semester = '',
+    bool forceRefresh = false,
+  });
+
+  Future<GradeDetail> getGradeDetail(
+    String username,
+    String password, {
+    required Grade grade,
+    bool forceRefresh = false,
+  });
+
+  Future<StudyProgressData> getStudyProgress(
+    String username,
+    String password, {
     bool forceRefresh = false,
   });
 

@@ -13,12 +13,14 @@ import 'package:campus_platform/services/schedule_widget_service.dart';
 import 'package:campus_platform/services/widget_navigation_service.dart';
 import 'services/app_update_coordinator.dart';
 import 'utils/providers.dart';
+import 'utils/semester_service.dart';
 import 'package:campus_platform/services/background_task.dart';
 import 'pages/login_page.dart';
 import 'pages/schedule_page.dart';
 import 'pages/campus_card_page.dart';
 import 'pages/electricity_page.dart';
 import 'pages/profile_page.dart';
+import 'pages/tools_page.dart';
 import 'theme/app_theme.dart';
 import 'widgets/responsive_scaffold.dart';
 import 'widgets/silent_zove_token_bootstrapper.dart';
@@ -41,7 +43,21 @@ void main() async {
     );
   }
 
-  runApp(const ProviderScope(child: CampusApp()));
+  final signedInUsernameHint = await CredentialService()
+      .loadSignedInUsernameHint();
+  final semesterSnapshot = await SemesterService.restoreSnapshot();
+
+  runApp(
+    ProviderScope(
+      overrides: [
+        signedInUsernameHintProvider.overrideWithValue(signedInUsernameHint),
+        semesterServiceProvider.overrideWithValue(
+          SemesterService(initialCache: semesterSnapshot),
+        ),
+      ],
+      child: const CampusApp(),
+    ),
+  );
 }
 
 class CampusApp extends StatelessWidget {
@@ -72,32 +88,28 @@ class _AuthGate extends ConsumerStatefulWidget {
 }
 
 class _AuthGateState extends ConsumerState<_AuthGate> {
-  late Future<void> _initFuture;
-
   @override
   void initState() {
     super.initState();
     // 关键修复：将 Future 缓存起来，确保生命周期内只执行一次本地读取
     // 这样后续路由返回触发 build 时，就不会再出现加载圈和销毁状态了
-    _initFuture = ref
-        .read(credentialsProvider.notifier)
-        .load(ref.read(credentialServiceProvider));
+    Future<void>.microtask(
+      () => ref
+          .read(credentialsProvider.notifier)
+          .load(ref.read(credentialServiceProvider)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: _initFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-        final creds = ref.watch(credentialsProvider);
-        return creds != null ? const _MainShell() : const LoginPage();
-      },
-    );
+    final creds = ref.watch(credentialsProvider);
+    final loadState = ref.watch(credentialLoadStateProvider);
+    final signedInHint = ref.watch(signedInUsernameHintProvider);
+    final shouldShowShell =
+        creds != null ||
+        (signedInHint != null && loadState != CredentialLoadState.loaded);
+
+    return shouldShowShell ? const _MainShell() : const LoginPage();
   }
 }
 
@@ -274,11 +286,17 @@ class _MainShellState extends ConsumerState<_MainShell>
     );
   }
 
-  static const _pages = [SchedulePage(), CampusCardPage(), ProfilePage()];
+  static const _pages = [
+    SchedulePage(),
+    CampusCardPage(),
+    ToolsPage(),
+    ProfilePage(),
+  ];
 
   static const _destinations = [
     NavigationDestination(icon: Icon(Icons.calendar_today), label: '课表'),
     NavigationDestination(icon: Icon(Icons.credit_card), label: '校园卡'),
+    NavigationDestination(icon: Icon(Icons.apps_outlined), label: '服务'),
     NavigationDestination(icon: Icon(Icons.person_outline), label: '我的'),
   ];
 
@@ -290,6 +308,10 @@ class _MainShellState extends ConsumerState<_MainShell>
     NavigationRailDestination(
       icon: Icon(Icons.credit_card),
       label: Text('校园卡'),
+    ),
+    NavigationRailDestination(
+      icon: Icon(Icons.apps_outlined),
+      label: Text('服务'),
     ),
     NavigationRailDestination(
       icon: Icon(Icons.person_outline),

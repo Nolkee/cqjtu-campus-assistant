@@ -67,6 +67,34 @@ void main() {
       expect(reminders, isEmpty);
     });
 
+    test('uses exact exam minutes instead of slot start time', () {
+      final reminders = buildClassReminders(
+        courses: const [
+          Course(
+            name: 'Exam',
+            teacher: '',
+            timeStr: '2026-06-03 14:30-16:30',
+            classroom: 'A01128',
+            dayOfWeek: DateTime.wednesday,
+            timeSlot: 7,
+            endTimeSlot: 9,
+            weekList: [1],
+            isExam: true,
+            exactStartMinutes: 14 * 60 + 30,
+            exactEndMinutes: 16 * 60 + 30,
+          ),
+        ],
+        semesterStart: DateTime(2026, 6, 1),
+        now: DateTime(2026, 6, 3, 14),
+        reminderMinutes: 15,
+      );
+
+      expect(reminders, hasLength(1));
+      expect(reminders.first.timeText, '14:30');
+      expect(reminders.first.remindAt, DateTime(2026, 6, 3, 14, 15));
+      expect(reminders.first.classStartAt, DateTime(2026, 6, 3, 14, 30));
+    });
+
     test('keeps active Android reminders until class starts', () {
       final reminders = buildClassReminders(
         courses: const [

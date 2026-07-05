@@ -8,43 +8,81 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/runtime_mode.dart';
-import '../../providers/shared.dart';
 import '../auth/auth_providers.dart';
 import '../settings/settings_providers.dart';
+import '../shared/cached_resource.dart';
 
 class NoDormSetException implements Exception {
   @override
   String toString() => '请先设置宿舍';
 }
 
-final electricityProvider = FutureProvider<String>((ref) async {
-  ref.watch(sessionUpdateProvider);
-  final interval = pollingInterval();
-  final timer = Timer(interval, () => ref.invalidateSelf());
-  ref.onDispose(timer.cancel);
+final electricityProvider =
+    NotifierProvider<ElectricityNotifier, CachedResource<String>>(
+      ElectricityNotifier.new,
+    );
 
-  final creds = ref.watch(credentialsProvider);
-  if (creds == null) throw Exception('Not logged in');
-  ensureCredentialPassword(creds);
+class ElectricityNotifier extends SimpleCachedResourceNotifier<String> {
+  @override
+  String get emptyData => '';
 
-  final gateway = ref.watch(campusGatewayProvider);
-  final dormAsync = ref.watch(dormRoomProvider);
-  final dorm = await dormAsync.when(
-    loading: () => ref.read(dormRoomProvider.future),
-    error: (e, _) => Future<DormRoom?>.error(e),
-    data: (d) => Future.value(d),
-  );
+  @override
+  String get cacheNamespace => 'electricity_balance';
 
-  if (dorm == null) throw NoDormSetException();
+  @override
+  String? get cacheScope {
+    final dorm = ref.read(dormRoomProvider).valueOrNull;
+    if (dorm == null) return 'no_dorm';
+    final params = dorm.toQueryParams();
+    return '${params['buildid'] ?? ''}:${params['roomid'] ?? ''}';
+  }
 
-  debugPrint('[FG] 查询电费: ${dorm.displayName}');
-  final balance = await gateway.getElecBalance(
-    creds.username,
-    creds.password,
-    dormParams: dorm.toQueryParams(),
-  );
-  debugPrint('[FG] 电费余额获取成功: $balance');
-  NotificationService.checkAndNotify(balance);
-  unawaited(ScheduleWidgetService.updateBalances(electricityBalance: balance));
-  return balance;
-});
+  @override
+  Duration get automaticRefreshInterval => pollingInterval();
+
+  @override
+  Object? encode(String data) => data;
+
+  @override
+  String decode(Object? json) => json?.toString() ?? '';
+
+  @override
+  void listenDependencies() {
+    ref.listen<AsyncValue<DormRoom?>>(dormRoomProvider, (_, next) {
+      unawaited(restoreCachedThenRefresh());
+    });
+  }
+
+  @override
+  Future<String> fetch(
+    ({String username, String password}) credentials, {
+    required bool forceRefresh,
+  }) async {
+    ensureCredentialPassword(credentials);
+
+    final dormAsync = ref.read(dormRoomProvider);
+    final dorm = await dormAsync.when(
+      loading: () => ref.read(dormRoomProvider.future),
+      error: (e, _) => Future<DormRoom?>.error(e),
+      data: (d) => Future.value(d),
+    );
+
+    if (dorm == null) throw NoDormSetException();
+
+    debugPrint('[FG] query electricity: ${dorm.displayName}');
+    return ref
+        .read(campusGatewayProvider)
+        .getElecBalance(
+          credentials.username,
+          credentials.password,
+          forceRefresh: forceRefresh,
+          dormParams: dorm.toQueryParams(),
+        );
+  }
+
+  @override
+  Future<void> onData(String data, {required bool changed}) async {
+    NotificationService.checkAndNotify(data);
+    await ScheduleWidgetService.updateBalances(electricityBalance: data);
+  }
+}

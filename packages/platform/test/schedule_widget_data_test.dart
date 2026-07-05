@@ -110,6 +110,31 @@ void main() {
       expect(snapshot.nextClass.occurrence?.timeRange, '14:00-15:25');
     });
 
+    test('uses exact exam minutes instead of slot start time', () {
+      final snapshot = buildScheduleWidgetSnapshot(
+        courses: const [
+          Course(
+            name: 'Exam',
+            teacher: '',
+            timeStr: '2026-06-03 14:30-16:30',
+            classroom: 'A01128',
+            dayOfWeek: DateTime.wednesday,
+            timeSlot: 7,
+            endTimeSlot: 9,
+            weekList: [1],
+            isExam: true,
+            exactStartMinutes: 14 * 60 + 30,
+            exactEndMinutes: 16 * 60 + 30,
+          ),
+        ],
+        semesterStart: DateTime(2026, 6, 1),
+        now: DateTime(2026, 6, 3, 14, 31),
+      );
+
+      expect(snapshot.nextClass.status, NextClassWidgetStatus.current);
+      expect(snapshot.nextClass.occurrence?.timeRange, '14:30-16:30');
+    });
+
     test('detects today done and today empty states', () {
       final done = buildScheduleWidgetSnapshot(
         courses: const [

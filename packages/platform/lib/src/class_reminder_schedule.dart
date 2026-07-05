@@ -144,6 +144,9 @@ int _classReminderIdBase({
     100000000 + week * 1000000 + weekday * 100000 + timeSlot * 1000;
 
 String? _startTimeTextForCourse(Course course) {
+  final exactStartMinutes = course.exactStartMinutes;
+  if (exactStartMinutes != null) return _timeTextFromMinutes(exactStartMinutes);
+
   if (course.isExam) {
     final match = RegExp(r'(\d{1,2}):(\d{2})')
         .firstMatch(course.timeStr.replaceAll('：', ':'));
@@ -153,4 +156,11 @@ String? _startTimeTextForCourse(Course course) {
     }
   }
   return classSlotStartTimes[course.timeSlot];
+}
+
+String _timeTextFromMinutes(int minutes) {
+  final clamped = minutes.clamp(0, 23 * 60 + 59);
+  final hour = clamped ~/ 60;
+  final minute = clamped % 60;
+  return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
 }

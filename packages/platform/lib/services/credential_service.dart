@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final credentialServiceProvider =
     Provider<CredentialService>((ref) => CredentialService());
@@ -21,10 +22,13 @@ class CredentialService {
 
   static const _keyUsername = 'username';
   static const _keyPassword = 'password';
+  static const _signedInUsernameKey = 'credential_signed_in_username_v1';
 
   Future<void> save(String username, String password) async {
     await _storage.write(key: _keyUsername, value: username);
     await _storage.write(key: _keyPassword, value: password);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_signedInUsernameKey, username);
     if (kDebugMode) {
       debugPrint(
         '[CredentialService] save username=${_redactIdentifier(username)} passwordLen=${password.length}',
@@ -51,5 +55,15 @@ class CredentialService {
     return (username: username, password: password);
   }
 
-  Future<void> clear() async => _storage.deleteAll();
+  Future<String?> loadSignedInUsernameHint() async {
+    final prefs = await SharedPreferences.getInstance();
+    final username = prefs.getString(_signedInUsernameKey)?.trim();
+    return username == null || username.isEmpty ? null : username;
+  }
+
+  Future<void> clear() async {
+    await _storage.deleteAll();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_signedInUsernameKey);
+  }
 }

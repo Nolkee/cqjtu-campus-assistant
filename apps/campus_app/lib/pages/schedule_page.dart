@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:core/models/course.dart';
+import 'package:core/utils/schedule_time_utils.dart';
 import 'package:campus_platform/services/notification_service.dart';
 import 'package:campus_platform/services/schedule_widget_service.dart';
 import '../utils/providers.dart';
+import '../widgets/background_refresh_banner.dart';
 import '../widgets/course_cell.dart';
 import '../widgets/error_view.dart';
-import 'webview_login_page.dart'; // 👈 新增引入：用于在此页面唤起验证码验证
+import 'webview_login_page.dart';
 
 const int _kTotalSlots = 13;
 
@@ -41,6 +43,10 @@ const Map<int, (String, String)> _kSlotTimes = {
   12: ('19:45', '20:25'),
   13: ('20:30', '21:10'),
 };
+
+const int _kTimetableStartMinutes = 8 * 60 + 20;
+const int _kTimetableEndMinutes = 21 * 60 + 10;
+const double _kCourseInset = 2.0;
 
 // ── 日期工具 ─────────────────────────────────────────────────
 DateTime _startOfWeek(DateTime date, {required bool sundayFirst}) {
@@ -187,10 +193,6 @@ class SchedulePage extends ConsumerWidget {
       }
     });
 
-    if (semesterAsync.isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
     final semesterStart = semesterAsync.valueOrNull;
     if (semesterStart == null) {
       return const _NoSemesterPage();
@@ -268,7 +270,6 @@ class _ScheduleBody extends ConsumerWidget {
   Future<void> _doRefresh(BuildContext context, WidgetRef ref) async {
     final creds = ref.read(credentialsProvider);
     if (creds == null) return;
-    final backend = ref.read(campusGatewayProvider);
 
     try {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -279,17 +280,13 @@ class _ScheduleBody extends ConsumerWidget {
       );
 
       // 强制后端发起请求
-      await backend.getSchedule(
-        creds.username,
-        creds.password,
-        semester: selectedSemester,
-        forceRefresh: true,
-      );
+      final result =
+          (await ref
+                  .read(scheduleProvider(selectedSemester).notifier)
+                  .refresh(forceRefresh: true, throwOnError: true))
+              .data;
 
       // 刷新本地状态
-      ref.invalidate(scheduleProvider(selectedSemester));
-      final result = await ref.read(scheduleProvider(selectedSemester).future);
-
       debugPrint('[刷新] 课表已更新，重新调度课程通知...');
       await NotificationService.scheduleClassReminders(
         result.courses,
@@ -439,6 +436,10 @@ class _ScheduleBody extends ConsumerWidget {
         },
         data: (result) => Column(
           children: [
+            if (scheduleAsync.shouldOfferManualRefresh)
+              BackgroundRefreshBanner(
+                onRefresh: () => _doRefresh(context, ref),
+              ),
             _WeekNavigator(
               semesterStart: semesterStart,
               selectedWeek: selectedWeek,
@@ -765,7 +766,6 @@ Future<void> _showAddCustomCourseSheet(
                                   ).notifier,
                                 )
                                 .addCourse(course);
-                            ref.invalidate(scheduleProvider(selectedSemester));
                             if (!sheetContext.mounted) return;
                             Navigator.pop(sheetContext);
                             if (!context.mounted) return;
@@ -1105,7 +1105,7 @@ class _TimetableGridState extends ConsumerState<_TimetableGrid> {
           );
     final today = DateTime.now();
     final todayDay = DateTime(today.year, today.month, today.day);
-    final gridH = _kTotalSlots * _kSlotH;
+    final gridH = _gridHeight;
     final totalWidth = _kTimeW + _kDayW * 7;
     final dayLabels = _weekdayLabels(sundayFirst: widget.sundayFirst);
     final orderedWeekdays = _orderedWeekdays(sundayFirst: widget.sundayFirst);
@@ -1340,6 +1340,55 @@ class _TimetableGridState extends ConsumerState<_TimetableGrid> {
     );
   }
 
+  double get _gridHeight => _slotBottom(_kTotalSlots);
+
+  double _slotTop(int slot) {
+    final normalized = slot.clamp(1, _kTotalSlots);
+    return (normalized - 1) * _kSlotH;
+  }
+
+  double _slotBottom(int slot) => _slotTop(slot) + _kSlotH;
+
+  double _topForSlot(int slot) => _slotTop(slot);
+
+  double _heightForSlot(int slot) => _kSlotH;
+
+  double _topForCourseMinute(int minutes) =>
+      _visualOffsetForMinute(minutes) + _kCourseInset;
+
+  double _bottomForCourseMinute(int minutes) =>
+      _visualOffsetForMinute(minutes) - _kCourseInset;
+
+  double _visualOffsetForMinute(int minutes) {
+    final clamped = minutes.clamp(
+      _kTimetableStartMinutes,
+      _kTimetableEndMinutes,
+    );
+
+    for (var slot = 1; slot <= _kTotalSlots; slot++) {
+      final range = slotMinuteRanges[slot]!;
+      if (clamped >= range.start && clamped <= range.end) {
+        final span = (range.end - range.start).clamp(1, 1440);
+        final fraction = (clamped - range.start) / span;
+        return _slotTop(slot) + _kSlotH * fraction;
+      }
+
+      if (slot == _kTotalSlots) break;
+
+      final nextRange = slotMinuteRanges[slot + 1]!;
+      if (clamped > range.end && clamped < nextRange.start) {
+        final gap = (nextRange.start - range.end).clamp(1, 1440);
+        final fraction = (clamped - range.end) / gap;
+        return _slotBottom(slot) +
+            (_slotTop(slot + 1) - _slotBottom(slot)) * fraction;
+      }
+    }
+
+    return clamped <= _kTimetableStartMinutes
+        ? _slotTop(1)
+        : _slotBottom(_kTotalSlots);
+  }
+
   Widget _buildTimeColumn(double gridH) {
     return SizedBox(
       width: _kTimeW,
@@ -1349,16 +1398,73 @@ class _TimetableGridState extends ConsumerState<_TimetableGrid> {
           ..._sectionBg(),
           for (int s = 1; s <= _kTotalSlots; s++)
             Positioned(
-              top: (s - 1) * _kSlotH,
+              top: _topForSlot(s),
               left: 0,
               right: 0,
-              height: _kSlotH,
+              height: _heightForSlot(s),
               child: _SlotCell(slot: s),
             ),
-          _hDivider(5 * _kSlotH, Colors.blue.shade200),
-          _hDivider(10 * _kSlotH, Colors.indigo.shade200),
+          _hDivider(_slotBottom(5), Colors.blue.shade200),
+          _hDivider(_slotBottom(10), Colors.indigo.shade200),
         ],
       ),
+    );
+  }
+
+  /// 根据精确分钟数（从午夜 00:00 起算）计算在课表网格中的像素 top 位置
+  double _exactTopForMinutes(int minutes) {
+    for (final entry in slotMinuteRanges.entries) {
+      final start = entry.value.start;
+      final end = entry.value.end;
+      if (minutes >= start && minutes <= end) {
+        return _topForCourseMinute(minutes);
+      }
+    }
+    // 超出时间范围，回退到最近邻节次
+    return _topForCourseMinute(minutes);
+  }
+
+  /// 构建单个课程定位块（支持考试课程的精确时间定位）
+  Widget _buildCoursePositioned(
+    _CoursePlacement placement,
+    BuildContext context,
+    Map<String, Color> courseColorMap,
+  ) {
+    final course = placement.course;
+    double top;
+    double height;
+
+    if (course.isExam &&
+        course.exactStartMinutes != null &&
+        course.exactEndMinutes != null) {
+      // 考试课程：根据精确分钟数计算位置和高度
+      top = _exactTopForMinutes(course.exactStartMinutes!);
+      final bottom = _bottomForCourseMinute(course.exactEndMinutes!);
+      height = bottom - top;
+    } else {
+      // 普通课程：按固定节次计算
+      top = _topForSlot(placement.startSlot) + _kCourseInset;
+      final bottom = _slotBottom(placement.endSlot) - _kCourseInset;
+      height = bottom - top;
+    }
+    height = height.clamp(18.0, double.infinity);
+
+    return Positioned(
+      key: ValueKey(placement.key),
+      top: top,
+      left: placement.left,
+      width: placement.width,
+      height: height,
+      child: placement.isSummary
+          ? _InactiveCourseSummaryCell(courses: placement.courses)
+          : CourseCell(
+              course: course,
+              isActive: course.isActiveInWeek(widget.selectedWeek),
+              color: courseColorMap[_courseColorKey(course)],
+              onDelete: course.isCustom
+                  ? () => _deleteCustomCourse(context, course)
+                  : null,
+            ),
     );
   }
 
@@ -1368,7 +1474,7 @@ class _TimetableGridState extends ConsumerState<_TimetableGrid> {
     DateTime courseDate,
     Map<String, Color> courseColorMap,
   ) {
-    final gridH = _kTotalSlots * _kSlotH;
+    final gridH = _gridHeight;
     final placements = _buildCoursePlacements(dayCourses);
     return Container(
       width: _kDayW,
@@ -1380,29 +1486,11 @@ class _TimetableGridState extends ConsumerState<_TimetableGrid> {
         children: [
           ..._sectionBg(),
           for (int s = 1; s <= _kTotalSlots; s++)
-            _hDivider(s * _kSlotH, Colors.grey.shade200),
-          _hDivider(5 * _kSlotH, Colors.blue.shade100, thickness: 1.5),
-          _hDivider(10 * _kSlotH, Colors.indigo.shade100, thickness: 1.5),
+            _hDivider(_slotBottom(s), Colors.grey.shade200),
+          _hDivider(_slotBottom(5), Colors.blue.shade100, thickness: 1.5),
+          _hDivider(_slotBottom(10), Colors.indigo.shade100, thickness: 1.5),
           for (final placement in placements)
-            Positioned(
-              key: ValueKey(placement.key),
-              top: (placement.startSlot - 1) * _kSlotH + 2,
-              left: placement.left,
-              width: placement.width,
-              height: placement.slotSpan * _kSlotH - 4,
-              child: placement.isSummary
-                  ? _InactiveCourseSummaryCell(courses: placement.courses)
-                  : CourseCell(
-                      course: placement.course,
-                      isActive: placement.course.isActiveInWeek(
-                        widget.selectedWeek,
-                      ),
-                      color: courseColorMap[_courseColorKey(placement.course)],
-                      onDelete: placement.course.isCustom
-                          ? () => _deleteCustomCourse(context, placement.course)
-                          : null,
-                    ),
-            ),
+            _buildCoursePositioned(placement, context, courseColorMap),
         ],
       ),
     );
@@ -1470,10 +1558,12 @@ class _TimetableGridState extends ConsumerState<_TimetableGrid> {
   }
 
   int _compareCoursesForLayout(Course a, Course b) {
-    final startCompare = a.timeSlot.compareTo(b.timeSlot);
+    final rangeA = _courseMinuteRange(a);
+    final rangeB = _courseMinuteRange(b);
+    final startCompare = rangeA.start.compareTo(rangeB.start);
     if (startCompare != 0) return startCompare;
 
-    final endCompare = a.endTimeSlot.compareTo(b.endTimeSlot);
+    final endCompare = rangeA.end.compareTo(rangeB.end);
     if (endCompare != 0) return endCompare;
 
     final activeCompare = (a.isActiveInWeek(widget.selectedWeek) ? 0 : 1)
@@ -1485,7 +1575,22 @@ class _TimetableGridState extends ConsumerState<_TimetableGrid> {
   }
 
   bool _coursesOverlap(Course a, Course b) {
-    return a.timeSlot <= b.endTimeSlot && b.timeSlot <= a.endTimeSlot;
+    final rangeA = _courseMinuteRange(a);
+    final rangeB = _courseMinuteRange(b);
+    return rangeA.start < rangeB.end && rangeB.start < rangeA.end;
+  }
+
+  ({int start, int end}) _courseMinuteRange(Course course) {
+    if (course.exactStartMinutes != null &&
+        course.exactEndMinutes != null &&
+        course.exactEndMinutes! > course.exactStartMinutes!) {
+      return (start: course.exactStartMinutes!, end: course.exactEndMinutes!);
+    }
+
+    return (
+      start: slotMinuteRanges[course.timeSlot]!.start,
+      end: slotMinuteRanges[course.endTimeSlot]!.end,
+    );
   }
 
   Future<void> _deleteCustomCourse(BuildContext context, Course course) async {
@@ -1503,21 +1608,21 @@ class _TimetableGridState extends ConsumerState<_TimetableGrid> {
       top: 0,
       left: 0,
       right: 0,
-      height: 5 * _kSlotH,
+      height: _slotBottom(5),
       child: Container(color: Colors.white),
     ),
     Positioned(
-      top: 5 * _kSlotH,
+      top: _topForSlot(6),
       left: 0,
       right: 0,
-      height: 5 * _kSlotH,
+      height: _slotBottom(10) - _topForSlot(6),
       child: Container(color: Colors.blue.shade50.withValues(alpha: 0.4)),
     ),
     Positioned(
-      top: 10 * _kSlotH,
+      top: _topForSlot(11),
       left: 0,
       right: 0,
-      height: 3 * _kSlotH,
+      height: _slotBottom(13) - _topForSlot(11),
       child: Container(color: Colors.indigo.shade50.withValues(alpha: 0.4)),
     ),
   ];

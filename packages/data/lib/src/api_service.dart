@@ -3,6 +3,7 @@ import 'dart:developer' as dev;
 import 'package:core/models/course.dart';
 import 'package:core/models/exam.dart';
 import 'package:core/models/grade.dart';
+import 'package:core/models/study_progress.dart';
 import 'package:dio/dio.dart';
 
 String _redactIdentifier(String value) {
@@ -86,6 +87,40 @@ class ApiService {
         .map((e) => Grade.fromJson(e as Map<String, dynamic>))
         .toList();
     return (summary: summary, grades: grades);
+  }
+
+  Future<GradeDetail> getGradeDetail(
+    String username,
+    String password, {
+    required String sessionId,
+    required Grade grade,
+    bool forceRefresh = false,
+  }) async {
+    final params = grade.detailQueryParameters;
+    if (params == null) return const GradeDetail(items: [], totalScore: '');
+
+    final res = await _dio.get('/api/getGradeDetail', queryParameters: {
+      'username': username,
+      'password': password,
+      'sessionId': sessionId,
+      'forceRefresh': forceRefresh,
+      ...params,
+    });
+    _checkCode(res.data, statusCode: res.statusCode);
+    final data = res.data['data'];
+    if (data is Map<String, dynamic>) return GradeDetail.fromJson(data);
+    if (data is Map)
+      return GradeDetail.fromJson(Map<String, dynamic>.from(data));
+    return const GradeDetail(items: [], totalScore: '');
+  }
+
+  Future<StudyProgressData> getStudyProgress(
+    String username,
+    String password, {
+    required String sessionId,
+    bool forceRefresh = false,
+  }) async {
+    throw UnsupportedError('self-hosted backend does not support study progress yet');
   }
 
   Future<List<Exam>> getExams(

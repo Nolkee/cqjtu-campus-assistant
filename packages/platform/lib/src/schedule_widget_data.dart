@@ -226,20 +226,39 @@ ScheduleWidgetOccurrence? _occurrenceForCourse(
   int week,
   DateTime date,
 ) {
-  final start = scheduleWidgetSlotTimes[course.timeSlot];
-  final end = scheduleWidgetSlotTimes[course.endTimeSlot]?.$2;
-  if (start == null || end == null) return null;
+  final exactStart = course.exactStartMinutes;
+  final exactEnd = course.exactEndMinutes;
+  String startText;
+  String endText;
 
-  final startAt = _dateWithTime(date, start.$1);
-  final endAt = _dateWithTime(date, end);
+  if (exactStart != null && exactEnd != null && exactEnd > exactStart) {
+    startText = _timeTextFromMinutes(exactStart);
+    endText = _timeTextFromMinutes(exactEnd);
+  } else {
+    final start = scheduleWidgetSlotTimes[course.timeSlot];
+    final end = scheduleWidgetSlotTimes[course.endTimeSlot]?.$2;
+    if (start == null || end == null) return null;
+    startText = start.$1;
+    endText = end;
+  }
+
+  final startAt = _dateWithTime(date, startText);
+  final endAt = _dateWithTime(date, endText);
   return ScheduleWidgetOccurrence(
     course: course,
     week: week,
     startAt: startAt,
     endAt: endAt,
-    startText: start.$1,
-    endText: end,
+    startText: startText,
+    endText: endText,
   );
+}
+
+String _timeTextFromMinutes(int minutes) {
+  final clamped = minutes.clamp(0, 23 * 60 + 59);
+  final hour = clamped ~/ 60;
+  final minute = clamped % 60;
+  return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
 }
 
 DateTime _weekStartOf(DateTime semesterStart, int week) {

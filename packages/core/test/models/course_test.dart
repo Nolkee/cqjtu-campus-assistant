@@ -107,4 +107,41 @@ void main() {
       expect(c.weekList, isEmpty);
     });
   });
+  group('Course exact exam minutes', () {
+    test('preserves exact exam minutes in JSON', () {
+      const c = Course(
+        name: 'Exam',
+        teacher: '',
+        timeStr: '2026-06-30 14:30-16:30',
+        classroom: 'A01128',
+        dayOfWeek: 2,
+        timeSlot: 6,
+        endTimeSlot: 9,
+        weekList: [18],
+        isExam: true,
+        exactStartMinutes: 14 * 60 + 30,
+        exactEndMinutes: 16 * 60 + 30,
+      );
+
+      final restored = Course.fromJson(c.toJson());
+
+      expect(restored.exactStartMinutes, 14 * 60 + 30);
+      expect(restored.exactEndMinutes, 16 * 60 + 30);
+    });
+
+    test('recovers exact exam minutes from legacy cached timeStr', () {
+      final c = Course.fromJson({
+        'name': 'Exam',
+        'timeStr': '2026-06-30 14:30-16:30',
+        'dayOfWeek': 2,
+        'timeSlot': 7,
+        'endTimeSlot': 9,
+        'weekList': [18],
+        'isExam': true,
+      });
+
+      expect(c.exactStartMinutes, 14 * 60 + 30);
+      expect(c.exactEndMinutes, 16 * 60 + 30);
+    });
+  });
 }

@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'package:core/models/course.dart';
 import 'package:core/models/exam.dart';
 import 'package:core/models/grade.dart';
+import 'package:core/models/study_progress.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html_parser;
 import 'package:pointycastle/export.dart';
@@ -71,6 +72,9 @@ class SchoolSystemConfig {
   final String casLoginUrl;
   final String scheduleUrl;
   final String gradesUrl;
+  final String gradeDetailUrl;
+  final String studyProgressUrl;
+  final String studentExecutionPlanUrl;
   final String examsUrl;
   final String ecardPayeleUrl;
   final String ecardEleresultUrl;
@@ -85,6 +89,11 @@ class SchoolSystemConfig {
         'https://ids.cqjtu.edu.cn/authserver/login?service=http%3A%2F%2Fjwgln.cqjtu.edu.cn%2Fjsxsd%2Fsso.jsp',
     this.scheduleUrl = 'https://jwgln.cqjtu.edu.cn/jsxsd/xskb/xskb_list.do',
     this.gradesUrl = 'https://jwgln.cqjtu.edu.cn/jsxsd/kscj/cjcx_list',
+    this.gradeDetailUrl = 'https://jwgln.cqjtu.edu.cn/jsxsd/kscj/pscj_list.do',
+    this.studyProgressUrl =
+        'https://jwgln.cqjtu.edu.cn/jsxsd/xxwcqk/xxwcqk_idxOntx.do',
+    this.studentExecutionPlanUrl =
+        'https://jwgln.cqjtu.edu.cn/jsxsd/xxwcqk/xxwcqkOnkctx.do',
     this.examsUrl = 'https://jwgln.cqjtu.edu.cn/jsxsd/xsks/xsksap_list',
     this.ecardPayeleUrl = 'https://ecard.cqjtu.edu.cn/epay/h5/payele',
     this.ecardEleresultUrl = 'https://ecard.cqjtu.edu.cn/epay/h5/eleresult',
@@ -308,6 +317,7 @@ class _SchoolHttpClient {
   Future<_HttpResponse> post(String url,
       {Map<String, String>? formBody,
       Map<String, String>? queryParams,
+      Map<String, String>? extraHeaders,
       int maxRedirects = 10}) async {
     final uri = _buildUri(url, queryParams);
     final encoded = formBody?.entries
@@ -316,10 +326,12 @@ class _SchoolHttpClient {
         .join('&');
     final bodyBytes = encoded != null ? utf8.encode(encoded) : null;
 
+    final origin = '${uri.scheme}://${uri.host}${_portSegment(uri)}';
     final headers = <String, String>{
       HttpHeaders.contentTypeHeader: 'application/x-www-form-urlencoded',
-      'Origin': 'https://ids.cqjtu.edu.cn',
+      'Origin': origin,
       HttpHeaders.refererHeader: uri.toString(),
+      ...?extraHeaders,
     };
 
     final res = await _followRedirects('POST', uri,
@@ -401,6 +413,14 @@ class _SchoolHttpClient {
     final params = Map<String, String>.from(uri.queryParameters);
     params.addAll(queryParams);
     return uri.replace(queryParameters: params);
+  }
+
+  String _portSegment(Uri uri) {
+    if (!uri.hasPort) return '';
+    final isDefaultHttp = uri.scheme == 'http' && uri.port == 80;
+    final isDefaultHttps = uri.scheme == 'https' && uri.port == 443;
+    if (isDefaultHttp || isDefaultHttps) return '';
+    return ':${uri.port}';
   }
 }
 
@@ -1003,11 +1023,12 @@ class _GradeParser {
 
     final rows = table.querySelectorAll('tr');
     for (int i = 1; i < rows.length; i++) {
-      final cells = rows[i]
-          .querySelectorAll('td')
-          .map((cell) => cell.text.trim())
-          .toList();
+      final cellElements = rows[i].querySelectorAll('td');
+      final cells = cellElements.map((cell) => cell.text.trim()).toList();
       if (cells.length < 14) continue;
+      final detailParams = _parseDetailParams(
+        cellElements.length > 4 ? cellElements[4] : null,
+      );
 
       grades.add(Grade(
         semester: cells.length > 1 ? cells[1] : '',
@@ -1018,10 +1039,75 @@ class _GradeParser {
         gradePoint: cells.length > 8 ? cells[8] : '-',
         courseAttribute: cells.length > 12 ? cells[12] : '',
         courseNature: cells.length > 13 ? cells[13] : '',
+        studentId: detailParams?['xs0101id'] ?? '',
+        teachingClassId: detailParams?['jx0404id'] ?? '',
+        gradeRecordId: detailParams?['cj0708id'] ?? '',
       ));
     }
 
     return grades;
+  }
+
+  static Map<String, String>? _parseDetailParams(dom.Element? scoreCell) {
+    if (scoreCell == null) return null;
+    final href = scoreCell.querySelector('a[href]')?.attributes['href'];
+    if (href == null || href.trim().isEmpty) return null;
+    final raw = href.trim().replaceAll('&amp;', '&');
+
+    final uri = Uri.tryParse(raw);
+    if (uri != null && uri.query.isNotEmpty) {
+      return uri.queryParameters;
+    }
+
+    final match = RegExp(
+      r"""pscj_list\.do\?([^'")\s]+)""",
+      caseSensitive: false,
+    ).firstMatch(raw);
+    final query = match?.group(1);
+    if (query == null || query.isEmpty) return null;
+    return Uri.splitQueryString(query);
+  }
+
+  static GradeDetail parseDetail(String html) {
+    final document = html_parser.parse(html);
+    final table =
+        document.getElementById('dataList') ?? document.querySelector('table');
+    if (table == null) return const GradeDetail(items: [], totalScore: '');
+
+    final rows = table.querySelectorAll('tr');
+    if (rows.length < 2) return const GradeDetail(items: [], totalScore: '');
+
+    final headers = rows.first
+        .querySelectorAll('th,td')
+        .map((cell) => cell.text.trim())
+        .toList();
+    final values =
+        rows[1].querySelectorAll('td').map((cell) => cell.text.trim()).toList();
+    if (headers.isEmpty || values.isEmpty) {
+      return const GradeDetail(items: [], totalScore: '');
+    }
+
+    final valueByHeader = <String, String>{};
+    for (var i = 0; i < headers.length && i < values.length; i++) {
+      valueByHeader[headers[i]] = values[i];
+    }
+
+    final items = <GradeDetailItem>[];
+    for (var i = 0; i < headers.length; i++) {
+      final header = headers[i];
+      if (header.isEmpty || header == '序号' || header == '总成绩') continue;
+      if (header.contains('比例')) continue;
+
+      final score = valueByHeader[header]?.trim() ?? '';
+      final ratio = valueByHeader['$header比例']?.trim() ?? '';
+      if (score.isEmpty && ratio.isEmpty) continue;
+      items.add(GradeDetailItem(name: header, score: score, ratio: ratio));
+    }
+
+    return GradeDetail(
+      items: items,
+      totalScore: valueByHeader['总成绩']?.trim() ?? '',
+    );
   }
 
   static String _extractMatch(String text, String pattern) {
@@ -1029,6 +1115,178 @@ class _GradeParser {
     final match = re.firstMatch(text);
     return match?.group(1) ?? '-';
   }
+}
+
+class _StudyProgressParser {
+  static Map<String, String> parseIndexForm(String html) {
+    final document = html_parser.parse(html);
+    final form = document.querySelector('form');
+    if (form == null) return const {};
+
+    final values = <String, String>{};
+    for (final input in form.querySelectorAll('input[name]')) {
+      final name = input.attributes['name']?.trim() ?? '';
+      if (name.isEmpty) continue;
+      values[name] = input.attributes['value']?.trim() ?? '';
+    }
+    return values;
+  }
+
+  static StudyProgressData parseReportHtml(
+    String html, {
+    required String currentSemester,
+  }) {
+    final document = html_parser.parse(html);
+    final summaryTable = _findStudyProgressTable(
+      document,
+      '课程体系',
+    );
+    final courseTable = _findStudyProgressTable(
+      document,
+      '修读学期',
+    );
+    if (summaryTable == null || courseTable == null) {
+      return StudyProgressData(
+        groups: const [],
+        currentSemester: currentSemester,
+        currentSemesterCourses: const [],
+      );
+    }
+
+    final summaryByTitle = _parseSummaryTable(summaryTable);
+    final coursesByTitle = _parseCourseTable(courseTable);
+    final groups = <StudyProgressGroup>[];
+
+    final orderedTitles = <String>[
+      ...summaryByTitle.keys,
+      ...coursesByTitle.keys.where((title) => !summaryByTitle.containsKey(title)),
+    ];
+
+    for (final title in orderedTitles) {
+      final summary = summaryByTitle[title];
+      final courses = coursesByTitle[title] ?? const <StudyProgressCourse>[];
+      groups.add(
+        StudyProgressGroup(
+          id: title,
+          title: title,
+          requiredCredits: summary?.requiredCredits ?? '',
+          earnedCredits: summary?.earnedCredits ?? '',
+          remainingCredits: summary?.remainingCredits ?? '',
+          completionRate: '',
+          courses: courses,
+        ),
+      );
+    }
+
+    return StudyProgressData(
+      groups: groups,
+      currentSemester: currentSemester,
+      currentSemesterCourses: const [],
+    );
+  }
+
+  static dom.Element? _findStudyProgressTable(
+    dom.Document document,
+    String marker,
+  ) {
+    for (final table in document.querySelectorAll('table')) {
+      final text = table.text.replaceAll(RegExp(r'\s+'), '');
+      if (text.contains(marker)) return table;
+    }
+    return null;
+  }
+
+  static Map<String, _StudyProgressSummary> _parseSummaryTable(dom.Element table) {
+    final result = <String, _StudyProgressSummary>{};
+    final rows = table.querySelectorAll('tr');
+
+    for (var i = 1; i < rows.length; i++) {
+      final cells = rows[i].querySelectorAll('td,th');
+      if (cells.length < 5) continue;
+      final rawTitle = cells[0].text.trim();
+      if (rawTitle.isEmpty || rawTitle == '总计') continue;
+      final title = _normalizeStudyGroupTitle(rawTitle);
+      if (title.isEmpty) continue;
+
+      final current = result[title];
+      result[title] = _StudyProgressSummary(
+        requiredCredits: _sumTexts(current?.requiredCredits, cells[1].text),
+        earnedCredits: _sumTexts(current?.earnedCredits, cells[2].text),
+        remainingCredits: _sumTexts(current?.remainingCredits, cells[4].text),
+      );
+    }
+
+    return result;
+  }
+
+  static Map<String, List<StudyProgressCourse>> _parseCourseTable(dom.Element table) {
+    final result = <String, List<StudyProgressCourse>>{};
+    var currentGroup = '';
+    final rows = table.querySelectorAll('tr');
+
+    for (var i = 1; i < rows.length; i++) {
+      final cells = rows[i].querySelectorAll('td,th');
+      if (cells.isEmpty) continue;
+
+      final texts = cells.map((cell) => cell.text.trim()).toList();
+      final nonEmpty = texts.where((text) => text.isNotEmpty).toList();
+      if (nonEmpty.isEmpty) continue;
+
+      if (cells.length == 1 || (cells.length > 1 && nonEmpty.length == 1)) {
+        currentGroup = nonEmpty.first;
+        result.putIfAbsent(currentGroup, () => <StudyProgressCourse>[]);
+        continue;
+      }
+
+      if (cells.length < 10 || currentGroup.isEmpty) continue;
+
+      result.putIfAbsent(currentGroup, () => <StudyProgressCourse>[]).add(
+        StudyProgressCourse(
+          semester: texts[0],
+          code: texts[1],
+          name: texts[2],
+          credits: texts[3],
+          attribute: texts[4],
+          nature: texts[5],
+          status: texts[6],
+          score: texts[7],
+          remark: texts[8],
+          isDegreeCourse: texts[9],
+        ),
+      );
+    }
+
+    return result;
+  }
+
+  static String _normalizeStudyGroupTitle(String rawTitle) {
+    final text = rawTitle.trim();
+    if (text.isEmpty) return '';
+    if (!text.contains('_')) return text;
+    final right = text.split('_').last.trim();
+    return right.replaceAll(RegExp(r'\((必修|选修|校选)\)$'), '');
+  }
+
+  static String _sumTexts(String? current, String next) {
+    final currentValue = double.tryParse((current ?? '').trim());
+    final nextValue = double.tryParse(next.trim());
+    if (currentValue == null && nextValue == null) return next.trim();
+    if (currentValue == null) return nextValue!.toStringAsFixed(1);
+    if (nextValue == null) return current!;
+    return (currentValue + nextValue).toStringAsFixed(1);
+  }
+}
+
+class _StudyProgressSummary {
+  const _StudyProgressSummary({
+    required this.requiredCredits,
+    required this.earnedCredits,
+    required this.remainingCredits,
+  });
+
+  final String requiredCredits;
+  final String earnedCredits;
+  final String remainingCredits;
 }
 
 // ---------------------------------------------------------------------------
@@ -1327,6 +1585,63 @@ class DirectSchoolCampusGateway implements CampusGateway {
     return _GradeParser.parse(html);
   }
 
+  @override
+  Future<GradeDetail> getGradeDetail(
+    String username,
+    String password, {
+    required Grade grade,
+    bool forceRefresh = false,
+  }) async {
+    final params = grade.detailQueryParameters;
+    if (params == null) return const GradeDetail(items: [], totalScore: '');
+
+    final session = _session(username);
+    await session.ensureAuth(username, password);
+
+    final resp = await session.httpClient.get(
+      _config.gradeDetailUrl,
+      queryParams: params,
+    );
+
+    if (_isSessionExpired(resp.body)) {
+      await session.forceRelogin(username, password);
+      final retryResp = await session.httpClient.get(
+        _config.gradeDetailUrl,
+        queryParams: params,
+      );
+      return _GradeParser.parseDetail(retryResp.body);
+    }
+
+    return _GradeParser.parseDetail(resp.body);
+  }
+
+  @override
+  Future<StudyProgressData> getStudyProgress(
+    String username,
+    String password, {
+    bool forceRefresh = false,
+  }) async {
+    final session = _session(username);
+    await session.ensureAuth(username, password);
+
+    final indexBody = await _fetchStudyProgressIndexBody(
+      session,
+      username,
+      password,
+    );
+    final formBody = _StudyProgressParser.parseIndexForm(indexBody);
+    final reportBody = await _fetchStudyProgressReportBody(
+      session,
+      username,
+      password,
+      formBody: formBody,
+    );
+    return _StudyProgressParser.parseReportHtml(
+      reportBody,
+      currentSemester: _currentSemester(),
+    );
+  }
+
   Future<String> _fetchGradesHtml(
     _UserSession session,
     String username,
@@ -1372,6 +1687,45 @@ class DirectSchoolCampusGateway implements CampusGateway {
     }
 
     return result;
+  }
+
+  Future<String> _fetchStudyProgressIndexBody(
+    _UserSession session,
+    String username,
+    String password,
+  ) async {
+    final resp = await session.httpClient.get(_config.studyProgressUrl);
+
+    if (_isSessionExpired(resp.body)) {
+      await session.forceRelogin(username, password);
+      final retryResp = await session.httpClient.get(_config.studyProgressUrl);
+      return retryResp.body;
+    }
+
+    return resp.body;
+  }
+
+  Future<String> _fetchStudyProgressReportBody(
+    _UserSession session,
+    String username,
+    String password, {
+    required Map<String, String> formBody,
+  }) async {
+    final resp = await session.httpClient.post(
+      _config.studentExecutionPlanUrl,
+      formBody: formBody,
+    );
+
+    if (_isSessionExpired(resp.body)) {
+      await session.forceRelogin(username, password);
+      final retryResp = await session.httpClient.post(
+        _config.studentExecutionPlanUrl,
+        formBody: formBody,
+      );
+      return retryResp.body;
+    }
+
+    return resp.body;
   }
 
   @override

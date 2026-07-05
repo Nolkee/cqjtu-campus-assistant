@@ -25,6 +25,13 @@ int _minutesOfDay(DateTime value) => value.hour * 60 + value.minute;
 /// 找到最接近 [start] 时间的起始节次。
 int nearestStartSlot(DateTime start) {
   final minutes = _minutesOfDay(start);
+  // 优先检查是否落在某个节次的时间范围内
+  for (final entry in slotMinuteRanges.entries) {
+    if (minutes >= entry.value.start && minutes <= entry.value.end) {
+      return entry.key;
+    }
+  }
+  // 回退到最近邻逻辑
   return slotMinuteRanges.entries.reduce((best, next) {
     final bestDiff = (best.value.start - minutes).abs();
     final nextDiff = (next.value.start - minutes).abs();

@@ -479,10 +479,23 @@ object ScheduleWidgetManager {
         date: LocalDate,
         zone: ZoneId,
     ): ScheduleWidgetOccurrence? {
-        val startSlot = slotTimes[course.timeSlot] ?: return null
-        val endSlot = slotTimes[course.endTimeSlot] ?: startSlot
-        val startAt = date.atTime(startSlot.first).atZone(zone).toInstant()
-        val endAt = date.atTime(endSlot.second).atZone(zone).toInstant()
+        val exactStartMinutes = course.exactStartMinutes
+        val exactEndMinutes = course.exactEndMinutes
+        val startTime: LocalTime
+        val endTime: LocalTime
+
+        if (exactStartMinutes != null && exactEndMinutes != null && exactEndMinutes > exactStartMinutes) {
+            startTime = localTimeFromMinutes(exactStartMinutes)
+            endTime = localTimeFromMinutes(exactEndMinutes)
+        } else {
+            val startSlot = slotTimes[course.timeSlot] ?: return null
+            val endSlot = slotTimes[course.endTimeSlot] ?: startSlot
+            startTime = startSlot.first
+            endTime = endSlot.second
+        }
+
+        val startAt = date.atTime(startTime).atZone(zone).toInstant()
+        val endAt = date.atTime(endTime).atZone(zone).toInstant()
         val today = LocalDate.now(zone)
         return ScheduleWidgetOccurrence(
             course = course,
@@ -490,10 +503,15 @@ object ScheduleWidgetManager {
             startAt = startAt,
             endAt = endAt,
             startAtDate = date,
-            startText = startSlot.first.format(timeFormatter),
-            endText = endSlot.second.format(timeFormatter),
+            startText = startTime.format(timeFormatter),
+            endText = endTime.format(timeFormatter),
             isToday = date == today,
         )
+    }
+
+    private fun localTimeFromMinutes(minutes: Int): LocalTime {
+        val clamped = minutes.coerceIn(0, 23 * 60 + 59)
+        return LocalTime.of(clamped / 60, clamped % 60)
     }
 
     private fun calculateCurrentWeek(
@@ -812,6 +830,8 @@ private data class ScheduleWidgetCourse(
     val isExam: Boolean,
     val isCustom: Boolean,
     val seatNumber: String,
+    val exactStartMinutes: Int?,
+    val exactEndMinutes: Int?,
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("name", name)
@@ -824,6 +844,8 @@ private data class ScheduleWidgetCourse(
         put("isExam", isExam)
         put("isCustom", isCustom)
         put("seatNumber", seatNumber)
+        put("exactStartMinutes", exactStartMinutes ?: JSONObject.NULL)
+        put("exactEndMinutes", exactEndMinutes ?: JSONObject.NULL)
         put("weekList", JSONArray().also { array ->
             weekList.sorted().forEach { array.put(it) }
         })
@@ -831,24 +853,37 @@ private data class ScheduleWidgetCourse(
 
     companion object {
         fun fromMap(map: Map<String, Any?>): ScheduleWidgetCourse? {
-            val timeSlot = map["timeSlot"].toIntOrNull() ?: return null
+            val timeSlot = map["timeSlot"].asIntOrNull() ?: return null
+            val timeStr = map["timeStr"]?.toString().orEmpty()
+            val isExam = map["isExam"].toBooleanValue()
+            val parsedExactMinutes = if (isExam) exactMinutesFromText(timeStr) else null
             return ScheduleWidgetCourse(
                 name = map["name"]?.toString().orEmpty(),
                 teacher = map["teacher"]?.toString().orEmpty(),
-                timeStr = map["timeStr"]?.toString().orEmpty(),
+                timeStr = timeStr,
                 classroom = map["classroom"]?.toString().orEmpty(),
-                dayOfWeek = map["dayOfWeek"].toIntOrNull() ?: 1,
+                dayOfWeek = map["dayOfWeek"].asIntOrNull() ?: 1,
                 timeSlot = timeSlot,
-                endTimeSlot = map["endTimeSlot"].toIntOrNull() ?: timeSlot,
+                endTimeSlot = map["endTimeSlot"].asIntOrNull() ?: timeSlot,
                 weekList = map["weekList"].toIntSet(),
-                isExam = map["isExam"].toBooleanValue(),
+                isExam = isExam,
                 isCustom = map["isCustom"].toBooleanValue(),
                 seatNumber = map["seatNumber"]?.toString().orEmpty(),
+                exactStartMinutes =
+                    map["exactStartMinutes"].asIntOrNull() ?: parsedExactMinutes?.first,
+                exactEndMinutes =
+                    map["exactEndMinutes"].asIntOrNull() ?: parsedExactMinutes?.second,
             )
         }
 
         fun fromJson(json: JSONObject): ScheduleWidgetCourse {
             val timeSlot = json.optInt("timeSlot", 1)
+            val timeStr = json.optString("timeStr")
+            val parsedExactMinutes = if (json.optBoolean("isExam", false)) {
+                exactMinutesFromText(timeStr)
+            } else {
+                null
+            }
             val weekArray = json.optJSONArray("weekList") ?: JSONArray()
             val weeks = buildSet {
                 for (index in 0 until weekArray.length()) {
@@ -858,7 +893,7 @@ private data class ScheduleWidgetCourse(
             return ScheduleWidgetCourse(
                 name = json.optString("name"),
                 teacher = json.optString("teacher"),
-                timeStr = json.optString("timeStr"),
+                timeStr = timeStr,
                 classroom = json.optString("classroom"),
                 dayOfWeek = json.optInt("dayOfWeek", 1),
                 timeSlot = timeSlot,
@@ -867,7 +902,27 @@ private data class ScheduleWidgetCourse(
                 isExam = json.optBoolean("isExam", false),
                 isCustom = json.optBoolean("isCustom", false),
                 seatNumber = json.optString("seatNumber"),
+                exactStartMinutes =
+                    json.optNullableInt("exactStartMinutes") ?: parsedExactMinutes?.first,
+                exactEndMinutes =
+                    json.optNullableInt("exactEndMinutes") ?: parsedExactMinutes?.second,
             )
+        }
+
+        private fun exactMinutesFromText(text: String): Pair<Int, Int>? {
+            val matches = Regex("(\\d{1,2}):(\\d{2})").findAll(text).take(2).toList()
+            if (matches.size < 2) return null
+
+            fun minutes(match: MatchResult): Int? {
+                val hour = match.groupValues[1].toIntOrNull() ?: return null
+                val minute = match.groupValues[2].toIntOrNull() ?: return null
+                if (hour !in 0..23 || minute !in 0..59) return null
+                return hour * 60 + minute
+            }
+
+            val start = minutes(matches[0]) ?: return null
+            val end = minutes(matches[1]) ?: return null
+            return if (end > start) start to end else null
         }
     }
 }
@@ -919,14 +974,14 @@ private data class WidgetRowIds(
     val metaId: Int,
 )
 
-private fun Any?.toIntOrNull(): Int? = when (this) {
+private fun Any?.asIntOrNull(): Int? = when (this) {
     is Number -> toInt()
-    is String -> toIntOrNull()
+    is String -> trim().toIntOrNull()
     else -> null
 }
 
 private fun Any?.toIntSet(): Set<Int> = when (this) {
-    is List<*> -> mapNotNull { it.toIntOrNull() }.toSet()
+    is List<*> -> mapNotNull { it.asIntOrNull() }.toSet()
     is IntArray -> toSet()
     else -> emptySet()
 }
@@ -941,4 +996,9 @@ private fun Any?.toBooleanValue(): Boolean = when (this) {
 private fun JSONObject.optNullableString(name: String): String? {
     if (!has(name) || isNull(name)) return null
     return optString(name).takeIf { it.isNotBlank() }
+}
+
+private fun JSONObject.optNullableInt(name: String): Int? {
+    if (!has(name) || isNull(name)) return null
+    return optInt(name)
 }

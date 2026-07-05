@@ -5,6 +5,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:data/data.dart';
 import '../utils/providers.dart';
+import '../widgets/background_refresh_banner.dart';
 
 class CampusCardPage extends ConsumerStatefulWidget {
   const CampusCardPage({super.key, this.scrollToQr = false});
@@ -36,6 +37,7 @@ class _CampusCardPageState extends ConsumerState<CampusCardPage> {
   @override
   Widget build(BuildContext context) {
     final qrScrollSignal = ref.watch(campusCardQrScrollSignalProvider);
+    final balanceState = ref.watch(campusCardBalanceProvider);
     if (qrScrollSignal > _handledQrScrollSignal) {
       _handledQrScrollSignal = qrScrollSignal;
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToQr());
@@ -46,12 +48,18 @@ class _CampusCardPageState extends ConsumerState<CampusCardPage> {
       body: ListView(
         controller: _controller,
         padding: const EdgeInsets.all(16),
-        children: const [
-          _BalanceCard(),
-          SizedBox(height: 16),
-          _QrCard(),
-          SizedBox(height: 16),
-          _RechargeCard(),
+        children: [
+          if (balanceState.shouldOfferManualRefresh)
+            BackgroundRefreshBanner(
+              onRefresh: () => ref
+                  .read(campusCardBalanceProvider.notifier)
+                  .refresh(forceRefresh: true),
+            ),
+          const _BalanceCard(),
+          const SizedBox(height: 16),
+          const _QrCard(),
+          const SizedBox(height: 16),
+          const _RechargeCard(),
         ],
       ),
     );
@@ -74,7 +82,7 @@ class _BalanceCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final balanceAsync = ref.watch(campusCardBalanceProvider);
-    final isUpdating = balanceAsync.isLoading && balanceAsync.hasValue;
+    final isUpdating = balanceAsync.isRefreshing && balanceAsync.hasValue;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -120,8 +128,9 @@ class _BalanceCard extends ConsumerWidget {
                               forceRefresh: true,
                             );
                       }
-                      ref.invalidate(campusCardBalanceProvider);
-                      await ref.read(campusCardBalanceProvider.future);
+                      await ref
+                          .read(campusCardBalanceProvider.notifier)
+                          .refresh(forceRefresh: true, throwOnError: true);
                       if (context.mounted) {
                         ScaffoldMessenger.of(
                           context,
@@ -219,7 +228,7 @@ class _QrCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokenAsync = ref.watch(payCodeProvider);
-    final isUpdating = tokenAsync.isLoading && tokenAsync.hasValue;
+    final isUpdating = tokenAsync.isRefreshing && tokenAsync.hasToken;
 
     return Card(
       child: Padding(
@@ -258,31 +267,57 @@ class _QrCard extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   FilledButton(
-                    onPressed: () => ref.invalidate(payCodeProvider),
+                    onPressed: () => ref
+                        .read(payCodeProvider.notifier)
+                        .refresh(forceRefresh: true, throwOnError: false),
                     child: const Text('重新获取'),
                   ),
                 ],
               ),
-              data: (token) => Column(
-                children: [
-                  QrImageView(
-                    data: token,
-                    size: 220,
-                    backgroundColor: Colors.white,
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    '二维码仅用于当次消费，请勿截图保存',
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.refresh, size: 18),
-                    label: const Text('刷新二维码'),
-                    onPressed: () => ref.invalidate(payCodeProvider),
-                  ),
-                ],
-              ),
+              data: (token) {
+                if (token.isEmpty) {
+                  return SizedBox(
+                    height: 220,
+                    child: Center(
+                      child: FilledButton.icon(
+                        icon: const Icon(Icons.qr_code_2),
+                        label: const Text('获取消费二维码'),
+                        onPressed: () => ref
+                            .read(payCodeProvider.notifier)
+                            .refresh(forceRefresh: true, throwOnError: false),
+                      ),
+                    ),
+                  );
+                }
+
+                return Column(
+                  children: [
+                    QrImageView(
+                      data: token,
+                      size: 220,
+                      backgroundColor: Colors.white,
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      '二维码仅用于当次消费，请勿截图保存',
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.refresh, size: 18),
+                      label: const Text('刷新二维码'),
+                      onPressed: tokenAsync.isRefreshing
+                          ? null
+                          : () => ref
+                                .read(payCodeProvider.notifier)
+                                .refresh(
+                                  forceRefresh: true,
+                                  throwOnError: false,
+                                ),
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -349,7 +384,9 @@ class _RechargeCardState extends ConsumerState<_RechargeCard>
                   }
 
                   // 3. 击穿缓存后，令 Provider 失效，UI 自动获取最新余额
-                  ref.invalidate(campusCardBalanceProvider);
+                  await ref
+                      .read(campusCardBalanceProvider.notifier)
+                      .refresh(forceRefresh: true, throwOnError: true);
 
                   if (mounted) {
                     ScaffoldMessenger.of(

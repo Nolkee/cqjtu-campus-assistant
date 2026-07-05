@@ -3,8 +3,9 @@ import 'package:core/models/grade.dart';
 
 class GradeItem extends StatelessWidget {
   final Grade grade;
+  final VoidCallback? onTap;
 
-  const GradeItem({super.key, required this.grade});
+  const GradeItem({super.key, required this.grade, this.onTap});
 
   Color get _scoreColor {
     final n = double.tryParse(grade.score);
@@ -20,6 +21,7 @@ class GradeItem extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
+        onTap: onTap,
         title: Text(
           grade.courseName,
           style: const TextStyle(fontWeight: FontWeight.w500),
@@ -27,13 +29,22 @@ class GradeItem extends StatelessWidget {
         subtitle: Text(
           '${grade.semester}  ${grade.credits} 学分  绩点 ${grade.gradePoint}',
         ),
-        trailing: Text(
-          grade.score,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: _scoreColor,
-          ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              grade.score,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: _scoreColor,
+              ),
+            ),
+            if (onTap != null) ...[
+              const SizedBox(width: 4),
+              Icon(Icons.chevron_right, color: _scoreColor, size: 20),
+            ],
+          ],
         ),
       ),
     );

@@ -86,12 +86,17 @@ void main() {
         'gradePoint': '3.7',
         'courseAttribute': '必修',
         'courseNature': '考试',
+        'studentId': '202500000001',
+        'teachingClassId': '202520262005822',
+        'gradeRecordId': '53B41442418D2185E06332F1010A1D6E',
       });
       expect(g.semester, '2024-2025-1');
       expect(g.courseName, '高等数学');
       expect(g.score, '92');
       expect(g.credits, '4.0');
       expect(g.gradePoint, '3.7');
+      expect(g.hasDetail, isTrue);
+      expect(g.detailQueryParameters?['jx0404id'], '202520262005822');
     });
 
     test('缺失字段使用 "-" 默认值', () {
@@ -108,6 +113,20 @@ void main() {
       expect(g.courseName, '');
       expect(g.courseAttribute, '');
       expect(g.courseNature, '');
+    });
+
+    test('GradeDetail JSON 往返解析', () {
+      final detail = GradeDetail.fromJson({
+        'totalScore': '90',
+        'items': [
+          {'name': '实验成绩', 'score': '93', 'ratio': '20%'},
+          {'name': '平时成绩', 'score': '96', 'ratio': '30%'},
+        ],
+      });
+      expect(detail.totalScore, '90');
+      expect(detail.items, hasLength(2));
+      expect(detail.items.first.name, '实验成绩');
+      expect(detail.toJson()['totalScore'], '90');
     });
   });
 

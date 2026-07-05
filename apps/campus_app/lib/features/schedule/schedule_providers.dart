@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:campus_platform/services/notification_service.dart';
+import 'package:campus_platform/services/schedule_widget_service.dart';
 import 'package:core/models/course.dart';
 import 'package:core/models/exam.dart';
 import 'package:core/utils/exam_time_utils.dart';
@@ -11,55 +13,132 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../providers/runtime_mode.dart';
-import '../../providers/shared.dart';
 import '../../utils/semester_service.dart';
 import '../auth/auth_providers.dart';
+import '../shared/cached_resource.dart';
 
 typedef ScheduleResult = ({List<Course> courses, String remark});
 
-final scheduleProvider = FutureProvider.family<ScheduleResult, String?>((
-  ref,
-  semester,
-) async {
-  ref.watch(sessionUpdateProvider);
-  final creds = ref.watch(credentialsProvider);
-  if (creds == null) throw Exception('Not logged in');
-  ensureCredentialPassword(creds);
+final scheduleProvider =
+    NotifierProvider.family<
+      ScheduleNotifier,
+      CachedResource<ScheduleResult>,
+      String?
+    >(ScheduleNotifier.new);
 
-  final gateway = ref.watch(campusGatewayProvider);
-  final selectedSemester = await ref.watch(
-    selectedScheduleSemesterProvider.future,
-  );
-  final semesterKey = semester ?? selectedSemester;
-  final customCourses = await ref.watch(
-    customCoursesProvider(semesterKey).future,
-  );
-  final totalWeeks = await ref.watch(
-    semesterTotalWeeksProvider(semesterKey).future,
-  );
-  final scheduleResult = await gateway.getSchedule(
-    creds.username,
-    creds.password,
-    semester: semester,
-  );
+class ScheduleNotifier extends CachedResourceNotifier<ScheduleResult, String?> {
+  @override
+  ScheduleResult get emptyData => (courses: const [], remark: '');
 
-  final semesterStart = await _resolveSemesterStart(ref, semesterKey);
-  final examCourses = semesterStart == null
-      ? <Course>[]
-      : await _loadExamCourses(
-          gateway: gateway,
-          username: creds.username,
-          password: creds.password,
-          semester: semester,
-          semesterStart: semesterStart,
-          totalWeeks: totalWeeks,
-        );
+  @override
+  String get cacheNamespace => 'schedule';
 
-  return (
-    courses: [...scheduleResult.courses, ...customCourses, ...examCourses],
-    remark: scheduleResult.remark,
-  );
-});
+  @override
+  String? cacheScopeForArg(String? arg) => arg;
+
+  @override
+  Object? encode(ScheduleResult data) => {
+    'courses': data.courses.map((course) => course.toJson()).toList(),
+    'remark': data.remark,
+  };
+
+  @override
+  ScheduleResult decode(Object? json) {
+    if (json is! Map) return emptyData;
+    final coursesRaw = json['courses'];
+    return (
+      courses: coursesRaw is List
+          ? coursesRaw
+                .whereType<Map>()
+                .map((item) => Course.fromJson(Map<String, dynamic>.from(item)))
+                .toList()
+          : const <Course>[],
+      remark: json['remark']?.toString() ?? '',
+    );
+  }
+
+  @override
+  void listenDependencies(String? arg) {
+    ref.listen<AsyncValue<List<Course>>>(customCoursesProvider(arg), (_, next) {
+      unawaited(refresh());
+    });
+    ref.listen<AsyncValue<int>>(semesterTotalWeeksProvider(arg), (_, next) {
+      unawaited(refresh());
+    });
+    ref.listen<AsyncValue<DateTime?>>(activeSemesterStartProvider, (_, next) {
+      unawaited(refresh());
+    });
+  }
+
+  @override
+  Future<ScheduleResult> fetch(
+    ({String username, String password}) credentials, {
+    required bool forceRefresh,
+  }) async {
+    ensureCredentialPassword(credentials);
+
+    final gateway = ref.read(campusGatewayProvider);
+    final selectedSemester = await ref.read(
+      selectedScheduleSemesterProvider.future,
+    );
+    final semesterKey = resourceArg ?? selectedSemester;
+    final customCourses = await ref.read(
+      customCoursesProvider(semesterKey).future,
+    );
+    final totalWeeks = await ref.read(
+      semesterTotalWeeksProvider(semesterKey).future,
+    );
+    final scheduleResult = await gateway.getSchedule(
+      credentials.username,
+      credentials.password,
+      semester: resourceArg,
+      forceRefresh: forceRefresh,
+    );
+
+    final semesterStart = await _resolveSemesterStart(ref, semesterKey);
+    final examCourses = semesterStart == null
+        ? <Course>[]
+        : await _loadExamCourses(
+            gateway: gateway,
+            username: credentials.username,
+            password: credentials.password,
+            semester: resourceArg,
+            semesterStart: semesterStart,
+            totalWeeks: totalWeeks,
+          );
+
+    return (
+      courses: [...scheduleResult.courses, ...customCourses, ...examCourses],
+      remark: scheduleResult.remark,
+    );
+  }
+
+  @override
+  Future<void> onData(ScheduleResult data, {required bool changed}) async {
+    if (!changed) return;
+    final selectedSemester = ref
+        .read(selectedScheduleSemesterProvider)
+        .valueOrNull;
+    final semesterStart = ref.read(activeSemesterStartProvider).valueOrNull;
+    if (semesterStart == null) return;
+    final totalWeeks =
+        ref.read(semesterTotalWeeksProvider(selectedSemester)).valueOrNull ??
+        defaultSemesterTotalWeeks;
+
+    await NotificationService.scheduleClassReminders(
+      data.courses,
+      semesterStart,
+      totalWeeks: totalWeeks,
+    );
+    await ScheduleWidgetService.updateScheduleWidgets(
+      courses: data.courses,
+      semesterStart: semesterStart,
+      selectedSemester: selectedSemester,
+      remark: data.remark,
+      totalWeeks: totalWeeks,
+    );
+  }
+}
 
 Future<DateTime?> _resolveSemesterStart(Ref ref, String? semesterKey) async {
   if (semesterKey != null && semesterKey.isNotEmpty) {
@@ -113,21 +192,36 @@ List<Course> examsToCourses({
         final seat = exam.seatNumber.trim() == '-'
             ? ''
             : exam.seatNumber.trim();
+
+        // 计算精确分钟数（从午夜 00:00 开始），用于课表精确布局
+        final startMinutes = parsed.start.hour * 60 + parsed.start.minute;
+        final endMinutes = parsed.end.hour * 60 + parsed.end.minute;
+
         return Course(
           name: name,
           teacher: '',
           timeStr: exam.examTime.trim(),
           classroom: exam.examRoom.trim(),
           dayOfWeek: parsed.start.weekday,
-          timeSlot: nearestStartSlot(parsed.start),
+          timeSlot: _startSlotForExactTime(parsed.start),
           endTimeSlot: endSlotFor(parsed.end),
           weekList: [week],
           isExam: true,
           seatNumber: seat,
+          exactStartMinutes: startMinutes,
+          exactEndMinutes: endMinutes,
         );
       })
       .whereType<Course>()
       .toList();
+}
+
+int _startSlotForExactTime(DateTime value) {
+  final minutes = value.hour * 60 + value.minute;
+  for (final entry in slotMinuteRanges.entries) {
+    if (minutes <= entry.value.end) return entry.key;
+  }
+  return slotMinuteRanges.keys.last;
 }
 
 // ── Semester / Week / Course Settings ─────────────────────────
@@ -135,7 +229,9 @@ List<Course> examsToCourses({
 class SemesterStartNotifier extends AsyncNotifier<DateTime?> {
   @override
   Future<DateTime?> build() async {
-    return ref.read(semesterServiceProvider).load();
+    final service = ref.read(semesterServiceProvider);
+    if (service.cacheReady) return service.loadSync();
+    return service.load();
   }
 
   Future<void> set(DateTime date) async {
@@ -153,7 +249,9 @@ class SemesterStartForKeyNotifier
     extends FamilyAsyncNotifier<DateTime?, String> {
   @override
   Future<DateTime?> build(String arg) async {
-    return ref.read(semesterServiceProvider).loadForKey(arg);
+    final service = ref.read(semesterServiceProvider);
+    if (service.cacheReady) return service.loadForKeySync(arg);
+    return service.loadForKey(arg);
   }
 
   Future<void> set(DateTime date) async {
@@ -172,7 +270,9 @@ final semesterStartForKeyProvider =
 class SelectedSemesterNotifier extends AsyncNotifier<String?> {
   @override
   Future<String?> build() async {
-    return ref.read(semesterServiceProvider).loadSelectedSemester();
+    final service = ref.read(semesterServiceProvider);
+    if (service.cacheReady) return service.loadSelectedSemesterSync();
+    return service.loadSelectedSemester();
   }
 
   Future<void> set(String? value) async {
