@@ -201,8 +201,14 @@ class StudyCreditProgressSummary {
     };
 
     for (final section in data.sections) {
-      final requiredBucket = totals[_creditCategoryForSection(section)]!;
-      requiredBucket.requiredCredits += _parseCredit(section.requiredCredits);
+      final bucket = totals[_creditCategoryForSection(section)]!;
+      bucket.requiredCredits += _parseCredit(section.requiredCredits);
+
+      final sectionEarnedCredits = _parseCredit(section.earnedCredits);
+      if (sectionEarnedCredits > 0) {
+        bucket.earnedCredits += sectionEarnedCredits;
+        continue;
+      }
 
       for (final course in section.courses) {
         if (course.status != StudyCourseStatus.completed) continue;
