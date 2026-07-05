@@ -1153,23 +1153,27 @@ class _StudyProgressParser {
       );
     }
 
-    final summaryByTitle = _parseSummaryTable(summaryTable);
-    final coursesByTitle = _parseCourseTable(courseTable);
+    final summaryByKey = _parseSummaryTable(summaryTable);
+    final coursesByKey = _parseCourseTable(courseTable);
     final groups = <StudyProgressGroup>[];
 
-    final orderedTitles = <String>[
-      ...summaryByTitle.keys,
-      ...coursesByTitle.keys
-          .where((title) => !summaryByTitle.containsKey(title)),
+    final orderedKeys = <String>[
+      ...summaryByKey.keys,
+      ...coursesByKey.keys.where((key) => !summaryByKey.containsKey(key)),
     ];
 
-    for (final title in orderedTitles) {
-      final summary = summaryByTitle[title];
-      final courses = coursesByTitle[title] ?? const <StudyProgressCourse>[];
+    for (final key in orderedKeys) {
+      final summary = summaryByKey[key];
+      final courses =
+          coursesByKey[key]?.courses ?? const <StudyProgressCourse>[];
+      final meta = summary?.meta ??
+          coursesByKey[key]?.meta ??
+          _StudyProgressGroupMeta.empty();
       groups.add(
         StudyProgressGroup(
-          id: title,
-          title: title,
+          id: key,
+          title: meta.displayTitle,
+          creditCategory: meta.creditCategory,
           requiredCredits: summary?.requiredCredits ?? '',
           earnedCredits: summary?.earnedCredits ?? '',
           remainingCredits: summary?.remainingCredits ?? '',
@@ -1198,7 +1202,8 @@ class _StudyProgressParser {
   }
 
   static Map<String, _StudyProgressSummary> _parseSummaryTable(
-      dom.Element table) {
+    dom.Element table,
+  ) {
     final result = <String, _StudyProgressSummary>{};
     final rows = table.querySelectorAll('tr');
 
@@ -1207,11 +1212,12 @@ class _StudyProgressParser {
       if (cells.length < 5) continue;
       final rawTitle = cells[0].text.trim();
       if (rawTitle.isEmpty || rawTitle == '总计') continue;
-      final title = _normalizeStudyGroupTitle(rawTitle);
-      if (title.isEmpty) continue;
+      final meta = _parseStudyGroupMeta(rawTitle);
+      if (meta.key.isEmpty) continue;
 
-      final current = result[title];
-      result[title] = _StudyProgressSummary(
+      final current = result[meta.key];
+      result[meta.key] = _StudyProgressSummary(
+        meta: meta,
         requiredCredits: _sumTexts(current?.requiredCredits, cells[1].text),
         earnedCredits: _sumTexts(current?.earnedCredits, cells[2].text),
         remainingCredits: _sumTexts(current?.remainingCredits, cells[4].text),
@@ -1221,10 +1227,11 @@ class _StudyProgressParser {
     return result;
   }
 
-  static Map<String, List<StudyProgressCourse>> _parseCourseTable(
-      dom.Element table) {
-    final result = <String, List<StudyProgressCourse>>{};
-    var currentGroup = '';
+  static Map<String, _StudyProgressCourseBucket> _parseCourseTable(
+    dom.Element table,
+  ) {
+    final result = <String, _StudyProgressCourseBucket>{};
+    var currentGroup = _StudyProgressGroupMeta.empty();
     final rows = table.querySelectorAll('tr');
 
     for (var i = 1; i < rows.length; i++) {
@@ -1236,14 +1243,23 @@ class _StudyProgressParser {
       if (nonEmpty.isEmpty) continue;
 
       if (cells.length == 1 || (cells.length > 1 && nonEmpty.length == 1)) {
-        currentGroup = nonEmpty.first;
-        result.putIfAbsent(currentGroup, () => <StudyProgressCourse>[]);
+        currentGroup = _parseStudyGroupMeta(nonEmpty.first);
+        result.putIfAbsent(
+          currentGroup.key,
+          () => _StudyProgressCourseBucket(meta: currentGroup),
+        );
         continue;
       }
 
-      if (cells.length < 10 || currentGroup.isEmpty) continue;
+      if (cells.length < 10 || currentGroup.key.isEmpty) continue;
 
-      result.putIfAbsent(currentGroup, () => <StudyProgressCourse>[]).add(
+      result
+          .putIfAbsent(
+            currentGroup.key,
+            () => _StudyProgressCourseBucket(meta: currentGroup),
+          )
+          .courses
+          .add(
             StudyProgressCourse(
               semester: texts[0],
               code: texts[1],
@@ -1262,12 +1278,26 @@ class _StudyProgressParser {
     return result;
   }
 
-  static String _normalizeStudyGroupTitle(String rawTitle) {
+  static _StudyProgressGroupMeta _parseStudyGroupMeta(String rawTitle) {
     final text = rawTitle.trim();
-    if (text.isEmpty) return '';
-    if (!text.contains('_')) return text;
-    final right = text.split('_').last.trim();
-    return right.replaceAll(RegExp(r'\((必修|选修|校选)\)$'), '');
+    if (text.isEmpty) return _StudyProgressGroupMeta.empty();
+
+    final right = text.contains('_') ? text.split('_').last.trim() : text;
+    final match = RegExp(r'^(.*?)(?:\((必修|选修|校选)\))?$').firstMatch(right);
+    final baseTitle =
+        (match?.group(1) ?? right).trim().replaceAll(RegExp(r'\s+'), ' ');
+    final creditCategory = (match?.group(2) ?? '').trim();
+    final displayTitle =
+        creditCategory.isEmpty ? baseTitle : '$baseTitle（$creditCategory）';
+    final key =
+        creditCategory.isEmpty ? baseTitle : '$baseTitle::$creditCategory';
+
+    return _StudyProgressGroupMeta(
+      key: key,
+      baseTitle: baseTitle,
+      displayTitle: displayTitle,
+      creditCategory: creditCategory,
+    );
   }
 
   static String _sumTexts(String? current, String next) {
@@ -1282,14 +1312,46 @@ class _StudyProgressParser {
 
 class _StudyProgressSummary {
   const _StudyProgressSummary({
+    required this.meta,
     required this.requiredCredits,
     required this.earnedCredits,
     required this.remainingCredits,
   });
 
+  final _StudyProgressGroupMeta meta;
   final String requiredCredits;
   final String earnedCredits;
   final String remainingCredits;
+}
+
+class _StudyProgressGroupMeta {
+  const _StudyProgressGroupMeta({
+    required this.key,
+    required this.baseTitle,
+    required this.displayTitle,
+    required this.creditCategory,
+  });
+
+  const _StudyProgressGroupMeta.empty()
+      : key = '',
+        baseTitle = '',
+        displayTitle = '',
+        creditCategory = '';
+
+  final String key;
+  final String baseTitle;
+  final String displayTitle;
+  final String creditCategory;
+}
+
+class _StudyProgressCourseBucket {
+  _StudyProgressCourseBucket({
+    required this.meta,
+    List<StudyProgressCourse>? courses,
+  }) : courses = courses ?? <StudyProgressCourse>[];
+
+  final _StudyProgressGroupMeta meta;
+  final List<StudyProgressCourse> courses;
 }
 
 // ---------------------------------------------------------------------------

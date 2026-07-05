@@ -68,6 +68,7 @@ class StudyProgressSectionView {
   const StudyProgressSectionView({
     required this.id,
     required this.title,
+    required this.creditCategory,
     required this.requiredCredits,
     required this.earnedCredits,
     required this.remainingCredits,
@@ -77,6 +78,7 @@ class StudyProgressSectionView {
 
   final String id;
   final String title;
+  final String creditCategory;
   final String requiredCredits;
   final String earnedCredits;
   final String remainingCredits;
@@ -88,6 +90,7 @@ class StudyProgressSectionView {
   ) => StudyProgressSectionView(
     id: json['id'] as String? ?? '',
     title: json['title'] as String? ?? '',
+    creditCategory: json['creditCategory'] as String? ?? '',
     requiredCredits: json['requiredCredits'] as String? ?? '',
     earnedCredits: json['earnedCredits'] as String? ?? '',
     remainingCredits: json['remainingCredits'] as String? ?? '',
@@ -104,6 +107,7 @@ class StudyProgressSectionView {
   Map<String, dynamic> toJson() => {
     'id': id,
     'title': title,
+    'creditCategory': creditCategory,
     'requiredCredits': requiredCredits,
     'earnedCredits': earnedCredits,
     'remainingCredits': remainingCredits,
@@ -197,15 +201,15 @@ class StudyCreditProgressSummary {
     };
 
     for (final section in data.sections) {
-      final bucket = totals[_creditCategoryForSection(section)]!;
-      final required = _parseCredit(section.requiredCredits);
-      final earned = _parseCredit(section.earnedCredits);
-      bucket.requiredCredits += required > 0
-          ? required
-          : _sumCourseCredits(section.courses);
-      bucket.earnedCredits += earned > 0
-          ? earned
-          : _sumCompletedCourseCredits(section.courses);
+      final requiredBucket = totals[_creditCategoryForSection(section)]!;
+      requiredBucket.requiredCredits += _parseCredit(section.requiredCredits);
+
+      for (final course in section.courses) {
+        if (course.status != StudyCourseStatus.completed) continue;
+        final earnedBucket =
+            totals[_creditCategoryForCompletedCourse(course, section)]!;
+        earnedBucket.earnedCredits += _completedCourseCredits(course);
+      }
     }
 
     return StudyCreditProgressSummary(
@@ -362,6 +366,7 @@ StudyProgressViewData _buildStudyProgressView(
     return StudyProgressSectionView(
       id: group.id.isEmpty ? group.title : group.id,
       title: group.title,
+      creditCategory: group.creditCategory,
       requiredCredits: group.requiredCredits,
       earnedCredits: group.earnedCredits,
       remainingCredits: group.remainingCredits,
@@ -481,6 +486,16 @@ String _normalizeName(String value) =>
 StudyCreditCategory _creditCategoryForSection(
   StudyProgressSectionView section,
 ) {
+  final directCategory = section.creditCategory.trim();
+  if (directCategory.isNotEmpty) {
+    return switch (directCategory) {
+      '必修' => StudyCreditCategory.compulsory,
+      '校选' => StudyCreditCategory.schoolElective,
+      '选修' => StudyCreditCategory.elective,
+      _ => StudyCreditCategory.elective,
+    };
+  }
+
   final text = [
     section.id,
     section.title,
@@ -499,13 +514,34 @@ StudyCreditCategory _creditCategoryForSection(
 bool _containsAny(String value, List<String> needles) =>
     needles.any((needle) => value.contains(needle));
 
-double _sumCourseCredits(List<StudyProgressCourseView> courses) => courses
-    .fold<double>(0, (sum, course) => sum + _parseCredit(course.credits));
+StudyCreditCategory _creditCategoryForCompletedCourse(
+  StudyProgressCourseView course,
+  StudyProgressSectionView section,
+) {
+  final grade = course.grade;
+  final directAttribute = [
+    grade?.courseAttribute ?? '',
+    grade?.courseNature ?? '',
+  ].join(' ');
 
-double _sumCompletedCourseCredits(List<StudyProgressCourseView> courses) =>
-    courses
-        .where((course) => course.status == StudyCourseStatus.completed)
-        .fold<double>(0, (sum, course) => sum + _parseCredit(course.credits));
+  if (_containsAny(directAttribute, const ['校选'])) {
+    return StudyCreditCategory.schoolElective;
+  }
+  if (_containsAny(directAttribute, const ['必修'])) {
+    return StudyCreditCategory.compulsory;
+  }
+  if (_containsAny(directAttribute, const ['选修'])) {
+    return StudyCreditCategory.elective;
+  }
+
+  return _creditCategoryForSection(section);
+}
+
+double _completedCourseCredits(StudyProgressCourseView course) {
+  final gradeCredits = _parseCredit(course.grade?.credits ?? '');
+  if (gradeCredits > 0) return gradeCredits;
+  return _parseCredit(course.credits);
+}
 
 double _parseCredit(String value) {
   final match = RegExp(r'-?\d+(?:\.\d+)?').firstMatch(value.trim());

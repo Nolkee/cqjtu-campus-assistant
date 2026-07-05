@@ -63,6 +63,7 @@ class StudyProgressGroup {
   const StudyProgressGroup({
     required this.id,
     required this.title,
+    this.creditCategory = '',
     required this.requiredCredits,
     this.earnedCredits = '',
     this.remainingCredits = '',
@@ -72,6 +73,7 @@ class StudyProgressGroup {
 
   final String id;
   final String title;
+  final String creditCategory;
   final String requiredCredits;
   final String earnedCredits;
   final String remainingCredits;
@@ -82,6 +84,7 @@ class StudyProgressGroup {
       StudyProgressGroup(
         id: json['id'] as String? ?? '',
         title: json['title'] as String? ?? '',
+        creditCategory: json['creditCategory'] as String? ?? '',
         requiredCredits: json['requiredCredits'] as String? ?? '',
         earnedCredits: json['earnedCredits'] as String? ?? '',
         remainingCredits: json['remainingCredits'] as String? ?? '',
@@ -98,6 +101,7 @@ class StudyProgressGroup {
   Map<String, dynamic> toJson() => {
         'id': id,
         'title': title,
+        'creditCategory': creditCategory,
         'requiredCredits': requiredCredits,
         'earnedCredits': earnedCredits,
         'remainingCredits': remainingCredits,

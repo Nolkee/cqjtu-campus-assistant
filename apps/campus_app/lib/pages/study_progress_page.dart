@@ -110,6 +110,7 @@ class _StudyProgressPageState extends ConsumerState<StudyProgressPage> {
           return StudyProgressSectionView(
             id: section.id,
             title: section.title,
+            creditCategory: section.creditCategory,
             requiredCredits: section.requiredCredits,
             earnedCredits: section.earnedCredits,
             remainingCredits: section.remainingCredits,
