@@ -32,15 +32,19 @@ void main() {
     PKCS7Padding(),
     CBCBlockCipher(AESEngine()),
   );
-  cipher.init(true, PaddedBlockCipherParameters(
-    ParametersWithIV(KeyParameter(Uint8List.fromList(key)), Uint8List.fromList(iv)),
-    null,
-  ));
+  cipher.init(
+      true,
+      PaddedBlockCipherParameters(
+        ParametersWithIV(
+            KeyParameter(Uint8List.fromList(key)), Uint8List.fromList(iv)),
+        null,
+      ));
 
   final encrypted = cipher.process(Uint8List.fromList(utf8.encode(plaintext)));
   final result = base64.encode(encrypted);
 
-  final expected = 'cqucJPbJHdrzCGcURjcAfjy0QqpGgPZCkKd4zlzzY/LVZZe1jvD575kLO8X0KygD+fGDa8WNiMhoijX07B5fBp0XhzzE2UWBYch0E0brpnU=';
+  final expected =
+      'cqucJPbJHdrzCGcURjcAfjy0QqpGgPZCkKd4zlzzY/LVZZe1jvD575kLO8X0KygD+fGDa8WNiMhoijX07B5fBp0XhzzE2UWBYch0E0brpnU=';
 
   print('\nDart result:  $result');
   print('Java expected: $expected');

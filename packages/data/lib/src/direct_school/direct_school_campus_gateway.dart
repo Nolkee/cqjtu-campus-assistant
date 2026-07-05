@@ -1159,7 +1159,8 @@ class _StudyProgressParser {
 
     final orderedTitles = <String>[
       ...summaryByTitle.keys,
-      ...coursesByTitle.keys.where((title) => !summaryByTitle.containsKey(title)),
+      ...coursesByTitle.keys
+          .where((title) => !summaryByTitle.containsKey(title)),
     ];
 
     for (final title in orderedTitles) {
@@ -1196,7 +1197,8 @@ class _StudyProgressParser {
     return null;
   }
 
-  static Map<String, _StudyProgressSummary> _parseSummaryTable(dom.Element table) {
+  static Map<String, _StudyProgressSummary> _parseSummaryTable(
+      dom.Element table) {
     final result = <String, _StudyProgressSummary>{};
     final rows = table.querySelectorAll('tr');
 
@@ -1219,7 +1221,8 @@ class _StudyProgressParser {
     return result;
   }
 
-  static Map<String, List<StudyProgressCourse>> _parseCourseTable(dom.Element table) {
+  static Map<String, List<StudyProgressCourse>> _parseCourseTable(
+      dom.Element table) {
     final result = <String, List<StudyProgressCourse>>{};
     var currentGroup = '';
     final rows = table.querySelectorAll('tr');
@@ -1241,19 +1244,19 @@ class _StudyProgressParser {
       if (cells.length < 10 || currentGroup.isEmpty) continue;
 
       result.putIfAbsent(currentGroup, () => <StudyProgressCourse>[]).add(
-        StudyProgressCourse(
-          semester: texts[0],
-          code: texts[1],
-          name: texts[2],
-          credits: texts[3],
-          attribute: texts[4],
-          nature: texts[5],
-          status: texts[6],
-          score: texts[7],
-          remark: texts[8],
-          isDegreeCourse: texts[9],
-        ),
-      );
+            StudyProgressCourse(
+              semester: texts[0],
+              code: texts[1],
+              name: texts[2],
+              credits: texts[3],
+              attribute: texts[4],
+              nature: texts[5],
+              status: texts[6],
+              score: texts[7],
+              remark: texts[8],
+              isDegreeCourse: texts[9],
+            ),
+          );
     }
 
     return result;

@@ -120,7 +120,8 @@ class ApiService {
     required String sessionId,
     bool forceRefresh = false,
   }) async {
-    throw UnsupportedError('self-hosted backend does not support study progress yet');
+    throw UnsupportedError(
+        'self-hosted backend does not support study progress yet');
   }
 
   Future<List<Exam>> getExams(

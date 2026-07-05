@@ -162,8 +162,7 @@ class StudyProgressData {
   Map<String, dynamic> toJson() => {
         'groups': groups.map((group) => group.toJson()).toList(),
         'currentSemester': currentSemester,
-        'currentSemesterCourses': currentSemesterCourses
-            .map((course) => course.toJson())
-            .toList(),
+        'currentSemesterCourses':
+            currentSemesterCourses.map((course) => course.toJson()).toList(),
       };
 }

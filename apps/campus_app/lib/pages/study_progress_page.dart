@@ -74,7 +74,10 @@ class _StudyProgressPageState extends ConsumerState<StudyProgressPage> {
                 const _EmptyState()
               else
                 for (final section in sections) ...[
-                  _SectionBlock(section: section, onOpenGrade: _openGradeDetail),
+                  _SectionBlock(
+                    section: section,
+                    onOpenGrade: _openGradeDetail,
+                  ),
                   const SizedBox(height: 14),
                 ],
             ],
@@ -89,9 +92,16 @@ class _StudyProgressPageState extends ConsumerState<StudyProgressPage> {
     return data.sections
         .map((section) {
           final courses = section.courses.where((course) {
-            final matchesQuery = query.isEmpty ||
-                course.name.replaceAll(RegExp(r'\s+'), '').toLowerCase().contains(query) ||
-                course.attribute.replaceAll(RegExp(r'\s+'), '').toLowerCase().contains(query);
+            final matchesQuery =
+                query.isEmpty ||
+                course.name
+                    .replaceAll(RegExp(r'\s+'), '')
+                    .toLowerCase()
+                    .contains(query) ||
+                course.attribute
+                    .replaceAll(RegExp(r'\s+'), '')
+                    .toLowerCase()
+                    .contains(query);
             final matchesStatus =
                 _statusFilter == null || course.status == _statusFilter;
             return matchesQuery && matchesStatus;
@@ -350,10 +360,7 @@ class _FilterChip extends StatelessWidget {
 }
 
 class _SectionBlock extends StatelessWidget {
-  const _SectionBlock({
-    required this.section,
-    required this.onOpenGrade,
-  });
+  const _SectionBlock({required this.section, required this.onOpenGrade});
 
   final StudyProgressSectionView section;
   final ValueChanged<StudyProgressCourseView> onOpenGrade;
@@ -421,10 +428,7 @@ class _SectionBlock extends StatelessWidget {
 }
 
 class _CourseRow extends StatelessWidget {
-  const _CourseRow({
-    required this.course,
-    required this.onOpenGrade,
-  });
+  const _CourseRow({required this.course, required this.onOpenGrade});
 
   final StudyProgressCourseView course;
   final VoidCallback onOpenGrade;
@@ -458,7 +462,10 @@ class _CourseRow extends StatelessWidget {
                     children: [
                       _SmallTag(label: '${course.credits} 学分'),
                       _SmallTag(label: course.attribute),
-                      _StatusTag(status: course.status, label: course.statusLabel),
+                      _StatusTag(
+                        status: course.status,
+                        label: course.statusLabel,
+                      ),
                     ],
                   ),
                 ],
@@ -469,7 +476,10 @@ class _CourseRow extends StatelessWidget {
               onTap: scoreInteractive ? onOpenGrade : null,
               borderRadius: BorderRadius.circular(8),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: scoreInteractive
                       ? const Color(0xFFEAF2FF)
@@ -536,10 +546,7 @@ class _SmallTag extends StatelessWidget {
 }
 
 class _StatusTag extends StatelessWidget {
-  const _StatusTag({
-    required this.status,
-    required this.label,
-  });
+  const _StatusTag({required this.status, required this.label});
 
   final StudyCourseStatus status;
   final String label;
@@ -548,17 +555,17 @@ class _StatusTag extends StatelessWidget {
   Widget build(BuildContext context) {
     final (background, foreground) = switch (status) {
       StudyCourseStatus.completed => (
-          const Color(0xFFE8F7EE),
-          const Color(0xFF1F9D55),
-        ),
+        const Color(0xFFE8F7EE),
+        const Color(0xFF1F9D55),
+      ),
       StudyCourseStatus.inProgress => (
-          const Color(0xFFEAF2FF),
-          const Color(0xFF2563EB),
-        ),
+        const Color(0xFFEAF2FF),
+        const Color(0xFF2563EB),
+      ),
       StudyCourseStatus.pending => (
-          const Color(0xFFFDECEC),
-          const Color(0xFFDC2626),
-        ),
+        const Color(0xFFFDECEC),
+        const Color(0xFFDC2626),
+      ),
     };
 
     return Container(
@@ -602,10 +609,7 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _ErrorState extends StatelessWidget {
-  const _ErrorState({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ErrorState({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -642,10 +646,7 @@ void _showCourseSheet(BuildContext context, StudyProgressCourseView course) {
         children: [
           Text(
             course.name,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 16),
           _SheetRow(label: '学分', value: course.credits),
@@ -663,10 +664,7 @@ void _showCourseSheet(BuildContext context, StudyProgressCourseView course) {
 }
 
 class _SheetRow extends StatelessWidget {
-  const _SheetRow({
-    required this.label,
-    required this.value,
-  });
+  const _SheetRow({required this.label, required this.value});
 
   final String label;
   final String value;
