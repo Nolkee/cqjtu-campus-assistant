@@ -1,7 +1,7 @@
 name: campus_app
 description: "重交校园助手 - 课程表、校园卡、电费一体化管理"
 publish_to: 'none'
-version: 1.0.2+15
+version: 1.0.0+16
 
 environment:
   sdk: ^3.11.0
