@@ -5,12 +5,14 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:campus_platform/services/credential_service.dart';
 import 'package:campus_platform/services/notification_service.dart';
 import 'services/app_update_coordinator.dart';
+import 'theme/ios_style.dart';
 import 'utils/providers.dart';
 import 'package:campus_platform/services/background_task.dart';
 import 'pages/login_page.dart';
 import 'pages/schedule_page.dart';
 import 'pages/campus_card_page.dart';
 import 'pages/profile_page.dart';
+import 'widgets/liquid_glass_tab_bar.dart';
 import 'widgets/silent_zove_token_bootstrapper.dart';
 
 void main() async {
@@ -189,6 +191,32 @@ class _MainShellState extends ConsumerState<_MainShell>
     ),
   ];
 
+  static const _liquidGlassItems = [
+    LiquidGlassTabItem(
+      label: '课表',
+      icon: Icons.calendar_today_outlined,
+      selectedIcon: Icons.calendar_today,
+      sfSymbol: 'calendar',
+    ),
+    LiquidGlassTabItem(
+      label: '校园卡',
+      icon: Icons.credit_card_outlined,
+      selectedIcon: Icons.credit_card,
+      sfSymbol: 'creditcard',
+    ),
+    LiquidGlassTabItem(
+      label: '我的',
+      icon: Icons.person_outline,
+      selectedIcon: Icons.person,
+      sfSymbol: 'person',
+    ),
+  ];
+
+  void _selectTab(int i) {
+    setState(() => _index = i);
+    _pageController.jumpToPage(i);
+  }
+
   @override
   Widget build(BuildContext context) {
     // ✅ 核心修复 3：在 build 中也监听真正选中的学期
@@ -204,23 +232,56 @@ class _MainShellState extends ConsumerState<_MainShell>
       if (next.hasValue) _trySchedule();
     });
 
+    final liquid = usesAppleLiquidGlass;
+    final glassInset =
+        liquid ? LiquidGlassTabBar.contentBottomInset(context) : 0.0;
+
+    final body = Stack(
+      children: [
+        PageView(
+          controller: _pageController,
+          physics: const NeverScrollableScrollPhysics(),
+          children: _pages,
+        ),
+        const SilentZoveTokenBootstrapper(),
+      ],
+    );
+
+    if (liquid) {
+      // Edge-to-edge content under official UIGlassEffect tab bar.
+      final media = MediaQuery.of(context);
+      return Scaffold(
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            Positioned.fill(
+              child: MediaQuery(
+                data: media.copyWith(
+                  padding: media.padding.copyWith(bottom: glassInset),
+                ),
+                child: body,
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: LiquidGlassTabBar(
+                currentIndex: _index,
+                onTap: _selectTab,
+                items: _liquidGlassItems,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
-      body: Stack(
-        children: [
-          PageView(
-            controller: _pageController,
-            physics: const NeverScrollableScrollPhysics(),
-            children: _pages,
-          ),
-          const SilentZoveTokenBootstrapper(),
-        ],
-      ),
+      body: body,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,
-        onTap: (i) {
-          setState(() => _index = i);
-          _pageController.jumpToPage(i);
-        },
+        onTap: _selectTab,
         type: BottomNavigationBarType.fixed,
         items: _items,
       ),

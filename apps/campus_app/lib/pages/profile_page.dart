@@ -5,6 +5,8 @@ import 'package:campus_platform/services/credential_service.dart';
 import 'package:campus_platform/services/notification_service.dart';
 import 'package:core/models/dorm_room.dart';
 import '../services/app_update_coordinator.dart';
+import '../theme/ios_style.dart';
+import '../widgets/ios_picker_sheet.dart';
 import 'electricity_page.dart';
 import 'leave_apply_page.dart';
 import 'tools_page.dart';
@@ -1151,18 +1153,15 @@ class _NotificationSettingsCardState
                           color: Colors.grey,
                         ),
                       ),
-                      PopupMenuButton<int>(
-                        initialValue: currentReminderMinutes,
-                        tooltip: '设置提醒提前时间',
-                        onSelected: _onReminderMinutesSelected,
-                        itemBuilder: (context) => _reminderMinuteOptions
-                            .map(
-                              (m) => PopupMenuItem<int>(
-                                value: m,
-                                child: Text('提前 $m 分钟'),
-                              ),
-                            )
-                            .toList(),
+                      GestureDetector(
+                        onTap: () => showIosWheelPickerSheet<int>(
+                          context: context,
+                          title: '提醒时间',
+                          options: _reminderMinuteOptions,
+                          selected: currentReminderMinutes,
+                          labelOf: (m) => '提前 $m 分钟',
+                          onDone: _onReminderMinutesSelected,
+                        ),
                         child: const Text(
                           '修改',
                           style: TextStyle(
@@ -1180,9 +1179,9 @@ class _NotificationSettingsCardState
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Switch(
+                : AdaptiveSwitch(
                     value: _courseReminderEnabled!,
-                    activeThumbColor: Colors.deepOrange,
+                    activeColor: Colors.deepOrange,
                     onChanged: (val) async {
                       await NotificationService.setCourseReminderEnabled(val);
                       setState(() => _courseReminderEnabled = val);
