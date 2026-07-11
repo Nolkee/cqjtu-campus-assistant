@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Bootstrap (melos)
+        run: |
+          dart pub get
+          dart run melos bootstrap
+
+      - name: Format check
+        run: |
+          dart format --set-exit-if-changed .
+
+      - name: Analyze (app)
+        run: |
+          cd apps/campus_app
+          flutter analyze --no-fatal-infos
+
+      - name: Analyze (packages)
+        run: |
+          cd packages/core && dart analyze
+          cd ../data && dart analyze
+          cd ../adapters_mock && dart analyze
+          cd ../platform && dart analyze

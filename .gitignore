@@ -1,0 +1,25 @@
+# Melos 自动生成，不提交
+pubspec_overrides.yaml
+**/pubspec_overrides.yaml
+
+# Dart/Flutter 通用
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+
+# IDE
+.idea/
+.vscode/launch.json
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 本地环境变量
+.env.local
+# 本地工具 / 遥测
+.appdata/
+**/.dart_tool/
+**/.flutter-plugins-dependencies

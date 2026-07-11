@@ -1,0 +1,10 @@
+name: campus_adapters_mock
+version: 0.0.1
+publish_to: "none"
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  core: ^0.0.1
+  data: ^0.0.1
